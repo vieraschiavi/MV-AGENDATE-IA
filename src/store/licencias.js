@@ -27,6 +27,14 @@ export const PLANES = {
     incluye: 'Todo lo del plan Básico + chatbot y ChatVoice con IA (WhatsApp/voz) que cotiza y agenda solo, con voz rioplatense + aviso automático de retraso al próximo cliente',
     ia: true,
     nota_costo_variable: 'El uso de IA (Claude), WhatsApp Business API y telefonía (Twilio) corre con las cuentas propias del profesional; costo de referencia US$ 20-40/mes según volumen de conversaciones — no incluido en el precio del software.'
+  },
+  // Modo SaaS hosteado: sin descarga — cuenta online con datos propios aislados,
+  // 14 días de prueba gratis y suscripción mensual. Siempre recurrente.
+  saas: {
+    nombre: 'SaaS online (mensual)', precio: 15, mensual: true,
+    incluye: 'Cuenta online lista para usar (sin instalar nada): agenda optimizada + cotizador + CRM + dashboards + exportación, con tus datos privados y aislados. 14 días de prueba gratis. Cancelás cuando quieras.',
+    ia: false,
+    nota_costo_variable: 'Los canales con IA (WhatsApp/voz) en modo SaaS se habilitan por cuenta en una fase posterior; hoy el chatbot/ChatVoice corre en las versiones descargables.'
   }
 };
 export const MEDIOS = ['tarjeta', 'mercadopago', 'transferencia'];
@@ -47,7 +55,9 @@ export function crearPedido({ plan, version = 'pc', email, medio, nombre, recurr
   if (!email) return { ok: false, error: 'Falta el email.' };
   const id = 'ORD-' + randomBytes(4).toString('hex').toUpperCase();
   const pedido = {
-    id, plan, version, email, nombre: nombre || '', medio, recurrente: !!recurrente && medio === 'mercadopago',
+    id, plan, version, email, nombre: nombre || '', medio,
+    // El plan SaaS es suscripción mensual siempre; los demás según lo pedido.
+    recurrente: (plan === 'saas' || !!recurrente) && medio === 'mercadopago',
     total_usd: PLANES[plan].precio, estado: 'pendiente',
     creado: new Date().toISOString(), licencia: null, token: null
   };

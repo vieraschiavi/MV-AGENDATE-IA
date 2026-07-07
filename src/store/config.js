@@ -14,6 +14,16 @@ const ENV = {
   anthropicApiKey: 'ANTHROPIC_API_KEY',
   nombreProfesional: 'NOMBRE_PROFESIONAL', // a quién representa el agente (ej: "Juan Pérez")
   oficioProfesional: 'OFICIO_PROFESIONAL', // clave de src/data/oficios.json (ej: "electricista")
+  pais: 'PAIS',                            // clave de src/data/paises.js (ej: "uy", "ar", "mx")
+  moneda: 'MONEDA',                        // '' = moneda local del país | 'USD' = facturar en dólares
+  // Profesiones/oficios creados por el usuario (JSON con el mismo formato de
+  // oficios.json) — se fusionan con el catálogo base: cualquier profesional
+  // (médico, abogado, taller, etc.) puede armar el suyo desde /config.html.
+  oficiosCustom: 'OFICIOS_CUSTOM',
+  // '0' = el chatbot da el precio directo. Cualquier otro valor (default): la
+  // cotización es un SUGERIDO y el chatbot no le dice montos al cliente hasta
+  // que el profesional la apruebe (o ajuste) desde el Panel.
+  aprobarCotizaciones: 'APROBAR_COTIZACIONES',
   agenciaNombre: 'AGENCIA_NOMBRE',         // nombre comercial mostrado en fichas/exportaciones
   agenciaTelefono: 'AGENCIA_TELEFONO',
   sitioUrl: 'SITIO_URL',                   // dominio público del deploy (para back_urls de MercadoPago, ej. https://mv-agendate-ia.vercel.app)
@@ -49,6 +59,11 @@ const ENV = {
   // se crea solo la primera vez que alguien elige suscripción y se cachea acá
   // para no crear un plan nuevo en cada intento de compra.
   preapprovalPlanFull: 'PREAPPROVAL_PLAN_FULL',
+  // Secreto de firma de los tokens de sesión del modo SaaS multi-cliente
+  // (autogenerado la primera vez; ver store/cuentas.js).
+  jwtSecret: 'JWT_SECRET',
+  // ID del plan recurrente SaaS (suscripción mensual hosteada) en MercadoPago.
+  preapprovalPlanSaas: 'PREAPPROVAL_PLAN_SAAS',
   // Licencia de ESTA copia descargada (si se vendió con suscripción Pro IA):
   // se usa para chequear periódicamente contra el servidor central si sigue
   // activa. Se completa en /config.html con el código que llegó al comprar.
@@ -57,7 +72,8 @@ const ENV = {
 const CLAVES = Object.keys(ENV);
 const SECRETAS = new Set([
   'anthropicApiKey', 'whatsappToken', 'whatsappVerifyToken',
-  'twilioAuthToken', 'deepgramApiKey', 'elevenlabsApiKey', 'adminKey', 'mercadopagoToken'
+  'twilioAuthToken', 'deepgramApiKey', 'elevenlabsApiKey', 'adminKey', 'mercadopagoToken',
+  'jwtSecret'
 ]);
 
 // Clave/config EMBEBIDA por el vendedor (oculta, base64) que viaja con el

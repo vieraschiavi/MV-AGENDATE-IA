@@ -38,8 +38,25 @@ export default function Panel() {
   };
 
   const hoy = datos?.hoy ?? [];
+  const pendientes = datos?.cotizacionesPendientes ?? [];
   const multi = profesionales.length > 1;
   const nombreProf = (id) => profesionales.find((p) => p.id === id)?.nombre || '—';
+
+  const [ajustes, setAjustes] = useState({});
+  const [avisoCot, setAvisoCot] = useState('');
+  const resolverCotizacion = async (cot, aprobar) => {
+    const total = Number(ajustes[cot.id] ?? cot.sugerido?.total);
+    const r = await fetchAdmin(`/api/cotizaciones/${cot.id}/resolver`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ aprobar, total }),
+    });
+    const d = await r.json();
+    if (!d.ok) { setAvisoCot(`⚠️ ${d.error || 'No se pudo resolver.'}`); return; }
+    setAvisoCot(aprobar
+      ? `✅ Precio confirmado (${cot.sugerido?.simbolo || '$'} ${d.cotizacion.totalAprobado})${cot.canal === 'whatsapp' && cot.telefono ? ' — el cliente ya recibió el aviso por WhatsApp.' : ' — el asistente se lo informa al cliente en cuanto retome la charla.'}`
+      : 'Cotización rechazada: el asistente le dirá al cliente que lo contactás directamente.');
+    cargar();
+  };
 
   return (
     <>
@@ -51,6 +68,46 @@ export default function Panel() {
           <div className="kpi"><div className="n">{datos ? hoy.length : '–'}</div><div className="l">Citas de hoy</div></div>
           <div className="kpi"><div className="n">{datos ? hoy.filter((c) => c.estado === 'en_curso').length : '–'}</div><div className="l">En curso</div></div>
           <div className="kpi"><div className="n">{datos ? datos.demo.total : '–'}</div><div className="l">Visitas a la demo</div></div>
+        </div>
+        <div className="card" style={{ marginBottom: 16, borderLeft: pendientes.length ? '4px solid var(--verde, #5cb531)' : undefined }}>
+          <h2 className="mv-h">💬 Cotizaciones por aprobar {pendientes.length > 0 && <span style={{ color: '#5cb531' }}>({pendientes.length})</span>}</h2>
+          <p style={{ fontSize: '.88rem', color: 'var(--muted)', margin: '0 0 10px' }}>
+            El asistente nunca le dice un precio al cliente sin tu OK: acá aprobás cada cotización tal cual
+            (o ajustás el monto) y recién ahí se le confirma. Si la charla fue por WhatsApp, el cliente recibe el precio al instante.
+          </p>
+          {pendientes.length === 0 ? (
+            <div className="mv-empty">No hay cotizaciones esperando tu aprobación.</div>
+          ) : (
+            <div className="mv-tablewrap">
+              <table className="mv-table">
+                <thead>
+                  <tr><th>Trabajo</th><th>Cliente</th><th>Canal</th><th>Sugerido</th><th>Precio a confirmar</th><th></th></tr>
+                </thead>
+                <tbody>
+                  {pendientes.map((cot) => (
+                    <tr key={cot.id}>
+                      <td>{cot.trabajoNombre}</td>
+                      <td>{cot.clienteNombre || cot.telefono || '—'}</td>
+                      <td>{cot.canal}</td>
+                      <td>{cot.sugerido?.simbolo || '$'} {cot.sugerido?.total ?? '—'} {cot.sugerido?.moneda || ''}</td>
+                      <td>
+                        <input
+                          type="number" min="1" style={{ width: 110 }}
+                          value={ajustes[cot.id] ?? cot.sugerido?.total ?? ''}
+                          onChange={(e) => setAjustes({ ...ajustes, [cot.id]: e.target.value })}
+                        />
+                      </td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        <button className="btn cel" onClick={() => resolverCotizacion(cot, true)}>Aprobar</button>{' '}
+                        <button className="btn ghost" onClick={() => resolverCotizacion(cot, false)}>Rechazar</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {avisoCot && <div style={{ fontSize: '.85rem', marginTop: 8, color: '#44535f' }}>{avisoCot}</div>}
         </div>
         <div className="card" style={{ marginBottom: 16 }}>
           <h2 className="mv-h">⏰ Aviso automático de retrasos</h2>

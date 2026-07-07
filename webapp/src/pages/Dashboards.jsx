@@ -35,10 +35,78 @@ const LineChart = ({ meses, trabajos, facturacion }) => {
   );
 };
 
+// Estimador de impuestos del país configurado (IA con respaldo local):
+// ingresá tu facturación mensual y te muestra régimen, carga y neto.
+const Impuestos = ({ sugerido, moneda }) => {
+  const [ingresos, setIngresos] = useState('');
+  const [resultado, setResultado] = useState(null);
+  const [cargando, setCargando] = useState(false);
+
+  const estimar = async () => {
+    const monto = Number(ingresos || sugerido || 0);
+    if (!monto) return;
+    setCargando(true);
+    setResultado(null);
+    try {
+      const r = await fetch('/api/impuestos/estimar', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ingresosMensuales: monto }),
+      }).then((x) => x.json());
+      setResultado(r);
+    } catch {
+      setResultado({ ok: false, error: 'Error de red.' });
+    }
+    setCargando(false);
+  };
+
+  return (
+    <div className="card wide" style={{ marginTop: 16 }}>
+      <h2 className="mv-h">🧾 Neto estimado según los impuestos de tu país</h2>
+      <p style={{ fontSize: '.85rem', color: 'var(--muted)', margin: '0 0 10px' }}>
+        La IA estima tu carga impositiva (régimen simplificado, aportes) según la ley de tu país
+        configurado y calcula cuánto te queda neto. Orientativo — no reemplaza a tu contador.
+      </p>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <input
+          type="number" placeholder={`Facturación mensual${sugerido ? ` (sugerido: ${Math.round(sugerido)})` : ''}`}
+          value={ingresos} onChange={(e) => setIngresos(e.target.value)} style={{ width: 260 }}
+        />
+        <button className="btn cel" onClick={estimar} disabled={cargando}>
+          {cargando ? 'Estimando…' : 'Estimar impuestos'}
+        </button>
+      </div>
+      {resultado && !resultado.ok && <div className="aviso warn">{resultado.error}</div>}
+      {resultado?.ok && (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontSize: '.9rem' }}>
+            <strong>{resultado.pais}</strong> · Régimen sugerido: <strong>{resultado.regimen_sugerido}</strong>
+            {resultado.fuente === 'ia' ? ' · calculado con IA' : ' · guía local aproximada'}
+          </div>
+          <div className="mv-tablewrap" style={{ marginTop: 8 }}>
+            <table className="mv-table">
+              <tbody>
+                <tr><td>Facturación bruta</td><td style={{ textAlign: 'right' }}>{dinero(resultado.ingresos_brutos)} {moneda}</td></tr>
+                {resultado.detalle.map((d, i) => (
+                  <tr key={i}><td style={{ color: 'var(--muted)' }}>− {d.concepto}</td><td style={{ textAlign: 'right', color: 'var(--danger)' }}>{dinero(d.monto)}</td></tr>
+                ))}
+                <tr><td><strong>Neto estimado</strong></td><td style={{ textAlign: 'right' }}><strong style={{ color: '#1a7f37' }}>{dinero(resultado.neto_estimado)} {moneda}</strong></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div style={{ fontSize: '.8rem', color: 'var(--muted)', marginTop: 8 }}>{resultado.notas}</div>
+          <div style={{ fontSize: '.75rem', color: 'var(--muted)', marginTop: 4 }}>{resultado.descargo}</div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function Dashboards() {
   const [filtro, setFiltro] = useState({ anio: '', mes: '', oficio: '', estado: '', profesionalId: '' });
   const [opciones, setOpciones] = useState(null);
   const [datos, setDatos] = useState(null);
+  const [parametros, setParametros] = useState(null);
+  useEffect(() => { getJSON('/api/parametros').then(setParametros).catch(() => {}); }, []);
 
   const qs = useCallback(() => new URLSearchParams(Object.entries(filtro).filter(([, v]) => v)).toString(), [filtro]);
 
@@ -113,6 +181,8 @@ export default function Dashboards() {
           <div className="card"><h2 className="mv-h">Trabajos por día de la semana</h2><div className="barlist"><Barras obj={Object.fromEntries(d.por_dia_semana.map((x) => [x.dia, x.cantidad]))} /></div></div>
           <div className="card"><h2 className="mv-h">Comparativa año contra año</h2><div className="barlist"><Barras obj={Object.fromEntries(anual.map((a) => [a.anio, a.trabajos]))} /></div></div>
         </div>
+
+        <Impuestos sugerido={s.total_facturado / 12} moneda={parametros?.moneda || ''} />
       </div>
     </>
   );

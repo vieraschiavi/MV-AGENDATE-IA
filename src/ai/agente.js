@@ -10,6 +10,7 @@ import { cotizar, cotizarToolDef, listarOficios } from './cotizador.js';
 import { geocodificar, geocodificarToolDef } from './geocoding.js';
 import { proponerHorarios, proponerHorariosToolDef, configuracionDescansoPorDefecto } from '../store/agenda.js';
 import { crearCita, confirmarDireccionCliente, buscarClientePorTelefono, agendaDelDiaConUbicacion } from '../store/trabajos.js';
+import { aprobacionRequerida, crearCotizacion, cotizacionDeSesion } from '../store/cotizaciones.js';
 import { get as cfg, listarProfesionales } from '../store/config.js';
 import { registrarUso } from '../store/uso.js';
 
@@ -139,8 +140,49 @@ async function ejecutarHerramienta(nombre, input, canal, sessionId) {
       if (existe) profesionalPorSesion.set(sessionId, input.profesionalId);
       return JSON.stringify({ ok: existe, profesionalId: existe ? input.profesionalId : null });
     }
-    case 'cotizar_trabajo':
-      return JSON.stringify(cotizar({ oficio: prof.oficio, ...input }));
+    case 'cotizar_trabajo': {
+      const r = cotizar({ oficio: prof.oficio, ...input });
+      if (r.error || !aprobacionRequerida()) return JSON.stringify(r);
+      // El precio calculado es un SUGERIDO interno: el cliente no lo ve hasta
+      // que el profesional lo apruebe (o ajuste) desde el Panel.
+      const previa = await cotizacionDeSesion(sessionId, input.trabajo);
+      if (previa?.estado === 'aprobada') {
+        return JSON.stringify({
+          ...r,
+          total: previa.totalAprobado,
+          aprobado: true,
+          nota_del_profesional: previa.nota || undefined,
+          instruccion: 'Precio CONFIRMADO por el profesional: informáselo al cliente con su moneda y seguí el flujo normal.'
+        });
+      }
+      if (previa?.estado === 'rechazada') {
+        return JSON.stringify({
+          requiere_aprobacion: true, estado: 'rechazada', cotizacion_id: previa.id,
+          instruccion: 'El profesional prefirió no cotizar esto por chat: NO des ningún monto; decile al cliente que el profesional lo va a contactar directamente y ofrecé el teléfono de contacto.'
+        });
+      }
+      if (previa?.estado === 'pendiente') {
+        return JSON.stringify({
+          requiere_aprobacion: true, estado: 'pendiente', cotizacion_id: previa.id,
+          instruccion: 'Todavía sin confirmar: NO des montos. Decile al cliente que el profesional está confirmando el precio y seguí juntando los demás datos (dirección, teléfono, horarios tentativos).'
+        });
+      }
+      // Teléfono del cliente: en WhatsApp/voz viene en el sessionId.
+      const telefono = /^(wa|tel):/.test(sessionId) ? sessionId.replace(/^(wa|tel):/, '') : (input.telefono || '');
+      const oficios = listarOficios();
+      const datosOficio = oficios.find((o) => o.clave === prof.oficio);
+      const cot = await crearCotizacion({
+        sessionId, canal, telefono,
+        oficio: prof.oficio, oficioNombre: datosOficio?.nombre || prof.oficio,
+        trabajo: input.trabajo,
+        trabajoNombre: datosOficio?.trabajos.find((t) => t.clave === input.trabajo)?.nombre || input.trabajo,
+        detalle: r
+      });
+      return JSON.stringify({
+        requiere_aprobacion: true, estado: 'pendiente', cotizacion_id: cot.id,
+        instruccion: 'La cotización quedó en manos del profesional: NO le digas ningún monto al cliente (ni aproximado). Explicale que el profesional confirma el precio enseguida y aprovechá para juntar teléfono y dirección. Cuando pregunte por el precio, volvé a llamar cotizar_trabajo para ver si ya está aprobado.'
+      });
+    }
     case 'geocodificar_direccion':
       return JSON.stringify(await geocodificar(input.direccion));
     case 'buscar_horarios_disponibles': {
@@ -205,12 +247,14 @@ function buildSystem(sessionId) {
 
 Flujo esperado en cada conversación:
 1. Entendé qué necesita el cliente y a qué tipo de trabajo predefinido corresponde. Usá cotizar_trabajo apenas lo sepas — nunca inventes precios.
-2. Dale el presupuesto estimado (mano de obra + materiales + traslado) ANTES de ofrecer horarios.
+2. REGLA DE ORO del precio: la cotización es un sugerido que SIEMPRE aprueba el profesional. Si cotizar_trabajo devuelve requiere_aprobacion=true con estado "pendiente", NO menciones ningún monto (ni rango, ni aproximado): decile al cliente que el profesional le confirma el precio en unos minutos y seguí avanzando con los pasos 3-5 mientras tanto. Cuando el cliente pregunte por el precio, o antes de cerrar la cita, volvé a llamar cotizar_trabajo: solo cuando devuelva aprobado=true informá ese precio confirmado. Si devuelve el presupuesto directo (sin requiere_aprobacion), daselo antes de ofrecer horarios como siempre. Nunca confirmes una cita sin precio informado al cliente.
 3. Pedí el teléfono y la dirección. Si el cliente comparte su UBICACIÓN (vas a ver algo como "[Ubicación compartida: lat X, lng Y — dirección aproximada: ...]" en su mensaje), esas coordenadas ya son exactas: no hace falta geocodificarlas, usalas directo. Si en cambio escribe la dirección a mano, pasala por geocodificar_direccion para obtener sus coordenadas antes de ofrecer horarios.
 4. Confirmá la dirección con confirmar_direccion_cliente (pasale también lat/lng si ya los tenés) — si cambió respecto a la base, listo, ya quedó actualizada.
 5. Preguntá si el titular va a estar presente; si no, registrá con registrar_persona_receptora el nombre de quien va a atender.
 6. Ofrecé 2-3 horarios concretos con buscar_horarios_disponibles (necesita fecha, día de la semana, duración del trabajo y las coordenadas del cliente) — nunca preguntes "¿cuándo te queda bien?" en abstracto.
 7. Cuando el cliente acepte un horario, cerrá todo con confirmar_cita (incluí lat/lng si los tenés, así queda guardado para la próxima vez).
+
+Moneda y forma de cobro: cotizar_trabajo devuelve la moneda configurada (campo "moneda"/"simbolo") — mencioná siempre los montos con esa moneda, sin convertir. Si el resultado dice tipo_cobro "honorarios" (servicios profesionales: médicos, abogados, escribanos, psicólogos, contadores…), hablá de "honorarios profesionales", nunca de "mano de obra".
 
 Tono y estilo: profesional pero cercano, español rioplatense (vos/tenés), claro y sin exclamaciones exageradas. Emojis con moderación (uno como máximo, o ninguno). Respuestas cortas tipo chat: 2-5 oraciones. En WhatsApp y voz, aún más breve. Si el trabajo no encaja en ningún tipo predefinido, decilo con honestidad y ofrecé una visita de diagnóstico. Si preguntan algo fuera del rubro, redirigí con amabilidad y ofrecé el teléfono ${telefonoProfesional()} para casos urgentes.`;
 }
@@ -251,7 +295,7 @@ function responderDemo(texto, canal) {
   if (/(cuanto|precio|presupuesto|cotiz|cuesta)/.test(t) && propio) {
     const trabajo = propio.trabajos[0];
     const r = cotizar({ oficio: propio.clave, trabajo: trabajo.clave, distanciaKm: 5 });
-    return `${BADGE}Con gusto te paso un presupuesto de ejemplo. Un(a) "${r.trabajo}" ronda los $${r.total} (${r.moneda}), con una duración estimada de ${r.duracion_estimada_min} minutos. Contame qué necesitás y te cotizo el trabajo real.`;
+    return `${BADGE}Con gusto te paso un presupuesto de ejemplo. Un(a) "${r.trabajo}" ronda los $${r.total} (${r.moneda}), con una duración estimada de ${r.duracion_estimada_min} minutos. El precio final siempre lo confirma el profesional. Contame qué necesitás y te cotizo el trabajo real.`;
   }
   if (/(turno|horario|agend|cita|cuando)/.test(t)) {
     return `${BADGE}Perfecto, para coordinar el horario necesito: qué trabajo necesitás, tu dirección y cuándo te queda bien. Con eso te propongo 2-3 horarios ya considerando el traslado.`;

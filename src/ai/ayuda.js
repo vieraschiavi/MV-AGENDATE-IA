@@ -28,7 +28,7 @@ export const TEMAS_AYUDA = [
   {
     claves: /(precio|cotiz|presupuesto|catalogo|catálogo|tarifa|lista de precios|oficio)/,
     titulo: 'Cotizador y precios',
-    texto: 'El agente cotiza SOLO con tu catálogo de precios (src/data/oficios.json — 18 oficios incluidos con trabajos, precios y tiempos de referencia en UYU). Nunca inventa un número: mano de obra + materiales + traslado. Ajustá los valores del catálogo a tus precios reales antes de vender. También podés cotizar a mano desde la demo o al crear una cita en /agenda.html.'
+    texto: 'El agente cotiza SOLO con tu catálogo de precios (src/data/oficios.json — 18 precargados y podés crear tu propia profesión desde /config.html, con la moneda de tu país). Nunca inventa un número: mano de obra + materiales + traslado. Ajustá los valores del catálogo a tus precios reales antes de vender. También podés cotizar a mano desde la demo o al crear una cita en /agenda.html.'
   },
   {
     claves: /(agenda|horario|traslado|viaje|cita|turno|almuerzo|descanso|d[ií]a libre)/,
@@ -68,7 +68,7 @@ export const TEMAS_AYUDA = [
   {
     claves: /(plan|comprar|pago|mercado ?pago|licencia|suscripci[oó]n|cu[aá]nto (sale|cuesta) el programa|full|b[aá]sico)/,
     titulo: 'Planes y compra',
-    texto: 'Dos planes de pago único: Básico USD 129 (agenda + cotizador + CRM + dashboards + app PC/Android) y Full USD 299 (todo lo anterior + chatbot y ChatVoice con IA + aviso de retraso). Se compra en /comprar.html por MercadoPago o transferencia. El plan Full usa tus propias cuentas de Claude/WhatsApp/Twilio: ese costo de uso (típicamente USD 20-50/mes según volumen) corre aparte, directo a esos proveedores, sin markup.'
+    texto: 'Dos planes de pago único: Básico USD 129 (agenda + cotizador + CRM + dashboards + app PC/Android) y Full USD 299 (todo lo anterior + chatbot y ChatVoice con IA + aviso de retraso), más una opción SaaS online por USD 15/mes (cuenta en la nube, sin instalar nada, 14 días de prueba gratis). Se compra en /comprar.html por MercadoPago o transferencia. El plan Full usa tus propias cuentas de Claude/WhatsApp/Twilio: ese costo de uso (típicamente USD 20-50/mes según volumen) corre aparte, directo a esos proveedores, sin markup.'
   },
   {
     claves: /(android|apk|celular|m[oó]vil|pwa|app|play ?store)/,
@@ -79,6 +79,26 @@ export const TEMAS_AYUDA = [
     claves: /(vercel|deploy|nube|dominio|hosting|servidor)/,
     titulo: 'Deploy en Vercel',
     texto: 'El repo ya trae vercel.json (estático public/ + función serverless api/index.js + Cron Job del aviso de retraso). Conectá el repo en vercel.com, configurá las variables de entorno (o cargá todo después en /config.html) y agregá Redis de Upstash para que los datos persistan entre invocaciones serverless. El ChatVoice premium (tiempo real) requiere servidor persistente; el resto funciona completo en Vercel.'
+  },
+  {
+    claves: /(pa[ií]s|moneda|d[oó]lar|usd|impuesto|monotributo|iva|bps|afip|sat|sunat|neto|latam|argentina|m[eé]xico|chile|colombia|per[uú]|brasil)/,
+    titulo: 'País, moneda e impuestos (LATAM)',
+    texto: 'En /config.html → "País y moneda" elegís tu país de LATAM: la moneda de cotización y facturación se ajusta sola (o podés facturar en USD). En Dashboards, el estimador "Neto estimado" usa IA para calcular tu carga impositiva según la ley de tu país (régimen simplificado, aportes) y cuánto te queda neto — orientativo, no reemplaza a tu contador. Y en "Mi profesión / precios de mercado" la IA investiga qué se cobra en tu país por cada trabajo y te sugiere los precios.'
+  },
+  {
+    claves: /(mi profesi[oó]n|crear (oficio|profesi[oó]n)|no est[aá] (en la lista|mi))/,
+    titulo: 'Crear tu propia profesión',
+    texto: 'El catálogo sirve para cualquier profesión u oficio con agenda: médicos, abogados, escribanos, psicólogos, talleres, estética, etc. Hay 18 precargadas, y en /config.html → "Mi profesión / precios de mercado" creás la tuya con sus tipos de trabajo, duraciones y precios (marcando "honorarios" si sos un servicio profesional sin materiales). La IA puede sugerirte los precios del mercado de tu país.'
+  },
+  {
+    claves: /(aprobar|aprobaci[oó]n|sugerido|confirmar (el )?precio|precio directo)/,
+    titulo: 'Aprobación de cotizaciones',
+    texto: 'El precio que calcula el asistente es un SUGERIDO: por defecto el chatbot no le dice ningún monto al cliente hasta que vos lo apruebes. Cada cotización pendiente te llega por WhatsApp y aparece en el Panel del día → "Cotizaciones por aprobar", donde la confirmás tal cual o ajustás el monto (o la rechazás para atenderla vos directo). Al aprobar, si la charla fue por WhatsApp el cliente recibe el precio confirmado al instante. Si preferís que el bot dé el precio directo sin pasar por vos, cambialo en /config.html → "Aprobación de cotizaciones".'
+  },
+  {
+    claves: /(cuenta online|saas|iniciar sesi[oó]n|registrarme|login|sesi[oó]n|trial|prueba gratis|sin instalar)/,
+    titulo: 'Cuenta online (SaaS)',
+    texto: 'Además de la versión descargable (pago único), podés usar MV Agendate IA como servicio online: en /app → "Cuenta online" creás tu cuenta con email y contraseña, con 14 días de prueba gratis y después USD 15/mes por MercadoPago. Tus clientes, citas y dashboards quedan privados y aislados de cualquier otra cuenta, disponibles desde cualquier dispositivo. La conexión de canales con IA (WhatsApp/ChatVoice) por cuenta online llega en una fase posterior; hoy esos canales corren en las versiones descargables.'
   },
   {
     claves: /(seguridad|admin|clave de administraci[oó]n|proteger)/,
