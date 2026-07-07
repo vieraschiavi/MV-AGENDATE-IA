@@ -5,7 +5,8 @@ import Agenda from './pages/Agenda.jsx';
 import Clientes from './pages/Clientes.jsx';
 import Dashboards from './pages/Dashboards.jsx';
 import Ayuda from './pages/Ayuda.jsx';
-import { claveAdmin } from './api.js';
+import Cuenta from './pages/Cuenta.jsx';
+import { claveAdmin, cuentaSesion } from './api.js';
 
 const PAGINAS = [
   { to: '/panel', ico: '🗓️', label: 'Panel del día' },
@@ -18,6 +19,7 @@ const PAGINAS = [
 export default function App() {
   const [abierto, setAbierto] = useState(false);
   const cerrar = () => setAbierto(false);
+  const cuenta = cuentaSesion();
 
   const pedirClave = () => {
     const k = prompt('Clave de administración:', claveAdmin());
@@ -35,7 +37,7 @@ export default function App() {
         <aside className={`mv-sidebar ${abierto ? 'open' : ''}`}>
           <div className="mv-ws">
             <img src="/logo-mv.svg" alt="MV" />
-            <div><strong>MV Agendate IA</strong><span>Espacio de trabajo</span></div>
+            <div><strong>MV Agendate IA</strong><span>{cuenta ? (cuenta.nombre || cuenta.email) : 'Espacio de trabajo'}</span></div>
           </div>
           <nav className="mv-nav">
             {PAGINAS.map((p) => (
@@ -45,9 +47,12 @@ export default function App() {
             ))}
           </nav>
           <div className="mv-nav-bottom">
+            <NavLink to="/cuenta" onClick={cerrar} className={({ isActive }) => (isActive ? 'on' : '')}>
+              <span className="ico">👤</span><span>{cuenta ? 'Mi cuenta' : 'Cuenta online'}</span>
+            </NavLink>
             <a href="/"><span className="ico">🏠</span><span>Inicio</span></a>
             <a href="/config.html"><span className="ico">⚙️</span><span>Configuración</span></a>
-            <button type="button" onClick={pedirClave}><span className="ico">🔑</span><span>Clave admin</span></button>
+            {!cuenta && <button type="button" onClick={pedirClave}><span className="ico">🔑</span><span>Clave admin</span></button>}
           </div>
         </aside>
         <main className="mv-main">
@@ -59,6 +64,7 @@ export default function App() {
             <Route path="/clientes/:id" element={<Clientes />} />
             <Route path="/dashboards" element={<Dashboards />} />
             <Route path="/ayuda" element={<Ayuda />} />
+            <Route path="/cuenta" element={<Cuenta />} />
             <Route path="*" element={<Navigate to="/panel" replace />} />
           </Routes>
         </main>

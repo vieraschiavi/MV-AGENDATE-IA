@@ -24,7 +24,8 @@ const tipoCambioUyu = () => Number(process.env.TIPO_CAMBIO_UYU) || 42;
  * comparten el mismo link de checkout de MercadoPago.
  */
 const CLAVE_PLAN_CFG = {
-  full: 'preapprovalPlanFull' // solo el plan con IA admite un cobro mensual (cubre el costo de API si el vendedor la revende con clave propia)
+  full: 'preapprovalPlanFull', // solo el plan con IA admite un cobro mensual (cubre el costo de API si el vendedor la revende con clave propia)
+  saas: 'preapprovalPlanSaas'  // suscripción mensual del modo SaaS hosteado (cuenta online)
 };
 export async function planRecurrente(tier, precioUsd) {
   const token = cfg('mercadopagoToken');

@@ -87,6 +87,14 @@
       </div>
     </div>
 
+    <h2 style="margin-top:22px;">✅ Aprobación de cotizaciones</h2>
+    <div class="sub">El precio que calcula el asistente es un sugerido: por defecto NO se lo dice al cliente hasta que vos lo apruebes (o ajustes) desde el Panel. Te llega un aviso por WhatsApp con cada cotización pendiente.</div>
+    <label>Modo de cotización del chatbot</label>
+    <select id="aprobarCotizaciones">
+      <option value="">Con mi aprobación previa (recomendado)</option>
+      <option value="0">Precio directo al cliente (sin aprobación)</option>
+    </select>
+
     <h2 style="margin-top:22px;">👷 Datos del profesional</h2>
     <div class="row">
       <div><label>Tu nombre (o el de tu negocio)</label><input id="nombreProfesional" placeholder="Juan Pérez"></div>
@@ -257,7 +265,7 @@
 
 <script>
 const $ = (s) => document.querySelector(s);
-const CAMPOS = ['anthropicApiKey','nombreProfesional','oficioProfesional','pais','moneda','agenciaNombre','agenciaTelefono','logoUrl','horarioInicio','horarioFin','almuerzoInicio','almuerzoFin','diasLibres','whatsappToken','whatsappPhoneId','whatsappVerifyToken','twilioAccountSid','twilioAuthToken','deepgramApiKey','elevenlabsApiKey','elevenlabsVoiceId','crmWebhookUrl','mercadopagoToken','demoLimite','demoMaxUsos','licenciaLocal'];
+const CAMPOS = ['anthropicApiKey','nombreProfesional','oficioProfesional','pais','moneda','aprobarCotizaciones','agenciaNombre','agenciaTelefono','logoUrl','horarioInicio','horarioFin','almuerzoInicio','almuerzoFin','diasLibres','whatsappToken','whatsappPhoneId','whatsappVerifyToken','twilioAccountSid','twilioAuthToken','deepgramApiKey','elevenlabsApiKey','elevenlabsVoiceId','crmWebhookUrl','mercadopagoToken','demoLimite','demoMaxUsos','licenciaLocal'];
 
 // Combo de oficios (cargado desde el catálogo del cotizador) + chips de días libres.
 const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];

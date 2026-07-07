@@ -1,30 +1,43 @@
 // CRM de MV Agendate IA: clientes, citas/trabajos y dashboard.
 // Persiste en Redis (Upstash) — en Vercel cualquier dato en memoria/archivo se
 // pierde en cada cold start; con Redis sobrevive entre invocaciones serverless.
+//
+// Multi-tenant (modo SaaS): cada función acepta un `cuentaId` opcional al
+// final — cada cuenta guarda sus datos bajo su propia clave de Redis y no ve
+// nada de las demás. Sin cuentaId opera sobre la cuenta 'default', que es
+// exactamente el comportamiento single-tenant de siempre (copia descargable).
 import { randomUUID } from 'node:crypto';
 import { kvGet, kvSet } from './redis.js';
 import { listarOficios } from '../ai/cotizador.js';
 import { listarProfesionales } from './config.js';
 
-const CLAVE = 'trabajos:db';
+const DEFAULT = 'default';
+const claveDb = (cuentaId) => (cuentaId && cuentaId !== DEFAULT ? `trabajos:db:${cuentaId}` : 'trabajos:db');
 
 export const ESTADOS_CITA = ['pendiente', 'confirmada', 'en_curso', 'completada', 'cancelada'];
 
-let db = null; // caché en memoria dentro de una misma instancia tibia (warm start)
-async function cargar() {
-  if (db) return db;
-  db = await kvGet(CLAVE);
-  if (db) { db.clientes ??= []; db.citas ??= []; return db; }
-  db = { clientes: [], citas: [], seq: 1 };
-  sembrarDemo();
-  await guardar();
+// Caché en memoria por cuenta, dentro de una misma instancia tibia (warm start)
+const dbs = new Map();
+async function cargar(cuentaId = DEFAULT) {
+  if (dbs.has(cuentaId)) return dbs.get(cuentaId);
+  let db = await kvGet(claveDb(cuentaId));
+  if (db) {
+    db.clientes ??= []; db.citas ??= [];
+  } else {
+    db = { clientes: [], citas: [], seq: 1 };
+    // Solo la cuenta default (demo/descargable) arranca con datos de ejemplo;
+    // una cuenta SaaS recién registrada empieza vacía.
+    if (cuentaId === DEFAULT) sembrarDemo(db);
+  }
+  dbs.set(cuentaId, db);
+  if (!(await kvGet(claveDb(cuentaId)))) await guardar(cuentaId);
   return db;
 }
-async function guardar() { await kvSet(CLAVE, db); }
+async function guardar(cuentaId = DEFAULT) { await kvSet(claveDb(cuentaId), dbs.get(cuentaId)); }
 
 const hoy = () => new Date();
 const iso = (d) => d.toISOString();
-const nuevoId = (pref) => `${pref}-${String(db.seq++).padStart(4, '0')}`;
+const nuevoId = (db, pref) => `${pref}-${String(db.seq++).padStart(4, '0')}`;
 const n = (s) => String(s ?? '').toLowerCase();
 
 function hash(s) { let h = 0; s = String(s); for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; }
@@ -60,9 +73,8 @@ function ultimosMeses(n = 12) {
 }
 
 // ---------- Demo seed (para que el dashboard y la agenda no arranquen vacíos) ----------
-function sembrarDemo() {
+function sembrarDemo(db) {
   const oficios = listarOficios();
-  const hace = (dias) => new Date(hoy().getTime() - dias * 86400000);
   const clientesDemo = [
     { nombre: 'María Fernández', telefono: '099 123 456', email: 'maria.fernandez@email.com', direccion: 'Av. Brasil 2450, Pocitos', lat: -34.9122, lng: -56.1490 },
     { nombre: 'Diego Rodríguez', telefono: '098 765 432', email: 'diego.rod@email.com', direccion: 'Bulevar Artigas 1120, Malvín', lat: -34.8965, lng: -56.1350 },
@@ -71,7 +83,7 @@ function sembrarDemo() {
     { nombre: 'Valentina Suárez', telefono: '099 555 222', email: 'valen.suarez@email.com', direccion: 'Sarandí 470, Ciudad Vieja', lat: -34.9070, lng: -56.2080 },
     { nombre: 'Gastón Techera', telefono: '092 700 900', email: 'gaston.techera@email.com', direccion: 'Ruta Interbalnearia km 22, Solymar', lat: -34.8100, lng: -55.9700 }
   ];
-  for (const c of clientesDemo) db.clientes.push(normalizarCliente(c));
+  for (const c of clientesDemo) db.clientes.push(normalizarCliente(db, c));
 
   const meses = ultimosMeses(12);
   let i = 0;
@@ -86,7 +98,7 @@ function sembrarDemo() {
       const fecha = new Date(y, m - 1, Math.min(dia, 27));
       const totalBase = 800 + (hash(mes + k + 'total') % 6000);
       db.citas.push({
-        id: nuevoId('CITA'),
+        id: nuevoId(db, 'CITA'),
         clienteId: db.clientes[i % db.clientes.length].id,
         clienteNombre: cliente.nombre,
         profesionalId: 'default',
@@ -113,9 +125,9 @@ function sembrarDemo() {
   }
 }
 
-function normalizarCliente(c) {
+function normalizarCliente(db, c) {
   return {
-    id: c.id || nuevoId('CLI'),
+    id: c.id || nuevoId(db, 'CLI'),
     nombre: c.nombre || '',
     telefono: c.telefono || '',
     email: c.email || '',
@@ -130,20 +142,23 @@ function normalizarCliente(c) {
 }
 
 // ---------- Clientes ----------
-export async function listarClientes() { await cargar(); return db.clientes; }
-export async function obtenerCliente(id) { await cargar(); return db.clientes.find((c) => c.id === id) || null; }
-export async function buscarClientePorTelefono(telefono) {
-  await cargar();
+export async function listarClientes(cuentaId) { return (await cargar(cuentaId)).clientes; }
+export async function obtenerCliente(id, cuentaId) {
+  const db = await cargar(cuentaId);
+  return db.clientes.find((c) => c.id === id) || null;
+}
+export async function buscarClientePorTelefono(telefono, cuentaId) {
+  const db = await cargar(cuentaId);
   const t = String(telefono || '').replace(/[^\d]/g, '');
   return db.clientes.find((c) => String(c.telefono).replace(/[^\d]/g, '').endsWith(t.slice(-8))) || null;
 }
-export async function guardarCliente(c) {
-  await cargar();
-  const cli = normalizarCliente(c);
+export async function guardarCliente(c, cuentaId) {
+  const db = await cargar(cuentaId);
+  const cli = normalizarCliente(db, c);
   const i = db.clientes.findIndex((x) => x.id === cli.id || (x.telefono && x.telefono === cli.telefono));
   if (i >= 0) { cli.id = db.clientes[i].id; cli.creado = db.clientes[i].creado; db.clientes[i] = { ...db.clientes[i], ...cli }; }
   else db.clientes.push(cli);
-  await guardar();
+  await guardar(cuentaId);
   return cli;
 }
 
@@ -152,8 +167,8 @@ export async function guardarCliente(c) {
  * del cliente, o actualiza la dirección si cambió (lo pide el flujo del
  * agente antes de cerrar la cita — ver ai/agente.js).
  */
-export async function confirmarDireccionCliente(clienteId, direccionInformada, lat, lng) {
-  await cargar();
+export async function confirmarDireccionCliente(clienteId, direccionInformada, lat, lng, cuentaId) {
+  const db = await cargar(cuentaId);
   const cli = db.clientes.find((c) => c.id === clienteId);
   if (!cli) return { ok: false, coincide: false, error: 'Cliente no encontrado.' };
   const coincide = !direccionInformada || n(direccionInformada) === n(cli.direccion);
@@ -163,23 +178,23 @@ export async function confirmarDireccionCliente(clienteId, direccionInformada, l
   // nuevo, o ubicación nativa que compartió el cliente por WhatsApp) — incluso
   // si la dirección no cambió, sirve para completar coordenadas que faltaban.
   if (Number.isFinite(lat) && Number.isFinite(lng)) { cli.lat = lat; cli.lng = lng; cambio = true; }
-  if (cambio) await guardar();
+  if (cambio) await guardar(cuentaId);
   return { ok: true, coincide, direccionEnBase: cli.direccion, lat: cli.lat, lng: cli.lng };
 }
 
 /** Asigna qué profesional del equipo atiende habitualmente a este cliente (cuentas multi-profesional). */
-export async function asignarProfesionalCliente(clienteId, profesionalId) {
-  await cargar();
+export async function asignarProfesionalCliente(clienteId, profesionalId, cuentaId) {
+  const db = await cargar(cuentaId);
   const cli = db.clientes.find((c) => c.id === clienteId);
   if (!cli) return { ok: false, error: 'Cliente no encontrado.' };
   cli.profesionalId = profesionalId || null;
-  await guardar();
+  await guardar(cuentaId);
   return { ok: true, profesionalId: cli.profesionalId };
 }
 
 // ---------- Citas / trabajos ----------
-export async function listarCitas(filtro = {}) {
-  await cargar();
+export async function listarCitas(filtro = {}, cuentaId) {
+  const db = await cargar(cuentaId);
   let cs = db.citas;
   if (filtro.fecha) cs = cs.filter((c) => c.fecha === filtro.fecha);
   if (filtro.desde) cs = cs.filter((c) => c.fecha >= filtro.desde);
@@ -192,15 +207,18 @@ export async function listarCitas(filtro = {}) {
   if (filtro.profesionalId) cs = cs.filter((c) => c.profesionalId === filtro.profesionalId);
   return cs.sort((a, b) => (a.fecha + a.inicio).localeCompare(b.fecha + b.inicio));
 }
-export async function citasDelDia(fecha) { return listarCitas({ fecha }); }
-export async function obtenerCita(id) { await cargar(); return db.citas.find((c) => c.id === id) || null; }
+export async function citasDelDia(fecha, cuentaId) { return listarCitas({ fecha }, cuentaId); }
+export async function obtenerCita(id, cuentaId) {
+  const db = await cargar(cuentaId);
+  return db.citas.find((c) => c.id === id) || null;
+}
 
-export async function crearCita(datos) {
-  await cargar();
+export async function crearCita(datos, cuentaId) {
+  const db = await cargar(cuentaId);
   let cliente = datos.clienteId ? db.clientes.find((c) => c.id === datos.clienteId) : null;
   if (!cliente && datos.telefono) cliente = db.clientes.find((c) => c.telefono === datos.telefono);
   if (!cliente) {
-    cliente = normalizarCliente({ nombre: datos.clienteNombre, telefono: datos.telefono, direccion: datos.direccion, lat: datos.lat, lng: datos.lng });
+    cliente = normalizarCliente(db, { nombre: datos.clienteNombre, telefono: datos.telefono, direccion: datos.direccion, lat: datos.lat, lng: datos.lng });
     db.clientes.push(cliente);
   } else if (Number.isFinite(datos.lat) && Number.isFinite(datos.lng)) {
     // Mantiene al cliente con la última ubicación conocida, para reusarla en
@@ -214,7 +232,7 @@ export async function crearCita(datos) {
   // especifica, cae en el único configurado (o el primero de la lista).
   const profesionalId = datos.profesionalId || listarProfesionales()[0]?.id || 'default';
   const cita = {
-    id: nuevoId('CITA'),
+    id: nuevoId(db, 'CITA'),
     clienteId: cliente.id,
     clienteNombre: cliente.nombre,
     profesionalId,
@@ -237,7 +255,7 @@ export async function crearCita(datos) {
     actualizada: iso(hoy())
   };
   db.citas.push(cita);
-  await guardar();
+  await guardar(cuentaId);
   notificarCRM('cita.confirmada', cita);
   return cita;
 }
@@ -249,37 +267,37 @@ export async function crearCita(datos) {
  * canceladas y las que todavía no tienen coordenadas (no se puede estimar su
  * traslado, mejor no asumir 0).
  */
-export async function agendaDelDiaConUbicacion(fecha, excluirCitaId, profesionalId) {
-  const cs = await citasDelDia(fecha);
+export async function agendaDelDiaConUbicacion(fecha, excluirCitaId, profesionalId, cuentaId) {
+  const cs = await citasDelDia(fecha, cuentaId);
   return cs
     .filter((c) => c.estado !== 'cancelada' && c.id !== excluirCitaId && Number.isFinite(c.lat) && Number.isFinite(c.lng)
       && (!profesionalId || c.profesionalId === profesionalId))
     .map((c) => ({ inicio: c.inicio, fin: c.fin, ubicacion: { lat: c.lat, lng: c.lng } }));
 }
 
-export async function cambiarEstadoCita(id, estado) {
-  await cargar();
+export async function cambiarEstadoCita(id, estado, cuentaId) {
+  const db = await cargar(cuentaId);
   if (!ESTADOS_CITA.includes(estado)) return { ok: false, error: `Estado inválido. Opciones: ${ESTADOS_CITA.join(', ')}` };
   const c = db.citas.find((x) => x.id === id);
   if (!c) return { ok: false, error: 'Cita no encontrada.' };
   c.estado = estado;
   c.actualizada = iso(hoy());
-  await guardar();
+  await guardar(cuentaId);
   return { ok: true, cita: c };
 }
 
-export async function registrarReceptor(id, nombreReceptor) {
-  await cargar();
+export async function registrarReceptor(id, nombreReceptor, cuentaId) {
+  const db = await cargar(cuentaId);
   const c = db.citas.find((x) => x.id === id);
   if (!c) return { ok: false, error: 'Cita no encontrada.' };
   c.receptor = nombreReceptor || null;
-  await guardar();
+  await guardar(cuentaId);
   return { ok: true, cita: c };
 }
 
 // ---------- Dashboard ----------
-export async function opcionesFiltros() {
-  await cargar();
+export async function opcionesFiltros(cuentaId) {
+  const db = await cargar(cuentaId);
   const uniq = (arr) => [...new Set(arr.filter(Boolean))].sort();
   return {
     oficios: uniq(db.citas.map((c) => c.oficio)),
@@ -291,9 +309,8 @@ export async function opcionesFiltros() {
 const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
 /** Resumen general: trabajos por oficio/estado, por día de semana, y facturación. */
-export async function resumenDashboard(f = {}) {
-  await cargar();
-  const cs = await listarCitas(f);
+export async function resumenDashboard(f = {}, cuentaId) {
+  const cs = await listarCitas(f, cuentaId);
   const completadas = cs.filter((c) => c.estado === 'completada');
   const cont = (campo) => cs.reduce((m, c) => { const k = c[campo] || 's/d'; m[k] = (m[k] || 0) + 1; return m; }, {});
   const porDiaSemana = DIAS_SEMANA.map((nombre, idx) => ({
@@ -314,10 +331,10 @@ export async function resumenDashboard(f = {}) {
 }
 
 /** Evolución mensual (12 meses): cantidad de trabajos y facturación, para comparar mes a mes / año a año. */
-export async function serieMensual(f = {}) {
-  await cargar();
+export async function serieMensual(f = {}, cuentaId) {
+  const db = await cargar(cuentaId);
   const meses = ultimosMeses(12);
-  const idsFiltrados = new Set((await listarCitas({ oficio: f.oficio, estado: f.estado, profesionalId: f.profesionalId })).map((c) => c.id));
+  const idsFiltrados = new Set((await listarCitas({ oficio: f.oficio, estado: f.estado, profesionalId: f.profesionalId }, cuentaId)).map((c) => c.id));
   const usarFiltro = !!(f.oficio || f.estado || f.profesionalId);
   const cant = Object.fromEntries(meses.map((m) => [m, 0]));
   const fact = Object.fromEntries(meses.map((m) => [m, 0]));
@@ -338,8 +355,8 @@ export async function serieMensual(f = {}) {
 }
 
 /** Evolución anual: totales por año calendario, para comparar año contra año. */
-export async function serieAnual(f = {}) {
-  await cargar();
+export async function serieAnual(f = {}, cuentaId) {
+  const db = await cargar(cuentaId);
   const todas = f.profesionalId ? db.citas.filter((c) => c.profesionalId === f.profesionalId) : db.citas;
   const anios = [...new Set(todas.map((c) => c.fecha.slice(0, 4)))].sort();
   return anios.map((anio) => {

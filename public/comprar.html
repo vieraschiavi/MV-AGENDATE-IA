@@ -35,7 +35,7 @@
       <h2>1. Elegí tu plan</h2>
       <div id="planes"></div>
     </div>
-    <div class="card">
+    <div class="card" id="versionCard">
       <h2>2. Versión a descargar</h2>
       <select id="version">
         <option value="pc">💻 PC / Servidor (completa)</option>
@@ -87,29 +87,34 @@ let PLANES = {}, plan = 'basico', medio = 'mercadopago', recurrente = false, ped
 const _planUrl = new URLSearchParams(location.search).get('plan');
 fetch('/api/planes').then(r=>r.json()).then(d=>{ PLANES=d.planes; if(_planUrl && PLANES[_planUrl]) plan=_planUrl; render(); });
 function render() {
-  $('#planes').innerHTML = Object.entries(PLANES).map(([k,p])=>`<div class="plan ${k===plan?'on':''}" data-k="${k}"><div><strong>${p.nombre}</strong><small>${p.incluye}</small></div><div class="p">USD ${p.precio}</div></div>`).join('');
+  $('#planes').innerHTML = Object.entries(PLANES).map(([k,p])=>`<div class="plan ${k===plan?'on':''}" data-k="${k}"><div><strong>${p.nombre}</strong><small>${p.incluye}</small></div><div class="p">USD ${p.precio}${p.mensual?'/mes':''}</div></div>`).join('');
   document.querySelectorAll('.plan').forEach(el=>el.onclick=()=>{ plan=el.dataset.k; if(plan!=='full') recurrente=false; render(); });
   const p = PLANES[plan]||{};
-  const sufijo = (medio === 'mercadopago' && recurrente) ? '/mes' : '';
+  const sufijo = (p.mensual || (medio === 'mercadopago' && recurrente)) ? '/mes' : '';
   $('#rPlan').textContent = p.nombre||'—'; $('#rPrecio').textContent = 'USD '+(p.precio||0)+sufijo; $('#rTot').textContent='USD '+(p.precio||0)+sufijo;
-  $('#rVer').textContent = $('#version').options[$('#version').selectedIndex].text;
+  // El plan SaaS es online: no hay versión para descargar.
+  $('#versionCard').style.display = p.mensual ? 'none' : '';
+  $('#rVer').textContent = p.mensual ? 'Online (sin descarga)' : $('#version').options[$('#version').selectedIndex].text;
   $('#notaVariable').textContent = p.nota_costo_variable || '';
   actualizarModalidad();
 }
 function actualizarModalidad() {
   // La transferencia es siempre pago único (no hay forma de automatizarla), y
   // la suscripción mensual solo aplica al plan Full (el Básico no usa APIs de IA).
+  // El plan SaaS es SIEMPRE suscripción mensual, sin elección de modalidad.
+  const p = PLANES[plan]||{};
   $('#modalidadWrap').style.display = (medio === 'mercadopago' && plan === 'full') ? 'block' : 'none';
   $('#modalidadNota').textContent = recurrente
     ? 'Se cobra automáticamente cada mes en tu tarjeta hasta que canceles. Podés cancelar cuando quieras.'
     : 'Pagás una sola vez ahora; sin renovación automática.';
+  if (p.mensual) $('#notaVariable').textContent = 'Suscripción mensual por MercadoPago: 14 días de prueba gratis registrándote en la app (/app → Cuenta online). Cancelás cuando quieras. ' + ($('#notaVariable').textContent || '');
 }
 $('#version').onchange = render;
 document.querySelectorAll('#medios .medio').forEach(el=>el.onclick=()=>{ document.querySelectorAll('#medios .medio').forEach(x=>x.classList.toggle('on',x===el)); medio=el.dataset.m; render(); });
 document.querySelectorAll('#modalidad .medio').forEach(el=>el.onclick=()=>{ document.querySelectorAll('#modalidad .medio').forEach(x=>x.classList.toggle('on',x===el)); recurrente = el.dataset.r === '1'; render(); });
 $('#btnComprar').onclick = async () => {
   const email=$('#email').value.trim(); if(!email) return alert('Poné tu email.');
-  const body = { plan, version:$('#version').value, email, nombre:$('#nombre').value, medio, recurrente: medio==='mercadopago' && recurrente };
+  const body = { plan, version:$('#version').value, email, nombre:$('#nombre').value, medio, recurrente: medio==='mercadopago' && (recurrente || !!(PLANES[plan]||{}).mensual) };
   const r = await (await fetch('/api/comprar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
   if(!r.ok) return alert(r.error);
   pedidoId = r.pedido.id;

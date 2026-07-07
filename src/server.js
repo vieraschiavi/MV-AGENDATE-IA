@@ -18,6 +18,8 @@ import { revisarYAvisarAgendaDelDia } from './channels/aviso-retraso.js';
 import { getConfigPublico, setConfig, get as cfg, listarProfesionales, guardarProfesionales, profesionalesGuardados } from './store/config.js';
 import { demoLimitada, consumirUso, usosRestantes, mensajeLimite } from './store/demo.js';
 import * as trabajos from './store/trabajos.js';
+import * as cuentas from './store/cuentas.js';
+import * as cotizaciones from './store/cotizaciones.js';
 import { fichaCitaHTML, agendaCSV, agendaExcelHTML, clientesCSV, clientesExcelHTML } from './exports/documentos.js';
 import { resumenUso, catalogoConEstado } from './store/uso.js';
 import * as lic from './store/licencias.js';
@@ -58,7 +60,7 @@ app.set('trust proxy', true);
 // CORS abierto para la app Android (APK) y el widget embebido en sitios de terceros
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Admin-Key');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Admin-Key, Authorization');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
@@ -68,6 +70,23 @@ app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: false })); // webhooks de Twilio llegan como form-encoded
 app.use(express.static(join(here, '../public')));
 app.use('/movil', express.static(join(here, '../movil'))); // app Android (PWA instalable)
+
+// --- Modo SaaS multi-cliente: resolución de cuenta por token ---
+// Con "Authorization: Bearer <token de /api/auth/login>" cada request opera
+// sobre los datos AISLADOS de esa cuenta; sin token (o con token inválido)
+// todo cae en la cuenta 'default' — el modo single-tenant descargable sigue
+// funcionando exactamente igual que siempre. Nota: el Bearer del cron de
+// Vercel (CRON_SECRET) no es un JWT válido, así que no interfiere.
+app.use((req, _res, next) => {
+  const auth = String(req.headers.authorization || '');
+  const sesion = auth.startsWith('Bearer ') ? cuentas.verificarToken(auth.slice(7)) : null;
+  req.cuentaId = sesion?.cuentaId || 'default';
+  req.cuentaEmail = sesion?.email || '';
+  next();
+});
+
+// El aviso de "cotización para aprobar" al profesional sale por WhatsApp.
+cotizaciones.setNotificador(enviarWhatsApp);
 
 const visitante = (req) => req.headers['x-visitor-id'] || req.body?.sessionId || req.ip || 'anon';
 
@@ -254,6 +273,37 @@ function soloAdmin(req, res, next) {
   return next();
 }
 
+// Rutas del workspace (citas/clientes/cotizaciones): en la cuenta 'default'
+// rige la clave admin de siempre; una cuenta SaaS autenticada administra su
+// propio espacio con el token (y se le corta la escritura si venció el trial
+// o la suscripción quedó suspendida).
+async function adminOCuenta(req, res, next) {
+  if (req.cuentaId === 'default') return soloAdmin(req, res, next);
+  const c = await cuentas.obtenerCuenta(req.cuentaId);
+  if (!c) return res.status(401).json({ error: 'Cuenta inválida.' });
+  const trialVencido = c.estado === 'trial' && new Date(c.trialHasta) < new Date();
+  if (c.estado === 'suspendida' || trialVencido) {
+    return res.status(402).json({ error: 'Tu prueba gratis terminó. Activá la suscripción mensual desde Comprar → SaaS online para seguir usando tu cuenta.' });
+  }
+  return next();
+}
+
+// ==================== Cuentas SaaS (registro / login / sesión) ====================
+app.post('/api/auth/registro', async (req, res) => {
+  if (await esBot(req)) return res.status(403).json({ error: 'Acceso denegado.' });
+  const r = await cuentas.registrar(req.body ?? {});
+  res.status(r.ok ? 200 : 400).json(r);
+});
+app.post('/api/auth/login', async (req, res) => {
+  if (await esBot(req)) return res.status(403).json({ error: 'Acceso denegado.' });
+  const r = await cuentas.login(req.body ?? {});
+  res.status(r.ok ? 200 : 401).json(r);
+});
+app.get('/api/auth/yo', async (req, res) => {
+  if (req.cuentaId === 'default') return res.json({ cuenta: null });
+  res.json({ cuenta: await cuentas.obtenerCuenta(req.cuentaId) });
+});
+
 // --- Configuración del profesional (oficio, nombre, jornada, canales, API key) ---
 app.get('/api/config', soloAdmin, (_req, res) => res.json(getConfigPublico()));
 app.post('/api/config', soloAdmin, (req, res) => {
@@ -335,28 +385,50 @@ async function chequearRetrasosDeHoy() {
 const profesionalOpts = () => ({ agencia: cfg('agenciaNombre') || cfg('nombreProfesional') || 'MV Agendate IA', telefono: cfg('agenciaTelefono') || '', logo: cfg('logoUrl') || '/logo-mv.svg' });
 
 // Citas
-app.get('/api/citas', async (req, res) => res.json(await trabajos.listarCitas(req.query ?? {})));
-app.get('/api/citas/dia/:fecha', async (req, res) => res.json(await trabajos.citasDelDia(req.params.fecha)));
-app.get('/api/citas/:id', async (req, res) => { const c = await trabajos.obtenerCita(req.params.id); res.status(c ? 200 : 404).json(c || { error: 'No encontrada' }); });
-app.post('/api/citas', soloAdmin, async (req, res) => {
+app.get('/api/citas', async (req, res) => res.json(await trabajos.listarCitas(req.query ?? {}, req.cuentaId)));
+app.get('/api/citas/dia/:fecha', async (req, res) => res.json(await trabajos.citasDelDia(req.params.fecha, req.cuentaId)));
+app.get('/api/citas/:id', async (req, res) => { const c = await trabajos.obtenerCita(req.params.id, req.cuentaId); res.status(c ? 200 : 404).json(c || { error: 'No encontrada' }); });
+app.post('/api/citas', adminOCuenta, async (req, res) => {
   const datos = { ...req.body };
   if (datos.direccion && !Number.isFinite(datos.lat)) {
     const geo = await geocodificar(datos.direccion);
     if (geo.ok) { datos.lat = geo.lat; datos.lng = geo.lng; }
   }
-  res.json({ ok: true, cita: await trabajos.crearCita(datos) });
+  res.json({ ok: true, cita: await trabajos.crearCita(datos, req.cuentaId) });
 });
-app.post('/api/citas/:id/estado', soloAdmin, async (req, res) => { const r = await trabajos.cambiarEstadoCita(req.params.id, req.body?.estado); res.status(r.ok ? 200 : 400).json(r); });
-app.post('/api/citas/:id/receptor', soloAdmin, async (req, res) => { const r = await trabajos.registrarReceptor(req.params.id, req.body?.nombreReceptor); res.status(r.ok ? 200 : 400).json(r); });
+app.post('/api/citas/:id/estado', adminOCuenta, async (req, res) => { const r = await trabajos.cambiarEstadoCita(req.params.id, req.body?.estado, req.cuentaId); res.status(r.ok ? 200 : 400).json(r); });
+app.post('/api/citas/:id/receptor', adminOCuenta, async (req, res) => { const r = await trabajos.registrarReceptor(req.params.id, req.body?.nombreReceptor, req.cuentaId); res.status(r.ok ? 200 : 400).json(r); });
 app.get('/api/citas/:id/ficha', async (req, res) => {
-  const c = await trabajos.obtenerCita(req.params.id); if (!c) return res.status(404).send('No encontrada');
+  const c = await trabajos.obtenerCita(req.params.id, req.cuentaId); if (!c) return res.status(404).send('No encontrada');
   res.type('html').send(fichaCitaHTML(c, profesionalOpts()));
 });
 
+// Cotizaciones sugeridas: el chatbot NUNCA le dice un precio al cliente sin que
+// el profesional lo apruebe (o ajuste) antes. Acá el Panel lista las pendientes
+// y las resuelve; al aprobar, si la charla fue por WhatsApp, el cliente recibe
+// el precio confirmado al instante.
+app.get('/api/cotizaciones', adminOCuenta, async (req, res) => {
+  res.json(await cotizaciones.listarCotizaciones(req.query.estado, req.cuentaId));
+});
+app.post('/api/cotizaciones/:id/resolver', adminOCuenta, async (req, res) => {
+  const { aprobar = true, total, nota } = req.body ?? {};
+  const r = await cotizaciones.resolverCotizacion(req.params.id, { aprobar, total, nota }, req.cuentaId);
+  if (!r.ok) return res.status(400).json(r);
+  const cot = r.cotizacion;
+  // Aviso proactivo al cliente por WhatsApp con el precio ya confirmado.
+  if (cot.estado === 'aprobada' && cot.canal === 'whatsapp' && cot.telefono) {
+    const s = cot.sugerido?.simbolo || '$';
+    const etiqueta = cot.sugerido?.tipo_cobro === 'honorarios' ? 'Honorarios' : 'Precio';
+    enviarWhatsApp(cot.telefono, `✅ ${etiqueta} confirmado para "${cot.trabajoNombre}": ${s} ${cot.totalAprobado} (${cot.sugerido?.moneda || ''}).${cot.nota ? `\nNota: ${cot.nota}` : ''}\n¿Coordinamos el horario?`)
+      .catch((e) => console.error('[cotizaciones] aviso al cliente falló:', e.message));
+  }
+  res.json(r);
+});
+
 // Clientes
-app.get('/api/clientes', async (_req, res) => res.json(await trabajos.listarClientes()));
-app.get('/api/cliente/:id', async (req, res) => { const c = await trabajos.obtenerCliente(req.params.id); res.status(c ? 200 : 404).json(c || { error: 'No encontrado' }); });
-app.post('/api/cliente', soloAdmin, async (req, res) => res.json({ ok: true, cliente: await trabajos.guardarCliente(req.body ?? {}) }));
+app.get('/api/clientes', async (req, res) => res.json(await trabajos.listarClientes(req.cuentaId)));
+app.get('/api/cliente/:id', async (req, res) => { const c = await trabajos.obtenerCliente(req.params.id, req.cuentaId); res.status(c ? 200 : 404).json(c || { error: 'No encontrado' }); });
+app.post('/api/cliente', adminOCuenta, async (req, res) => res.json({ ok: true, cliente: await trabajos.guardarCliente(req.body ?? {}, req.cuentaId) }));
 app.post('/api/cliente/:id/confirmar-direccion', async (req, res) => {
   const direccionInformada = req.body?.direccionInformada;
   let lat, lng;
@@ -364,17 +436,17 @@ app.post('/api/cliente/:id/confirmar-direccion', async (req, res) => {
     const geo = await geocodificar(direccionInformada);
     if (geo.ok) { lat = geo.lat; lng = geo.lng; }
   }
-  res.json(await trabajos.confirmarDireccionCliente(req.params.id, direccionInformada, lat, lng));
+  res.json(await trabajos.confirmarDireccionCliente(req.params.id, direccionInformada, lat, lng, req.cuentaId));
 });
-app.post('/api/cliente/:id/profesional', soloAdmin, async (req, res) => {
-  res.json(await trabajos.asignarProfesionalCliente(req.params.id, req.body?.profesionalId));
+app.post('/api/cliente/:id/profesional', adminOCuenta, async (req, res) => {
+  res.json(await trabajos.asignarProfesionalCliente(req.params.id, req.body?.profesionalId, req.cuentaId));
 });
 
 // Dashboard (con filtros: oficio, estado, año, mes, fecha)
-app.get('/api/dashboard', async (req, res) => res.json(await trabajos.resumenDashboard(req.query ?? {})));
-app.get('/api/dashboard/serie', async (req, res) => res.json(await trabajos.serieMensual(req.query ?? {})));
-app.get('/api/dashboard/serie-anual', async (req, res) => res.json(await trabajos.serieAnual(req.query ?? {})));
-app.get('/api/dashboard/filtros', async (_req, res) => res.json({ ...(await trabajos.opcionesFiltros()), profesionales: listarProfesionales() }));
+app.get('/api/dashboard', async (req, res) => res.json(await trabajos.resumenDashboard(req.query ?? {}, req.cuentaId)));
+app.get('/api/dashboard/serie', async (req, res) => res.json(await trabajos.serieMensual(req.query ?? {}, req.cuentaId)));
+app.get('/api/dashboard/serie-anual', async (req, res) => res.json(await trabajos.serieAnual(req.query ?? {}, req.cuentaId)));
+app.get('/api/dashboard/filtros', async (req, res) => res.json({ ...(await trabajos.opcionesFiltros(req.cuentaId)), profesionales: listarProfesionales() }));
 
 // Equipo de profesionales de la cuenta (estudios con varios trabajadores, ej. 3
 // electricistas): lectura pública (para poblar selectores en agenda/clientes/
@@ -386,23 +458,27 @@ app.post('/api/profesionales', soloAdmin, (req, res) => {
 });
 
 // Exportación de la agenda y de la base de clientes (Excel/CSV), con los mismos filtros del dashboard.
-app.get('/api/agenda.csv', async (req, res) => res.type('text/csv').attachment('agenda.csv').send(agendaCSV(await trabajos.listarCitas(req.query ?? {}))));
+app.get('/api/agenda.csv', async (req, res) => res.type('text/csv').attachment('agenda.csv').send(agendaCSV(await trabajos.listarCitas(req.query ?? {}, req.cuentaId))));
 app.get('/api/agenda.xls', async (req, res) => {
   res.setHeader('Content-Type', 'application/vnd.ms-excel');
   res.setHeader('Content-Disposition', 'attachment; filename="agenda.xls"');
-  res.send(agendaExcelHTML(await trabajos.listarCitas(req.query ?? {})));
+  res.send(agendaExcelHTML(await trabajos.listarCitas(req.query ?? {}, req.cuentaId)));
 });
-app.get('/api/clientes.csv', async (_req, res) => res.type('text/csv').attachment('clientes.csv').send(clientesCSV(await trabajos.listarClientes())));
-app.get('/api/clientes.xls', async (_req, res) => {
+app.get('/api/clientes.csv', async (req, res) => res.type('text/csv').attachment('clientes.csv').send(clientesCSV(await trabajos.listarClientes(req.cuentaId))));
+app.get('/api/clientes.xls', async (req, res) => {
   res.setHeader('Content-Type', 'application/vnd.ms-excel');
   res.setHeader('Content-Disposition', 'attachment; filename="clientes.xls"');
-  res.send(clientesExcelHTML(await trabajos.listarClientes()));
+  res.send(clientesExcelHTML(await trabajos.listarClientes(req.cuentaId)));
 });
 
 // Panel del profesional: agenda de hoy + visitas de la demo
-app.get('/api/panel', soloAdmin, async (_req, res) => {
+app.get('/api/panel', adminOCuenta, async (req, res) => {
   const hoyStr = new Date().toISOString().slice(0, 10);
-  res.json({ hoy: await trabajos.citasDelDia(hoyStr), demo: trabajos.resumenDemo() });
+  res.json({
+    hoy: await trabajos.citasDelDia(hoyStr, req.cuentaId),
+    cotizacionesPendientes: await cotizaciones.listarCotizaciones('pendiente', req.cuentaId),
+    demo: req.cuentaId === 'default' ? trabajos.resumenDemo() : { total: 0, visitas: [] }
+  });
 });
 
 // --- Uso de APIs (tokens) y catálogo de servicios/costos ---
@@ -431,6 +507,14 @@ app.post('/api/comprar', async (req, res) => {
 
 async function procesarPreapproval(pre) {
   if (!pre?.id) return;
+  // Modo SaaS: si el pagador tiene una cuenta online con ese email, el estado
+  // de su suscripción activa/suspende la cuenta automáticamente.
+  if (pre.payer_email) {
+    const cuentaSaas = await cuentas.buscarCuentaPorEmail(pre.payer_email);
+    if (cuentaSaas) {
+      await cuentas.actualizarEstado(cuentaSaas.id, pre.status === 'authorized' ? 'activa' : 'suspendida', pre.id);
+    }
+  }
   let licencia = await suscripciones.buscarLicenciaPorPreapproval(pre.id);
   if (!licencia) {
     const pedido = lic.buscarPedidoPendientePorEmail(pre.payer_email, pre.external_reference || undefined);

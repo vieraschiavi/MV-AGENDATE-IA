@@ -50,6 +50,19 @@ según su mercado.
    (monotributo/BPS, AFIP, SAT, SUNAT, etc.) y el neto mensual — orientativo,
    con descargo. Los servicios profesionales cotizan como honorarios; los
    oficios, como mano de obra + materiales.
+9. **El precio siempre lo aprueba el profesional**: la cotización que calcula
+   el agente es un sugerido interno — el chatbot NO le dice ningún monto al
+   cliente hasta que el profesional lo apruebe tal cual (o lo ajuste) desde el
+   Panel. Cada pendiente le llega por WhatsApp; al aprobar, el cliente recibe
+   el precio confirmado al instante. Se puede pasar a "precio directo" desde
+   `/config.html` (y la demo pública fluye sola).
+10. **Modo SaaS multi-cliente (fase 1)**: además de la versión descargable,
+    cuentas online con email/contraseña (`/app` → Cuenta online): 14 días de
+    prueba gratis y suscripción de USD 15/mes por MercadoPago. Cada cuenta
+    tiene sus clientes/citas/dashboards aislados (namespacing por cuenta en
+    Redis); sin token, todo sigue operando sobre la cuenta `default` — el modo
+    single-tenant no cambia. Los canales IA (WhatsApp/voz) por cuenta llegan
+    en fase 2.
 
 ## 2. Stack
 
@@ -128,6 +141,8 @@ test/                   Suite de tests (cotizador, agenda, aviso de retraso, age
 - `GET /api/dashboard`, `/api/dashboard/serie`, `/api/dashboard/serie-anual`, `/api/dashboard/filtros`
 - `GET /api/agenda.csv` · `/api/agenda.xls` · `/api/clientes.csv` · `/api/clientes.xls` — exportación con filtros
 - `GET /api/agenda/chequear-retrasos` (cron) / `POST` (manual, admin) — dispara los avisos de demora
+- `GET /api/cotizaciones?estado=pendiente` · `POST /api/cotizaciones/:id/resolver` — aprobación de cotizaciones (el chatbot no da precio sin OK del profesional)
+- `POST /api/auth/registro` · `POST /api/auth/login` · `GET /api/auth/yo` — cuentas del modo SaaS (con `Authorization: Bearer <token>`, todas las rutas del workspace operan sobre los datos aislados de esa cuenta)
 - `GET /api/planes` · `POST /api/comprar` · `POST /api/pago/mercadopago` (webhook) · `GET /descargar/:token`
 - `GET/POST /webhook/whatsapp`, `POST /webhook/voz`, `POST /webhook/voz-premium` — canales externos
 
@@ -150,17 +165,22 @@ commiteado en `public/app/`, así el deploy sigue sin build step).
 
 ## 6. Planes y precios
 
-| | Básico — USD 129 | Full (con IA) — USD 299 |
-|---|---|---|
-| Agenda con traslados y descansos + cotizador multi-oficio | ✓ | ✓ |
-| CRM de clientes + dashboards + exportación Excel/PDF | ✓ | ✓ |
-| App PC / Android | ✓ | ✓ |
-| Chatbot y ChatVoice con IA (WhatsApp/voz) | — | ✓ |
-| Aviso automático de retraso | — | ✓ |
+| | Básico — USD 129 | Full (con IA) — USD 299 | SaaS online — USD 15/mes |
+|---|---|---|---|
+| Agenda con traslados y descansos + cotizador multi-oficio | ✓ | ✓ | ✓ |
+| CRM de clientes + dashboards + exportación Excel/PDF | ✓ | ✓ | ✓ |
+| App PC / Android | ✓ | ✓ | (web, sin instalar) |
+| Chatbot y ChatVoice con IA (WhatsApp/voz) | — | ✓ | fase 2 |
+| Aviso automático de retraso | — | ✓ | fase 2 |
+| Cuenta online con datos aislados + 14 días gratis | — | — | ✓ |
 
-Pago único vía MercadoPago o transferencia (`/comprar.html`). El plan Full usa
-las cuentas propias del profesional (Claude, WhatsApp Business, y Twilio si
-quiere voz) — ese costo de uso corre aparte, directo a esos proveedores.
+Básico/Full: pago único vía MercadoPago o transferencia (`/comprar.html`). El
+plan Full usa las cuentas propias del profesional (Claude, WhatsApp Business,
+y Twilio si quiere voz) — ese costo de uso corre aparte, directo a esos
+proveedores. SaaS: suscripción mensual por MercadoPago (Preapproval, cobro en
+UYU), registro en `/app` → Cuenta online; el webhook de MercadoPago
+activa/suspende la cuenta sola según el estado de la suscripción (matcheando
+el email del pagador).
 
 ### Competencia y precios (relevamiento LATAM/Uruguay)
 
