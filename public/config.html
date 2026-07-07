@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MV Agendate IA — Configuración</title>
+<link rel="icon" href="/logo-mv.svg" type="image/svg+xml">
+<style>
+  :root{ --navy:#0f2a43; --navy2:#16466e; --gold:#e0b25c; --line:#e3e9f0; --ok:#1a7f37; --off:#b23; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:#eef2f7; color:#22303e; }
+  header{ background:linear-gradient(135deg,var(--navy),var(--navy2)); color:#fff; padding:22px 20px; }
+  header h1{ margin:0; font-size:1.25rem; }
+  header p{ margin:4px 0 0; opacity:.85; font-size:.85rem; }
+  .wrap{ max-width:760px; margin:0 auto; padding:20px; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px; margin-bottom:18px; box-shadow:0 6px 20px #0f2a4310; }
+  .card h2{ margin:0 0 4px; font-size:1.05rem; color:var(--navy); }
+  .card .sub{ font-size:.82rem; color:#5a6b7c; margin-bottom:14px; }
+  label{ display:block; font-size:.8rem; font-weight:600; color:#3a4a5a; margin:12px 0 5px; }
+  input,select{ width:100%; padding:11px 12px; border:1px solid #cfd9e4; border-radius:10px; font-size:.95rem; }
+  input:focus{ outline:none; border-color:var(--navy2); box-shadow:0 0 0 3px #16466e22; }
+  .row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media(max-width:560px){ .row{ grid-template-columns:1fr; } }
+  .btn{ background:var(--navy); color:#fff; border:0; border-radius:11px; padding:13px 18px; font-size:.95rem; font-weight:600; cursor:pointer; width:100%; margin-top:16px; }
+  .btn:hover{ background:var(--navy2); }
+  .btn.gold{ background:var(--gold); color:#3a2a05; }
+  .hint{ font-size:.75rem; color:#7a8a9a; margin-top:4px; }
+  .badges{ display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
+  .badge{ font-size:.75rem; padding:5px 10px; border-radius:999px; font-weight:600; }
+  .badge.on{ background:#e6f6ec; color:var(--ok); }
+  .badge.off{ background:#fdeaea; color:var(--off); }
+  details{ margin-top:8px; border-top:1px solid var(--line); padding-top:10px; }
+  summary{ cursor:pointer; font-weight:600; color:var(--navy2); font-size:.9rem; }
+  .aviso{ display:none; padding:11px 13px; border-radius:10px; font-size:.85rem; margin-top:12px; }
+  .aviso.ok{ display:block; background:#e6f6ec; color:var(--ok); }
+  .aviso.err{ display:block; background:#fdeaea; color:var(--off); }
+  .test{ display:flex; gap:8px; margin-top:10px; }
+  .test input{ flex:1; }
+  .test button{ width:auto; margin:0; padding:11px 14px; }
+  #testOut{ margin-top:10px; font-size:.88rem; white-space:pre-wrap; background:#f6f9fc; border:1px solid var(--line); border-radius:10px; padding:12px; display:none; }
+  a.link{ color:var(--navy2); }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap" style="padding:0;display:flex;align-items:center;gap:14px;">
+    <img src="/logo-mv.svg" alt="MV" style="width:44px;height:44px;border-radius:10px;flex:0 0 auto;">
+    <div>
+      <h1>Configuración — MV Agendate IA</h1>
+      <p>Cargá tu API key de Claude (Anthropic), tu oficio y tu jornada laboral. Se aplican al instante, sin reiniciar.</p>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="card">
+    <h2>Estado de los servicios</h2>
+    <div class="sub">Qué funciones quedan activas con lo que tenés cargado.</div>
+    <div class="badges" id="badges"><span class="badge off">cargando…</span></div>
+  </div>
+
+  <div class="card">
+    <h2>Clave de administración</h2>
+    <div class="sub">Si configuraste una clave de admin, pegala acá para poder ver y guardar. En el primer uso dejala vacía.</div>
+    <input id="adminKey" type="password" placeholder="X-Admin-Key (opcional)" autocomplete="off">
+    <div class="hint">Podés definir una clave nueva abajo, en "Seguridad".</div>
+    <button class="btn gold" id="btnCargar">Cargar configuración actual</button>
+  </div>
+
+  <form id="form" class="card">
+    <h2>🔑 Inteligencia artificial (Claude)</h2>
+    <div class="sub">Tu API key de Anthropic (Claude). Es lo que hace funcionar el chatbot, el chatvoice y el análisis de fotos con IA real. Conseguila en <a class="link" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.</div>
+    <label>ANTHROPIC API KEY</label>
+    <input id="anthropicApiKey" type="password" placeholder="sk-ant-... (dejá vacío para no cambiarla)" autocomplete="off">
+    <div class="hint">Se guarda en tu servidor, nunca se expone al cliente. Al guardar, el chatbot pasa de "modo demo" a IA real automáticamente.</div>
+
+    <h2 style="margin-top:22px;">👷 Datos del profesional</h2>
+    <div class="row">
+      <div><label>Tu nombre (o el de tu negocio)</label><input id="nombreProfesional" placeholder="Juan Pérez"></div>
+      <div><label>Oficio</label>
+        <select id="oficioProfesional"></select>
+      </div>
+    </div>
+    <div class="row">
+      <div><label>Nombre comercial (fichas/exportaciones)</label><input id="agenciaNombre" placeholder="Electricidad Pérez"></div>
+      <div><label>Teléfono de contacto</label><input id="agenciaTelefono" placeholder="+598 99 123 456"></div>
+    </div>
+    <label>Logo (aparece en fichas y exportaciones)</label>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <input id="logoUrl" placeholder="URL del logo o subilo →" style="flex:1;">
+      <input id="logoFile" type="file" accept="image/*" style="width:auto;padding:6px;">
+      <img id="logoPrev" style="width:40px;height:40px;border-radius:8px;object-fit:contain;display:none;">
+    </div>
+    <div class="hint">Podés pegar una URL o subir una imagen (se guarda embebida). Si lo dejás vacío, usa el logo MV.</div>
+
+    <h2 style="margin-top:22px;">🗓️ Jornada y descansos</h2>
+    <div class="sub">El motor de agenda usa esto para no ofrecer horarios fuera de tu jornada, respetar tu almuerzo y no agendar en tus días libres.</div>
+    <div class="row">
+      <div><label>Inicio de jornada</label><input id="horarioInicio" type="time" value="08:00"></div>
+      <div><label>Fin de jornada</label><input id="horarioFin" type="time" value="19:00"></div>
+    </div>
+    <div class="row">
+      <div><label>Inicio de almuerzo/descanso</label><input id="almuerzoInicio" type="time" value="12:30"></div>
+      <div><label>Fin de almuerzo/descanso</label><input id="almuerzoFin" type="time" value="13:30"></div>
+    </div>
+    <label>Días libres (no se agenda)</label>
+    <div class="badges" id="diasLibresBox"></div>
+    <input type="hidden" id="diasLibres">
+
+    <details>
+      <summary>📲 Canales avanzados (WhatsApp, teléfono, voz)</summary>
+      <label>WhatsApp — Token (Meta Cloud API)</label>
+      <input id="whatsappToken" type="password" placeholder="EAAG... (opcional)" autocomplete="off">
+      <div class="row">
+        <div><label>WhatsApp — Phone Number ID</label><input id="whatsappPhoneId" placeholder="1234567890"></div>
+        <div><label>WhatsApp — Verify Token</label><input id="whatsappVerifyToken" type="password" placeholder="mi-token" autocomplete="off"></div>
+      </div>
+      <button type="button" class="btn" id="btnProbarWa" style="margin-top:8px;">📶 Probar conexión de WhatsApp</button>
+      <div id="waResultado" class="hint"></div>
+      <div class="row" style="margin-top:14px;">
+        <div><label>Twilio — Account SID</label><input id="twilioAccountSid" placeholder="AC..."></div>
+        <div><label>Twilio — Auth Token</label><input id="twilioAuthToken" type="password" placeholder="••••" autocomplete="off"></div>
+      </div>
+      <div class="row">
+        <div><label>Deepgram API Key (voz→texto)</label><input id="deepgramApiKey" type="password" placeholder="••••" autocomplete="off"></div>
+        <div><label>ElevenLabs API Key (voz clonada)</label><input id="elevenlabsApiKey" type="password" placeholder="••••" autocomplete="off"></div>
+      </div>
+      <div class="row">
+        <div><label>ElevenLabs — Voice ID</label><input id="elevenlabsVoiceId" placeholder="voz clonada"></div>
+        <div><label>Webhook CRM (leads salientes)</label><input id="crmWebhookUrl" placeholder="https://tu-crm/webhook"></div>
+      </div>
+      <div class="hint">Guardá primero el Account SID / Auth Token de Twilio acá arriba — la sección de números de abajo los necesita. Ningún canal necesita reiniciar el servidor: toma efecto apenas guardás.</div>
+    </details>
+
+    <details>
+      <summary>📞 Número de teléfono (ChatVoice)</summary>
+      <div class="hint">Buscá y activá un número real para que tus clientes llamen y los atienda el asistente — sin entrar nunca a la consola de Twilio. Necesitás el Account SID / Auth Token de Twilio cargados arriba primero.</div>
+      <div id="miNumero" class="hint" style="margin-top:8px;"></div>
+      <div class="row" style="margin-top:10px;">
+        <div>
+          <label>País</label>
+          <select id="paisNumero"><option value="UY">Uruguay (+598)</option><option value="US">Estados Unidos (+1)</option><option value="AR">Argentina (+54)</option></select>
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button type="button" class="btn" id="btnBuscarNumeros">🔍 Buscar números disponibles</button>
+        </div>
+      </div>
+      <div id="numerosDisponibles"></div>
+      <label style="margin-top:16px;">Llamame para probar (tu propio celular)</label>
+      <div class="row">
+        <input id="telefonoPrueba" placeholder="+598 9X XXX XXX">
+        <button type="button" class="btn gold" id="btnLlamarPrueba">📲 Llamar ahora</button>
+      </div>
+      <div id="pruebaResultado" class="hint"></div>
+    </details>
+
+    <details>
+      <summary>💳 Pagos (MercadoPago)</summary>
+      <label>MercadoPago — Access Token</label>
+      <input id="mercadopagoToken" type="password" placeholder="APP_USR-... (cobros → payout a tu banco)" autocomplete="off">
+      <div class="hint">Con esto, la página de compra (/comprar.html) cobra con tarjeta/saldo por MercadoPago y el dinero entra a tu cuenta MP; luego retirás a tu banco. Sin token, la compra usa transferencia bancaria.</div>
+      <label>Tu licencia (si compraste el plan Full con suscripción mensual)</label>
+      <input id="licenciaLocal" placeholder="Ej: MV-FULL-A1B2C3D4" autocomplete="off">
+      <div class="hint">Sólo si elegiste la modalidad de <strong>suscripción mensual</strong> al comprar. Con esto, el programa chequea cada tanto que tu pago siga al día; si tu suscripción se cancela o falla un cobro, se desactiva el chat/voz con IA (el resto del programa sigue funcionando). Si compraste pago único, dejá esto vacío.</div>
+    </details>
+
+    <details>
+      <summary>🎁 Modo demostración (para mostrar el producto)</summary>
+      <div class="row">
+        <div><label>Instancia de demo con cupo</label><select id="demoLimite"><option value="">No (producto completo)</option><option value="1">Sí (limitar usos)</option></select></div>
+        <div><label>Usos gratis con IA</label><input id="demoMaxUsos" type="number" placeholder="3"></div>
+      </div>
+      <div class="hint">Con "Sí", las funciones de IA (chat y análisis de fotos) son gratis pero limitadas a N usos por visitante, con todas las opciones. En el producto vendido dejá "No" (ilimitado).</div>
+    </details>
+
+    <details>
+      <summary>🔒 Seguridad</summary>
+      <label>Clave de administración (protege este panel y el importador)</label>
+      <input id="adminKeyNew" type="password" placeholder="dejá vacío para no cambiarla" autocomplete="off">
+      <div class="hint">Si la definís, la próxima vez tendrás que pegarla arriba para entrar.</div>
+      <div class="hint" style="margin-top:8px;">💡 Para <strong>vender</strong> el producto con tu API key ya embebida y oculta al público, en el servidor corré <code>npm run embeber-clave</code> — la clave viaja con el producto sin quedar a la vista.</div>
+    </details>
+
+    <button class="btn" type="submit">💾 Guardar configuración</button>
+    <div class="aviso" id="aviso"></div>
+  </form>
+
+  <div class="card">
+    <h2>🧪 Probar el chatbot</h2>
+    <div class="sub">Mandá un mensaje de prueba. Te dice si respondió la IA real o el modo demo.</div>
+    <div class="test">
+      <input id="testMsg" placeholder="Ej: Necesito instalar un tomacorriente" value="Hola, ¿cuánto sale instalar un tomacorriente?">
+      <button class="btn" style="margin:0;width:auto;" id="btnTest">Enviar</button>
+    </div>
+    <div id="testOut"></div>
+  </div>
+
+  <p style="text-align:center;font-size:.8rem;color:#7a8a9a;">
+    <a class="link" href="/">← Volver a la landing</a> · <a class="link" href="/panel.html">Panel del día</a> · <a class="link" href="/dashboards.html">Dashboards</a> · <a class="link" href="/demo.html">Demo</a>
+  </p>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const CAMPOS = ['anthropicApiKey','nombreProfesional','oficioProfesional','agenciaNombre','agenciaTelefono','logoUrl','horarioInicio','horarioFin','almuerzoInicio','almuerzoFin','diasLibres','whatsappToken','whatsappPhoneId','whatsappVerifyToken','twilioAccountSid','twilioAuthToken','deepgramApiKey','elevenlabsApiKey','elevenlabsVoiceId','crmWebhookUrl','mercadopagoToken','demoLimite','demoMaxUsos','licenciaLocal'];
+
+// Combo de oficios (cargado desde el catálogo del cotizador) + chips de días libres.
+const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+let diasLibresSet = new Set([0]);
+function pintarDiasLibres() {
+  $('#diasLibresBox').innerHTML = DIAS.map((nombre, i) =>
+    `<span class="badge ${diasLibresSet.has(i) ? 'off' : 'on'}" data-dia="${i}" style="cursor:pointer;">${diasLibresSet.has(i) ? '🚫' : '✓'} ${nombre}</span>`).join('');
+  $('#diasLibresBox').querySelectorAll('[data-dia]').forEach((el) => {
+    el.onclick = () => {
+      const d = Number(el.dataset.dia);
+      diasLibresSet.has(d) ? diasLibresSet.delete(d) : diasLibresSet.add(d);
+      $('#diasLibres').value = [...diasLibresSet].sort().join(',');
+      pintarDiasLibres();
+    };
+  });
+}
+$('#diasLibres').value = [...diasLibresSet].sort().join(',');
+pintarDiasLibres();
+fetch('/api/oficios').then((r) => r.json()).then((oficios) => {
+  $('#oficioProfesional').innerHTML = oficios.map((o) => `<option value="${o.clave}">${o.nombre}</option>`).join('');
+});
+// Subir logo → data-URI en el campo logoUrl
+document.addEventListener('change', (e) => {
+  if (e.target.id !== 'logoFile') return;
+  const f = e.target.files[0]; if (!f) return;
+  const fr = new FileReader();
+  fr.onload = () => { document.querySelector('#logoUrl').value = fr.result; const pv = document.querySelector('#logoPrev'); pv.src = fr.result; pv.style.display = 'block'; };
+  fr.readAsDataURL(f);
+});
+const SECRETOS = ['anthropicApiKey','whatsappToken','whatsappVerifyToken','twilioAuthToken','deepgramApiKey','elevenlabsApiKey'];
+
+function headers() {
+  const h = { 'Content-Type':'application/json' };
+  const k = $('#adminKey').value.trim();
+  if (k) h['X-Admin-Key'] = k;
+  return h;
+}
+function pintarBadges(estado) {
+  const defs = [['claude','IA Claude'],['whatsapp','WhatsApp'],['voz','Teléfono'],['vozPremium','Voz clonada'],['crm','CRM']];
+  $('#badges').innerHTML = defs.map(([k,label]) =>
+    `<span class="badge ${estado?.[k]?'on':'off'}">${estado?.[k]?'✓':'○'} ${label}</span>`).join('');
+}
+async function cargar() {
+  try {
+    const r = await fetch('/api/config', { headers: headers() });
+    if (r.status === 401) return aviso('Clave de administración inválida.', false);
+    const c = await r.json();
+    for (const campo of CAMPOS) {
+      const el = $('#'+campo); if (!el) continue;
+      // Los secretos vienen enmascarados: los mostramos como placeholder, no como valor editable.
+      if (SECRETOS.includes(campo)) { el.value = ''; el.placeholder = c[campo] ? c[campo] + ' (cargada — dejá vacío para conservar)' : el.placeholder; }
+      else el.value = c[campo] || '';
+    }
+    if (c.diasLibres) { diasLibresSet = new Set(c.diasLibres.split(',').map(Number)); pintarDiasLibres(); }
+    pintarBadges(c.estado);
+  } catch { aviso('No pude conectar con el servidor.', false); }
+}
+function aviso(msg, ok) {
+  const a = $('#aviso'); a.textContent = msg; a.className = 'aviso ' + (ok ? 'ok' : 'err');
+  setTimeout(() => { a.className = 'aviso'; }, 6000);
+}
+$('#btnCargar').onclick = (e) => { e.preventDefault(); cargar(); };
+
+$('#form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = {};
+  for (const campo of CAMPOS) {
+    const v = $('#'+campo).value.trim();
+    if (v) body[campo] = v;            // vacío = no cambiar (conserva la clave existente)
+  }
+  const nuevaAdmin = $('#adminKeyNew').value.trim();
+  if (nuevaAdmin) body.adminKey = nuevaAdmin;
+  try {
+    const r = await fetch('/api/config', { method:'POST', headers: headers(), body: JSON.stringify(body) });
+    const d = await r.json();
+    if (!r.ok || !d.ok) return aviso(d.error || 'No se pudo guardar.', false);
+    pintarBadges(d.config.estado);
+    aviso(d.demo ? 'Guardado. Aún en modo demo (falta API key de Claude válida).' : '✅ Guardado. Chatbot con IA real activo.', true);
+    if (nuevaAdmin) $('#adminKey').value = nuevaAdmin;
+    // limpiar campos de secreto para que el placeholder muestre "cargada"
+    setTimeout(cargar, 400);
+  } catch { aviso('Error de red al guardar.', false); }
+});
+
+$('#btnTest').onclick = async () => {
+  const out = $('#testOut'); out.style.display = 'block'; out.textContent = 'Enviando…';
+  try {
+    const r = await fetch('/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ mensaje: $('#testMsg').value }) });
+    const d = await r.json();
+    out.textContent = (d.demo ? '⚙️ [MODO DEMO — cargá tu API key para IA real]\n\n' : '🟢 [IA REAL — Claude]\n\n') + (d.respuesta || d.error || '');
+  } catch { out.textContent = 'No pude conectar con el servidor.'; }
+};
+
+cargar();
+
+// ---------- WhatsApp: probar conexión ----------
+$('#btnProbarWa').onclick = async () => {
+  const out = $('#waResultado'); out.textContent = 'Probando…';
+  try {
+    const r = await fetch('/api/whatsapp/probar', { headers: headers() });
+    const d = await r.json();
+    out.textContent = d.ok ? `✅ Conectado — ${d.numero}${d.nombre ? ' (' + d.nombre + ')' : ''}` : `⚠️ ${d.error}`;
+  } catch { out.textContent = '⚠️ No pude conectar con el servidor.'; }
+};
+
+// ---------- Teléfono (ChatVoice): números Twilio ----------
+async function cargarMiNumero() {
+  const el = $('#miNumero');
+  try {
+    const r = await fetch('/api/telefonia/mis-numeros', { headers: headers() });
+    const d = await r.json();
+    if (!d.ok) { el.textContent = ''; return; }
+    if (!d.numeros.length) { el.textContent = 'Todavía no tenés ningún número activo.'; return; }
+    el.innerHTML = '📍 ' + d.numeros.map((n) =>
+      `<strong>${n.numero}</strong> ` +
+      `<button type="button" class="btnReapuntar" data-sid="${n.sid}" style="background:none;border:1px solid #cfd9e4;border-radius:8px;padding:3px 9px;font-size:.75rem;cursor:pointer;margin-left:4px;">🔗 Reapuntar webhook a este dominio</button>`
+    ).join('<br>');
+    el.querySelectorAll('.btnReapuntar').forEach((btn) => {
+      btn.onclick = async () => {
+        btn.disabled = true; btn.textContent = 'Reapuntando…';
+        try {
+          const r = await fetch('/api/telefonia/reapuntar-webhook', { method: 'POST', headers: headers(), body: JSON.stringify({ sid: btn.dataset.sid }) });
+          const d2 = await r.json();
+          aviso(d2.ok ? `✅ Webhook actualizado: ${d2.voiceUrl}` : (d2.error || 'No se pudo reapuntar.'), d2.ok);
+        } catch { aviso('Error de red al reapuntar el webhook.', false); }
+        btn.disabled = false; btn.textContent = '🔗 Reapuntar webhook a este dominio';
+      };
+    });
+  } catch { el.textContent = ''; }
+}
+$('#btnBuscarNumeros').onclick = async () => {
+  const cont = $('#numerosDisponibles'); cont.innerHTML = '<div class="hint">Buscando…</div>';
+  try {
+    const r = await fetch('/api/telefonia/numeros-disponibles?pais=' + $('#paisNumero').value, { headers: headers() });
+    const d = await r.json();
+    if (!d.ok) { cont.innerHTML = `<div class="hint">⚠️ ${d.error}</div>`; return; }
+    if (!d.numeros.length) { cont.innerHTML = '<div class="hint">No hay números disponibles para ese país ahora mismo. Probá otro.</div>'; return; }
+    cont.innerHTML = d.numeros.map((n) =>
+      `<div class="row" style="align-items:center;margin-top:8px;">` +
+        `<div>📞 <strong>${n.numero}</strong> — ${n.region} <span class="hint">(~USD ${n.precio_ref_usd}/mes ref.)</span></div>` +
+        `<button type="button" class="btn" style="margin-top:0;" data-numero="${n.numero}">Comprar y activar</button>` +
+      `</div>`
+    ).join('');
+    cont.querySelectorAll('button[data-numero]').forEach((btn) => {
+      btn.onclick = async () => {
+        btn.disabled = true; btn.textContent = 'Activando…';
+        try {
+          const r = await fetch('/api/telefonia/comprar-numero', { method: 'POST', headers: headers(), body: JSON.stringify({ numero: btn.dataset.numero }) });
+          const d = await r.json();
+          if (!d.ok) { aviso(d.error || 'No se pudo comprar el número.', false); btn.disabled = false; btn.textContent = 'Comprar y activar'; return; }
+          aviso(`✅ Número ${d.numero} activo — ya podés recibir llamadas.`, true);
+          cargarMiNumero();
+          cont.innerHTML = '';
+        } catch { aviso('Error de red al comprar el número.', false); btn.disabled = false; btn.textContent = 'Comprar y activar'; }
+      };
+    });
+  } catch { cont.innerHTML = '<div class="hint">⚠️ No pude conectar con el servidor.</div>'; }
+};
+$('#btnLlamarPrueba').onclick = async () => {
+  const out = $('#pruebaResultado'); const tel = $('#telefonoPrueba').value.trim();
+  if (!tel) { out.textContent = '⚠️ Escribí un teléfono primero.'; return; }
+  out.textContent = 'Llamando…';
+  try {
+    const r = await fetch('/api/telefonia/llamar-prueba', { method: 'POST', headers: headers(), body: JSON.stringify({ telefono: tel }) });
+    const d = await r.json();
+    out.textContent = d.ok ? '✅ Llamando ahora — atendé tu celular.' : `⚠️ ${d.error}`;
+  } catch { out.textContent = '⚠️ No pude conectar con el servidor.'; }
+};
+cargarMiNumero();
+</script>
+<script src="/js/contacto.js" defer></script>
+</body>
+</html>

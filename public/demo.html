@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demo — MV Agendate IA</title>
+<link rel="icon" href="/logo-mv.svg" type="image/svg+xml">
+<style>
+  :root { --azul:#0f2a43; --cel:#1f7ae0; --oro:#e3a72f; --gris:#f4f6f9; }
+  * { margin:0; box-sizing:border-box; font-family:'Segoe UI', system-ui, sans-serif; }
+  body { background:var(--gris); color:#22303e; }
+  header { background:var(--azul); color:#fff; padding:18px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+  header a { color:var(--oro); text-decoration:none; font-weight:600; }
+  main { max-width:1100px; margin:24px auto; padding:0 16px; display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  @media (max-width:860px){ main{grid-template-columns:1fr;} }
+  .col { background:#fff; border-radius:14px; box-shadow:0 4px 18px #0001; overflow:hidden; display:flex; flex-direction:column; }
+  .col h2 { background:var(--azul); color:#fff; font-size:1.05rem; padding:14px 18px; }
+  /* Chat */
+  #mensajes { flex:1; min-height:380px; max-height:520px; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; }
+  .msg { max-width:82%; padding:10px 14px; border-radius:14px; font-size:.95rem; line-height:1.45; white-space:pre-wrap; }
+  .msg.user { align-self:flex-end; background:var(--cel); color:#fff; border-bottom-right-radius:4px; }
+  .msg.bot { align-self:flex-start; background:var(--gris); border-bottom-left-radius:4px; }
+  form.chat { display:flex; gap:8px; padding:12px; border-top:1px solid #e4e9ef; }
+  form.chat input { flex:1; padding:12px 14px; border:1px solid #cfd8e0; border-radius:10px; font-size:1rem; }
+  button { background:var(--cel); color:#fff; border:0; border-radius:10px; padding:12px 20px; font-size:1rem; font-weight:600; cursor:pointer; }
+  button:disabled { opacity:.5; }
+  .chips { padding:0 16px 12px; display:flex; flex-wrap:wrap; gap:8px; }
+  .chips span { background:#e8f0fb; color:var(--cel); border-radius:20px; padding:6px 12px; font-size:.82rem; cursor:pointer; }
+  /* Cotizador */
+  .cot { padding:18px; display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .cot label { font-size:.82rem; font-weight:600; color:#54626f; display:block; margin-bottom:4px; }
+  .cot input, .cot select { width:100%; padding:10px; border:1px solid #cfd8e0; border-radius:8px; font-size:.95rem; }
+  .cot .full { grid-column:1/-1; }
+  #resultado { margin:0 18px 18px; padding:16px; border-radius:10px; background:var(--gris); display:none; }
+  #resultado .rango { font-size:1.5rem; font-weight:800; color:var(--azul); }
+  #resultado small { color:#5a6b7c; display:block; margin-top:6px; }
+  #horarios { padding:0 18px 18px; }
+  .horario { background:#e8f0fb; border-radius:10px; padding:10px 12px; margin-top:8px; font-size:.88rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <span style="display:flex;align-items:center;gap:10px;"><img src="/logo-mv.svg" alt="MV" style="width:34px;height:34px;border-radius:8px;"><strong>MV Agendate IA — Demo en vivo</strong></span>
+  <span><a href="/">← Volver</a></span>
+</header>
+
+<main>
+  <div class="col">
+    <h2>💬 Hablá con el asistente del profesional</h2>
+    <div id="mensajes"></div>
+    <div class="chips">
+      <span onclick="sugerir(this)">¿Cuánto sale instalar un tomacorriente?</span>
+      <span onclick="sugerir(this)">Necesito un electricista para mañana</span>
+      <span onclick="sugerir(this)">¿Tenés horarios esta semana?</span>
+    </div>
+    <form class="chat" id="formChat">
+      <input id="entrada" placeholder="Escribí tu mensaje..." autocomplete="off" />
+      <button type="submit" id="btnEnviar">Enviar</button>
+    </form>
+  </div>
+
+  <div class="col">
+    <h2>💰 Cotizador instantáneo</h2>
+    <form class="cot" id="formCot">
+      <div><label>Oficio</label><select name="oficio" id="selOficio"></select></div>
+      <div><label>Trabajo</label><select name="trabajo" id="selTrabajo"></select></div>
+      <div><label>Distancia estimada (km)</label><input name="distanciaKm" type="number" value="5" /></div>
+      <div><label>Urgencia</label><select name="urgencia"><option value="normal">Normal (agendado)</option><option value="mismo_dia">Mismo día</option><option value="urgente">Urgente</option></select></div>
+      <div class="full"><label>Horario</label><select name="horario"><option value="habil">Horario hábil</option><option value="nocturno">Nocturno (después de 20h)</option><option value="feriado">Feriado</option></select></div>
+      <div class="full"><button type="submit" style="width:100%;">Cotizar</button></div>
+    </form>
+    <div id="resultado"></div>
+    <div id="horarios"></div>
+  </div>
+</main>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let sessionId = null;
+
+function agregar(texto, quien) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + quien;
+  div.textContent = texto;
+  $('#mensajes').appendChild(div);
+  $('#mensajes').scrollTop = $('#mensajes').scrollHeight;
+  return div;
+}
+
+agregar('¡Hola! Soy el asistente virtual del profesional 👋 Contame qué necesitás y te paso presupuesto y horarios disponibles.', 'bot');
+
+function sugerir(el) { $('#entrada').value = el.textContent; $('#formChat').requestSubmit(); }
+
+$('#formChat').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const texto = $('#entrada').value.trim();
+  if (!texto) return;
+  agregar(texto, 'user');
+  $('#entrada').value = '';
+  $('#btnEnviar').disabled = true;
+  const pensando = agregar('Escribiendo…', 'bot');
+  try {
+    const r = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mensaje: texto, sessionId })
+    });
+    const data = await r.json();
+    sessionId = data.sessionId || sessionId;
+    pensando.textContent = data.respuesta || data.error || 'Error inesperado.';
+  } catch {
+    pensando.textContent = 'No pude conectar con el servidor.';
+  } finally {
+    $('#btnEnviar').disabled = false;
+    $('#entrada').focus();
+  }
+});
+
+// ---------- Cotizador ----------
+let oficios = [];
+async function cargarOficios() {
+  oficios = await (await fetch('/api/oficios')).json();
+  $('#selOficio').innerHTML = oficios.map(o => `<option value="${o.clave}">${o.nombre}</option>`).join('');
+  actualizarTrabajos();
+}
+function actualizarTrabajos() {
+  const of = oficios.find(o => o.clave === $('#selOficio').value) || oficios[0];
+  $('#selTrabajo').innerHTML = (of?.trabajos || []).map(t => `<option value="${t.clave}">${t.nombre}</option>`).join('');
+}
+$('#selOficio').addEventListener('change', actualizarTrabajos);
+cargarOficios();
+
+$('#formCot').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd.entries());
+  body.distanciaKm = Number(body.distanciaKm) || 0;
+  const r = await fetch('/api/cotizar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const d = await r.json();
+  const caja = $('#resultado');
+  caja.style.display = 'block';
+  if (d.error) { caja.innerHTML = '⚠️ ' + d.error; return; }
+  caja.innerHTML =
+    '<div class="rango">$ ' + d.total.toLocaleString('es-UY') + '</div>' +
+    'Duración estimada: <strong>' + d.duracion_estimada_min + ' minutos</strong>' +
+    '<small>Mano de obra: $' + d.desglose.mano_obra + ' · Materiales: $' + d.desglose.materiales + ' · Traslado: $' + d.desglose.traslado + '</small>' +
+    '<small>' + d.trabajo + ' (' + d.oficio + ')</small>';
+
+  // Horarios de ejemplo, para mostrar el motor de agenda con traslados.
+  const hoy = new Date();
+  const manana = new Date(hoy.getTime() + 86400000);
+  const propuestos = await (await fetch('/api/agenda/proponer', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      fecha: manana.toISOString().slice(0, 10), diaSemana: manana.getDay(),
+      ubicacionCliente: { lat: -34.90 + Math.random() * 0.03, lng: -56.16 + Math.random() * 0.03 },
+      duracionMin: d.duracion_estimada_min,
+      citasDelDia: [{ inicio: '09:00', fin: '10:00', ubicacion: { lat: -34.91, lng: -56.15 } }]
+    })
+  })).json();
+  $('#horarios').innerHTML = propuestos.propuestas?.length
+    ? '<strong>Horarios propuestos para mañana:</strong>' + propuestos.propuestas.map(p => `<div class="horario">🕐 ${p.inicio} - ${p.fin} (traslado: ${p.traslado_previo_min + p.traslado_posterior_min} min)</div>`).join('')
+    : (propuestos.motivo_descarte ? `<div class="horario">${propuestos.motivo_descarte}</div>` : '');
+});
+</script>
+<script type="module" src="/js/botid-init.js"></script>
+</body>
+</html>

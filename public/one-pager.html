@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>MV Agendate IA — One Pager</title>
+<link rel="icon" href="/logo-mv.svg" type="image/svg+xml">
+<style>
+  * { margin:0; box-sizing:border-box; font-family:'Segoe UI', system-ui, sans-serif; }
+  :root { --azul:#0f2a43; --cel:#1f7ae0; --oro:#e3a72f; --verde:#5cb531; }
+  body { color:#22303e; max-width:800px; margin:0 auto; padding:34px 40px; }
+  .noprint { text-align:center; margin-bottom:16px; }
+  .noprint button { background:var(--cel); color:#fff; border:0; border-radius:8px; padding:10px 22px; font-size:1rem; cursor:pointer; }
+  @media print { .noprint { display:none; } body { padding:0; } }
+  .cab { display:flex; align-items:center; gap:16px; border-bottom:4px solid var(--azul); padding-bottom:14px; margin-bottom:18px; }
+  .cab img.logo { width:60px; height:60px; flex:0 0 auto; }
+  h1 { font-size:1.5rem; color:var(--azul); line-height:1.15; }
+  h1 small { display:block; font-size:.85rem; color:#5a6b7c; font-weight:400; }
+  .franja { background:var(--azul); color:#fff; border-radius:12px; padding:14px 18px; font-size:1.02rem; margin-bottom:18px; }
+  .franja b { color:var(--verde); }
+  h2 { font-size:1rem; color:var(--azul); border-left:4px solid var(--oro); padding-left:10px; margin:16px 0 10px; }
+  .cols { display:grid; grid-template-columns:1fr 1fr; gap:8px 22px; font-size:.9rem; }
+  .cols div { padding:5px 0; }
+  .cols b { color:var(--azul); }
+  table { width:100%; border-collapse:collapse; font-size:.88rem; margin-top:6px; }
+  th { background:var(--azul); color:#fff; padding:8px; text-align:center; }
+  td { border:1px solid #dfe6ec; padding:7px 10px; text-align:center; }
+  td:first-child { text-align:left; }
+  .dest { background:#fdf7ea; color:var(--azul); font-weight:700; }
+  .pie { margin-top:18px; border-top:1px solid #dfe6ec; padding-top:12px; font-size:.85rem; color:#5a6b7c; display:flex; justify-content:space-between; }
+  .pie b { color:var(--azul); }
+</style>
+</head>
+<body>
+<div class="noprint"><button onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button></div>
+
+<div class="cab">
+  <img class="logo" src="/logo-mv.png" alt="MV">
+  <h1>MV Agendate IA<small>El asistente que agenda y cotiza por vos, en cualquier oficio</small></h1>
+</div>
+
+<div class="franja">Tus clientes te escriben por <b>WhatsApp o te llaman</b> a cualquier hora. MV cotiza el trabajo, arma la agenda considerando traslados y tus descansos, y avisa solo si vas a llegar tarde — vos te dedicás al trabajo.</div>
+
+<h2>Qué hace por tu oficio</h2>
+<div class="cols">
+  <div>💬 <b>Chatbot IA real:</b> atiende por WhatsApp con tu nombre, en español rioplatense, para electricistas, plomeros, abogados, psicólogos y más de 15 oficios</div>
+  <div>💰 <b>Cotiza al instante:</b> presupuesto con mano de obra, materiales y traslado, según tu propia lista de precios por trabajo</div>
+  <div>🗓️ <b>Agenda inteligente:</b> propone horarios considerando el traslado real entre citas y tus días/horarios de descanso</div>
+  <div>🎙️ <b>Atiende el teléfono:</b> voz rioplatense natural que cotiza y agenda por voz</div>
+  <div>⏰ <b>Avisa retrasos solo:</b> si el trabajo anterior se extendió, le escribe al próximo cliente 30 min antes, sin que vos hagas nada</div>
+  <div>👥 <b>Base de clientes:</b> confirma dirección y quién te va a recibir si no está el titular</div>
+  <div>📊 <b>Dashboard completo:</b> trabajos por día/semana/mes/año, comparativas y facturación total</div>
+  <div>📱 <b>App PC y Android:</b> tu agenda y tu CRM en la computadora y en el celular</div>
+</div>
+
+<h2>Por dónde atiende</h2>
+<div class="cols">
+  <div>📲 WhatsApp con tu número</div>
+  <div>☎️ Tu teléfono fijo o celular (ChatVoice)</div>
+  <div>🌐 En tu página web (chat embebido)</div>
+  <div>📊 Todo en un panel: agenda del día, clientes y facturación</div>
+</div>
+
+<h2>Planes (pago único · sin permanencia)</h2>
+<table>
+  <tr><th></th><th>Básico<br>USD 129</th><th class="dest">Full (con IA)<br>USD 299</th></tr>
+  <tr><td>Agenda con traslados y descansos + cotizador multi-oficio</td><td>✓</td><td class="dest">✓</td></tr>
+  <tr><td>CRM de clientes + dashboards + exportación Excel/PDF</td><td>✓</td><td class="dest">✓</td></tr>
+  <tr><td>App PC / Android</td><td>✓</td><td class="dest">✓</td></tr>
+  <tr><td>Chatbot y ChatVoice con IA (WhatsApp/voz)</td><td>—</td><td class="dest">✓</td></tr>
+  <tr><td>Aviso automático de retraso al próximo cliente</td><td>—</td><td class="dest">✓</td></tr>
+</table>
+<p style="font-size:.82rem;color:#7a8896;margin-top:8px;">El plan Full usa tus propias cuentas de Claude (IA), WhatsApp Business y, si querés voz, Twilio — el costo de uso es aparte (de referencia, USD 20-40/mes según volumen) y corre directo a esas cuentas, sin intermediarios.</p>
+
+<div class="pie">
+  <div><b>Demo en vivo:</b> probá el cotizador y la agenda antes de comprar.</div>
+  <div><b>Contacto:</b> vieraschiavi@gmail.com</div>
+</div>
+<script src="/js/contacto.js" defer></script>
+</body>
+</html>
