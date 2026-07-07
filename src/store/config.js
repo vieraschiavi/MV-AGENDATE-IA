@@ -23,6 +23,11 @@ const ENV = {
   almuerzoInicio: 'ALMUERZO_INICIO',
   almuerzoFin: 'ALMUERZO_FIN',
   diasLibres: 'DIAS_LIBRES',             // ej: "0,6" (domingo y sábado), 0=domingo
+  // Equipo de profesionales de la cuenta (JSON: [{id,nombre,oficio,horarioInicio,
+  // horarioFin,almuerzoInicio,almuerzoFin,diasLibres}]) — para estudios con más
+  // de un trabajador (ej. 3 electricistas), cada uno con su propia agenda.
+  // Vacío = un solo profesional implícito armado con los campos sueltos de arriba.
+  profesionales: 'PROFESIONALES',
   whatsappToken: 'WHATSAPP_TOKEN',
   whatsappPhoneId: 'WHATSAPP_PHONE_ID',
   whatsappVerifyToken: 'WHATSAPP_VERIFY_TOKEN',
@@ -95,6 +100,68 @@ export function setConfig(patch = {}) {
   writeFileSync(FILE, JSON.stringify(actual, null, 2));
   cache = actual;
   return getConfigPublico();
+}
+
+/**
+ * Lista de profesionales/trabajadores de la cuenta (para estudios con más de
+ * uno, ej. 3 electricistas). Si no se cargó ninguno, devuelve un único
+ * profesional implícito armado con los campos sueltos de siempre
+ * (nombreProfesional/oficioProfesional/horarioInicio.../almuerzoInicio.../diasLibres) — así
+ * las cuentas de un solo profesional no necesitan migrar nada.
+ */
+export function listarProfesionales() {
+  const c = cargar();
+  try {
+    const lista = JSON.parse(c.profesionales || '[]');
+    if (Array.isArray(lista) && lista.length) return lista;
+  } catch { /* config guardada inválida: cae al default de abajo */ }
+  return [{
+    id: 'default',
+    nombre: c.nombreProfesional || 'Profesional',
+    oficio: c.oficioProfesional || 'electricista',
+    horarioInicio: c.horarioInicio || '08:00',
+    horarioFin: c.horarioFin || '19:00',
+    almuerzoInicio: c.almuerzoInicio || '12:30',
+    almuerzoFin: c.almuerzoFin || '13:30',
+    diasLibres: c.diasLibres || '0'
+  }];
+}
+
+/** Lista cruda guardada (sin sintetizar el default) — para el editor de equipo de /config.html: vacía si no se cargó ningún profesional todavía. */
+export function profesionalesGuardados() {
+  try {
+    const lista = JSON.parse(cargar().profesionales || '[]');
+    return Array.isArray(lista) ? lista : [];
+  } catch { return []; }
+}
+
+/** Un profesional puntual por id (o el primero de la lista si no se especifica/no existe). */
+export function obtenerProfesional(id) {
+  const lista = listarProfesionales();
+  return lista.find((p) => p.id === id) || lista[0];
+}
+
+/** Guarda la lista completa de profesionales del equipo (reemplaza la anterior). */
+function slug(texto) {
+  return String(texto || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
+export function guardarProfesionales(lista) {
+  const limpia = (Array.isArray(lista) ? lista : [])
+    .map((p, i) => ({
+      id: slug(p.id || p.nombre) || `prof-${i + 1}`,
+      nombre: String(p.nombre || '').trim(),
+      oficio: String(p.oficio || '').trim(),
+      horarioInicio: String(p.horarioInicio || '08:00').trim(),
+      horarioFin: String(p.horarioFin || '19:00').trim(),
+      almuerzoInicio: String(p.almuerzoInicio || '12:30').trim(),
+      almuerzoFin: String(p.almuerzoFin || '13:30').trim(),
+      diasLibres: String(p.diasLibres ?? '0').trim()
+    }))
+    .filter((p) => p.nombre);
+  setConfig({ profesionales: JSON.stringify(limpia) });
+  return limpia;
 }
 
 // Nunca exponemos ni un fragmento del secreto: solo si está configurado o no.

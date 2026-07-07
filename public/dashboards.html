@@ -29,6 +29,7 @@
     <div><label>Mes</label><select id="fMes"><option value="">Todos</option></select></div>
     <div><label>Oficio</label><select id="fOficio"><option value="">Todos</option></select></div>
     <div><label>Estado</label><select id="fEstado"><option value="">Todos</option></select></div>
+    <div id="fProfesionalBox" style="display:none;"><label>Profesional</label><select id="fProfesional"><option value="">Todos</option></select></div>
     <button onclick="location.reload()" class="btn sec" style="align-self:end;">↺ Limpiar</button>
     <div class="exportar" style="margin-left:auto;align-self:end;">
       <a id="expCsv" href="/api/agenda.csv">⬇️ Agenda CSV</a>
@@ -60,7 +61,7 @@ const $ = (s) => document.querySelector(s);
 const COL = ['#1f7ae0','#2ea043','#e0b25c','#8e44ad','#e67e22','#16a085','#c0392b'];
 function qs() {
   const p = {};
-  for (const [id,k] of [['fAnio','anio'],['fMes','mes'],['fOficio','oficio'],['fEstado','estado']]) {
+  for (const [id,k] of [['fAnio','anio'],['fMes','mes'],['fOficio','oficio'],['fEstado','estado'],['fProfesional','profesionalId']]) {
     const v = $('#'+id).value; if (v) p[k]=v;
   }
   return new URLSearchParams(p).toString();
@@ -99,13 +100,17 @@ async function cargar() {
     fetch('/api/dashboard?'+q).then(r=>r.json()),
     fetch('/api/dashboard/serie?'+q).then(r=>r.json()),
     fetch('/api/dashboard/filtros').then(r=>r.json()),
-    fetch('/api/dashboard/serie-anual').then(r=>r.json())
+    fetch('/api/dashboard/serie-anual?'+q).then(r=>r.json())
   ]);
   if (!$('#fOficio').dataset.load) {
     $('#fOficio').innerHTML='<option value="">Todos</option>'+opt.oficios.map(x=>`<option>${x}</option>`).join('');
     $('#fEstado').innerHTML='<option value="">Todos</option>'+opt.estados.map(x=>`<option>${x}</option>`).join('');
     $('#fAnio').innerHTML='<option value="">Todos</option>'+opt.anios.map(x=>`<option>${x}</option>`).join('');
     $('#fMes').innerHTML='<option value="">Todos</option>'+s.meses.map(m=>`<option value="${m}">${m}</option>`).join('');
+    if (opt.profesionales.length > 1) {
+      $('#fProfesional').innerHTML = '<option value="">Todos</option>' + opt.profesionales.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
+      $('#fProfesionalBox').style.display = '';
+    }
     $('#fOficio').dataset.load='1';
   }
   const ult = s.meses.length-1;
@@ -128,7 +133,7 @@ async function cargar() {
   const anualObj = Object.fromEntries(anual.map(a=>[a.anio, a.trabajos]));
   barras('cAnual', anualObj);
 }
-['fAnio','fMes','fOficio','fEstado'].forEach(id=>$('#'+id).addEventListener('change', cargar));
+['fAnio','fMes','fOficio','fEstado','fProfesional'].forEach(id=>$('#'+id).addEventListener('change', cargar));
 cargar();
 </script>
 <script src="/js/contacto.js" defer></script>

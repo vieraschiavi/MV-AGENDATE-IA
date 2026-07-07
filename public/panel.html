@@ -34,6 +34,7 @@
 <script>
 mvShell('panel');
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+let profesionales = [];
 
 function tabla(filas, cols) {
   if (!filas.length) return '<div class="mv-empty">Sin citas para hoy.</div>';
@@ -47,16 +48,21 @@ async function cambiarEstado(id, estado) {
 }
 
 async function cargar() {
+  if (!profesionales.length) profesionales = await (await fetch('/api/profesionales')).json();
   const resp = await mvFetchAdmin('/api/panel');
   if (resp.status === 401) return;
   const d = await resp.json();
   kHoy.textContent = d.hoy.length;
   kEnCurso.textContent = d.hoy.filter(c=>c.estado==='en_curso').length;
   kDemo.textContent = d.demo.total;
+  const colProfesional = profesionales.length > 1
+    ? [{ titulo:'Profesional', render:(c)=>esc(profesionales.find(p=>p.id===c.profesionalId)?.nombre || '—') }]
+    : [];
   tHoy.innerHTML = tabla(d.hoy, [
     { titulo:'Hora', render:(c)=>esc(c.inicio)+'-'+esc(c.fin) },
     { titulo:'Cliente', render:(c)=>esc(c.clienteNombre) },
     { titulo:'Trabajo', render:(c)=>esc(c.trabajoNombre) },
+    ...colProfesional,
     { titulo:'Dirección', render:(c)=>esc(c.direccion) },
     { titulo:'Estado', render:(c)=>`<select onchange="cambiarEstado('${esc(c.id)}',this.value)">
         ${['pendiente','confirmada','en_curso','completada','cancelada'].map(e=>`<option value="${e}" ${e===c.estado?'selected':''}>${e}</option>`).join('')}

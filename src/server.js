@@ -11,7 +11,7 @@ import { cotizar } from './ai/cotizador.js';
 import { geocodificar, geocodificarInverso } from './ai/geocoding.js';
 import { proponerHorarios } from './store/agenda.js';
 import { revisarYAvisarAgendaDelDia } from './channels/aviso-retraso.js';
-import { getConfigPublico, setConfig, get as cfg } from './store/config.js';
+import { getConfigPublico, setConfig, get as cfg, listarProfesionales, guardarProfesionales, profesionalesGuardados } from './store/config.js';
 import { demoLimitada, consumirUso, usosRestantes, mensajeLimite } from './store/demo.js';
 import * as trabajos from './store/trabajos.js';
 import { fichaCitaHTML, agendaCSV, agendaExcelHTML, clientesCSV, clientesExcelHTML } from './exports/documentos.js';
@@ -279,12 +279,24 @@ app.post('/api/cliente/:id/confirmar-direccion', async (req, res) => {
   }
   res.json(await trabajos.confirmarDireccionCliente(req.params.id, direccionInformada, lat, lng));
 });
+app.post('/api/cliente/:id/profesional', soloAdmin, async (req, res) => {
+  res.json(await trabajos.asignarProfesionalCliente(req.params.id, req.body?.profesionalId));
+});
 
 // Dashboard (con filtros: oficio, estado, año, mes, fecha)
 app.get('/api/dashboard', async (req, res) => res.json(await trabajos.resumenDashboard(req.query ?? {})));
 app.get('/api/dashboard/serie', async (req, res) => res.json(await trabajos.serieMensual(req.query ?? {})));
-app.get('/api/dashboard/serie-anual', async (_req, res) => res.json(await trabajos.serieAnual()));
-app.get('/api/dashboard/filtros', async (_req, res) => res.json(await trabajos.opcionesFiltros()));
+app.get('/api/dashboard/serie-anual', async (req, res) => res.json(await trabajos.serieAnual(req.query ?? {})));
+app.get('/api/dashboard/filtros', async (_req, res) => res.json({ ...(await trabajos.opcionesFiltros()), profesionales: listarProfesionales() }));
+
+// Equipo de profesionales de la cuenta (estudios con varios trabajadores, ej. 3
+// electricistas): lectura pública (para poblar selectores en agenda/clientes/
+// dashboards) y escritura admin.
+app.get('/api/profesionales', (req, res) => res.json(req.query.raw ? profesionalesGuardados() : listarProfesionales()));
+app.post('/api/profesionales', soloAdmin, (req, res) => {
+  const lista = Array.isArray(req.body?.profesionales) ? req.body.profesionales : [];
+  res.json({ ok: true, profesionales: guardarProfesionales(lista) });
+});
 
 // Exportación de la agenda y de la base de clientes (Excel/CSV), con los mismos filtros del dashboard.
 app.get('/api/agenda.csv', async (req, res) => res.type('text/csv').attachment('agenda.csv').send(agendaCSV(await trabajos.listarCitas(req.query ?? {}))));

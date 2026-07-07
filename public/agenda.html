@@ -20,6 +20,7 @@
     <input id="fFecha" type="date" style="width:auto;">
     <select id="fOficio" style="width:auto;"><option value="">Oficio</option></select>
     <select id="fEstado" style="width:auto;"><option value="">Estado</option><option>pendiente</option><option>confirmada</option><option>en_curso</option><option>completada</option><option>cancelada</option></select>
+    <select id="fProfesional" style="width:auto;display:none;"><option value="">Profesional</option></select>
     <button class="btn cel" id="btnNueva">+ Nueva cita</button>
     <a class="btn sec" href="/api/agenda.csv">⬇ CSV</a>
     <a class="btn sec" href="/api/agenda.xls">⬇ Excel</a>
@@ -34,6 +35,7 @@
     <div><label>Teléfono</label><input id="pTelefono"></div>
     <div><label>Oficio</label><select id="pOficio"></select></div>
     <div><label>Trabajo</label><select id="pTrabajo"></select></div>
+    <div id="pProfesionalBox" style="display:none;"><label>Profesional</label><select id="pProfesional"></select></div>
     <div><label>Fecha</label><input id="pFecha" type="date"></div>
     <div><label>Hora inicio</label><input id="pInicio" type="time"></div>
     <div><label>Hora fin</label><input id="pFin" type="time"></div>
@@ -50,8 +52,9 @@
 mvShell('agenda');
 const $ = (s) => document.querySelector(s);
 const ESTADOS = ['pendiente','confirmada','en_curso','completada','cancelada'];
-let citas = [], oficios = [], vista = 'tabla';
-const filtro = () => ({ fecha:$('#fFecha').value, oficio:$('#fOficio').value, estado:$('#fEstado').value });
+let citas = [], oficios = [], profesionales = [], vista = 'tabla';
+const filtro = () => ({ fecha:$('#fFecha').value, oficio:$('#fOficio').value, estado:$('#fEstado').value, profesionalId:$('#fProfesional').value });
+const nombreProf = (id) => profesionales.find(p=>p.id===id)?.nombre || '';
 
 async function cargarOficios() {
   oficios = await (await fetch('/api/oficios')).json();
@@ -59,6 +62,16 @@ async function cargarOficios() {
   $('#fOficio').innerHTML = '<option value="">Oficio</option>' + opts;
   $('#pOficio').innerHTML = opts;
   actualizarTrabajos();
+}
+async function cargarProfesionales() {
+  profesionales = await (await fetch('/api/profesionales')).json();
+  if (profesionales.length > 1) {
+    const opts = profesionales.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
+    $('#fProfesional').innerHTML = '<option value="">Profesional</option>' + opts;
+    $('#fProfesional').style.display = '';
+    $('#pProfesional').innerHTML = opts;
+    $('#pProfesionalBox').style.display = '';
+  }
 }
 function actualizarTrabajos() {
   const of = oficios.find(o=>o.clave===$('#pOficio').value) || oficios[0];
@@ -81,10 +94,12 @@ function selectEstado(c) {
 
 function renderTabla() {
   if (!citas.length) { $('#lista').innerHTML = '<div class="mv-empty">Sin citas con ese filtro.</div>'; return; }
+  const colProf = profesionales.length > 1 ? '<th>Profesional</th>' : '';
   $('#lista').innerHTML = `<table class="mv-table"><tr>
-      <th>Cliente</th><th>Trabajo</th><th>Oficio</th><th>Fecha</th><th>Hora</th><th>Dirección</th><th>Precio</th><th>Estado</th><th></th>
+      <th>Cliente</th><th>Trabajo</th><th>Oficio</th>${colProf}<th>Fecha</th><th>Hora</th><th>Dirección</th><th>Precio</th><th>Estado</th><th></th>
     </tr>` + citas.map((c) => `<tr class="row" onclick="window.open('/api/citas/${c.id}/ficha','_blank')">
       <td>${c.clienteNombre}</td><td>${c.trabajoNombre}</td><td>${c.oficioNombre}</td>
+      ${profesionales.length > 1 ? `<td>${nombreProf(c.profesionalId)||'—'}</td>` : ''}
       <td>${c.fecha}</td><td>${c.inicio}-${c.fin}</td>
       <td>${c.direccion||'—'}${c.receptor?' · atiende '+c.receptor:''}</td>
       <td><strong style="color:var(--cel);">${c.cotizacion?.total ? '$ '+c.cotizacion.total.toLocaleString('es-UY') : '—'}</strong></td>
@@ -99,7 +114,7 @@ function renderTablero() {
     return `<div class="mv-board-col"><h3><span class="pill ${e}"><i></i>${e}</span><span class="cnt">${cs.length}</span></h3>` +
       cs.map(c => `<div class="mv-board-card" onclick="window.open('/api/citas/${c.id}/ficha','_blank')">
         <div class="t">${c.clienteNombre}</div>
-        <div class="m">${c.trabajoNombre} · ${c.fecha} ${c.inicio}</div>
+        <div class="m">${c.trabajoNombre} · ${c.fecha} ${c.inicio}${profesionales.length > 1 ? ' · '+(nombreProf(c.profesionalId)||'—') : ''}</div>
         <div class="m">📍 ${c.direccion||'—'}</div>
         <div class="precio">${c.cotizacion?.total ? '$ '+c.cotizacion.total.toLocaleString('es-UY') : '—'}</div>
       </div>`).join('') + (cs.length ? '' : '<div class="mv-empty" style="padding:8px;">Vacío</div>') + '</div>';
@@ -120,7 +135,7 @@ async function cargar() {
   renderTabla();
   renderTablero();
 }
-['#fFecha','#fOficio','#fEstado'].forEach(s=>$(s).onchange=cargar);
+['#fFecha','#fOficio','#fEstado','#fProfesional'].forEach(s=>$(s).onchange=cargar);
 const abrir=(m)=>$('#'+m).style.display='grid'; const cerrar=(m)=>$('#'+m).style.display='none';
 
 async function cambiarEstado(id,est){ if(!est) return; await mvFetchAdmin(`/api/citas/${id}/estado`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estado:est})}); cargar(); }
@@ -132,6 +147,7 @@ $('#btnGuardar').onclick=async()=>{
   const trabajo = of?.trabajos.find(t=>t.clave===$('#pTrabajo').value);
   const body = {
     clienteNombre: $('#pCliente').value, telefono: $('#pTelefono').value,
+    profesionalId: $('#pProfesional').value || undefined,
     oficio: $('#pOficio').value, oficioNombre: of?.nombre, trabajo: $('#pTrabajo').value, trabajoNombre: trabajo?.nombre,
     fecha: $('#pFecha').value, inicio: $('#pInicio').value, fin: $('#pFin').value || $('#pInicio').value,
     direccion: $('#pDireccion').value, receptor: $('#pReceptor').value || null,
@@ -141,7 +157,7 @@ $('#btnGuardar').onclick=async()=>{
   const r=await (await mvFetchAdmin('/api/citas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
   if(r.ok){ cerrar('mForm'); cargar(); } else alert(r.error||'Error');
 };
-cargarOficios().then(cargar);
+Promise.all([cargarOficios(), cargarProfesionales()]).then(cargar);
 </script>
 <script src="/js/contacto.js" defer></script>
 </body>

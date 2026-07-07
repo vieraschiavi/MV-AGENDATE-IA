@@ -187,6 +187,15 @@
   </form>
 
   <div class="card">
+    <h2>👷‍♂️ Equipo (varios profesionales)</h2>
+    <div class="sub">Si en la cuenta trabaja más de un profesional (ej. un estudio con 3 electricistas), cargalos acá — cada uno con su propio oficio, jornada y agenda; el chatbot le pregunta al cliente cuál corresponde antes de cotizar. Si dejás la lista vacía, se usa el profesional único de "Datos del profesional" y "Jornada y descansos" de arriba.</div>
+    <div id="listaProfesionales"></div>
+    <button type="button" class="btn gold" id="btnAgregarProfesional" style="margin-top:10px;">+ Agregar profesional</button>
+    <button type="button" class="btn" id="btnGuardarProfesionales">💾 Guardar equipo</button>
+    <div class="aviso" id="avisoProfesionales"></div>
+  </div>
+
+  <div class="card">
     <h2>🧪 Probar el chatbot</h2>
     <div class="sub">Mandá un mensaje de prueba. Te dice si respondió la IA real o el modo demo.</div>
     <div class="test">
@@ -222,9 +231,67 @@ function pintarDiasLibres() {
 }
 $('#diasLibres').value = [...diasLibresSet].sort().join(',');
 pintarDiasLibres();
+let OFICIOS = [];
 fetch('/api/oficios').then((r) => r.json()).then((oficios) => {
+  OFICIOS = oficios;
   $('#oficioProfesional').innerHTML = oficios.map((o) => `<option value="${o.clave}">${o.nombre}</option>`).join('');
+  cargarEquipo();
 });
+
+// ---------- Equipo (varios profesionales por cuenta) ----------
+let equipo = [];
+function oficioOpts(seleccionado) {
+  return OFICIOS.map((o) => `<option value="${o.clave}" ${o.clave===seleccionado?'selected':''}>${o.nombre}</option>`).join('');
+}
+function pintarEquipo() {
+  $('#listaProfesionales').innerHTML = equipo.map((p, i) => `
+    <div style="${i>0?'border-top:1px solid var(--line);margin-top:14px;padding-top:14px;':''}">
+      <div class="row">
+        <div><label>Nombre</label><input data-campo="nombre" data-i="${i}" value="${p.nombre||''}" placeholder="Ej: Juan Pérez"></div>
+        <div><label>Oficio</label><select data-campo="oficio" data-i="${i}">${oficioOpts(p.oficio)}</select></div>
+      </div>
+      <div class="row">
+        <div><label>Inicio jornada</label><input type="time" data-campo="horarioInicio" data-i="${i}" value="${p.horarioInicio||'08:00'}"></div>
+        <div><label>Fin jornada</label><input type="time" data-campo="horarioFin" data-i="${i}" value="${p.horarioFin||'19:00'}"></div>
+      </div>
+      <div class="row">
+        <div><label>Almuerzo — inicio</label><input type="time" data-campo="almuerzoInicio" data-i="${i}" value="${p.almuerzoInicio||'12:30'}"></div>
+        <div><label>Almuerzo — fin</label><input type="time" data-campo="almuerzoFin" data-i="${i}" value="${p.almuerzoFin||'13:30'}"></div>
+      </div>
+      <div class="row">
+        <div><label>Días libres (0=domingo…6=sábado)</label><input data-campo="diasLibres" data-i="${i}" value="${p.diasLibres??'0'}" placeholder="0,6"></div>
+        <div style="display:flex;align-items:flex-end;"><button type="button" class="btn" style="background:#fdeaea;color:#b23;margin:0;" data-quitar="${i}">🗑 Quitar</button></div>
+      </div>
+    </div>`).join('') || '<div class="hint">Sin profesionales adicionales — se usa el único de arriba.</div>';
+  $('#listaProfesionales').querySelectorAll('[data-campo]').forEach((el) => {
+    el.onchange = () => { equipo[Number(el.dataset.i)][el.dataset.campo] = el.value; };
+  });
+  $('#listaProfesionales').querySelectorAll('[data-quitar]').forEach((el) => {
+    el.onclick = () => { equipo.splice(Number(el.dataset.quitar), 1); pintarEquipo(); };
+  });
+}
+async function cargarEquipo() {
+  try {
+    const r = await fetch('/api/profesionales?raw=1', { headers: headers() });
+    equipo = r.ok ? await r.json() : [];
+  } catch { equipo = []; }
+  pintarEquipo();
+}
+$('#btnAgregarProfesional').onclick = () => {
+  equipo.push({ oficio: OFICIOS[0]?.clave || '', horarioInicio: '08:00', horarioFin: '19:00', almuerzoInicio: '12:30', almuerzoFin: '13:30', diasLibres: '0' });
+  pintarEquipo();
+};
+$('#btnGuardarProfesionales').onclick = async () => {
+  const a = $('#avisoProfesionales');
+  try {
+    const r = await fetch('/api/profesionales', { method:'POST', headers: headers(), body: JSON.stringify({ profesionales: equipo }) });
+    const d = await r.json();
+    if (!r.ok || !d.ok) { a.textContent = d.error || 'No se pudo guardar.'; a.className = 'aviso err'; return; }
+    equipo = d.profesionales; pintarEquipo();
+    a.textContent = '✅ Equipo guardado.'; a.className = 'aviso ok';
+  } catch { a.textContent = 'Error de red al guardar.'; a.className = 'aviso err'; }
+  setTimeout(() => { a.className = 'aviso'; }, 6000);
+};
 // Subir logo → data-URI en el campo logoUrl
 document.addEventListener('change', (e) => {
   if (e.target.id !== 'logoFile') return;

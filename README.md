@@ -36,6 +36,12 @@ catálogo de precios.
    Excel/CSV/PDF con filtros.
 6. **App PC y Android**: el mismo servidor sirve la web, la demo, el panel y
    una PWA instalable como app (sin Play Store).
+7. **Multi-profesional**: un mismo estudio (ej. 3 electricistas) puede cargar
+   varios profesionales, cada uno con su propio oficio, jornada y descansos —
+   el chatbot identifica cuál corresponde antes de cotizar, y cada uno agenda
+   sobre su propia agenda (traslados calculados sin mezclar citas entre
+   profesionales). Con uno solo configurado (el caso por defecto) no cambia
+   nada del flujo de siempre.
 
 ## 2. Stack
 
@@ -72,7 +78,7 @@ src/
     whatsapp.js            Webhook WhatsApp (Meta Cloud API)
     aviso-retraso.js       Detecta demoras y dispara el aviso automático por WhatsApp
   store/
-    config.js              Config en caliente + prioridad config.json > env > clave embebida
+    config.js              Config en caliente + prioridad config.json > env > clave embebida; equipo de profesionales (multi-profesional)
     agenda.js              Motor de agenda: distancias, traslados y huecos disponibles
     trabajos.js            Clientes, citas/trabajos y dashboard (Redis)
     licencias.js           Pedidos, planes, confirmación de pago, token de descarga (HMAC)
@@ -88,7 +94,7 @@ public/                 Web estática (landing, demo, dashboards, agenda, client
 movil/                  App Android (PWA instalable / APK)
 api/index.js            Entrypoint serverless de Vercel
 vercel.json             Config de deploy + Cron Job del aviso de retrasos
-test/                   Suite de tests (cotizador, agenda, aviso de retraso, agente, geocoding)
+test/                   Suite de tests (cotizador, agenda, aviso de retraso, agente, geocoding, multi-profesional)
 ```
 
 ## 4. Endpoints principales
@@ -98,7 +104,8 @@ test/                   Suite de tests (cotizador, agenda, aviso de retraso, age
 - `POST /api/agenda/proponer` — horarios propuestos considerando traslados
 - `GET /api/geocoding?direccion=` · `GET /api/geocoding/inverso?lat=&lng=` — dirección ↔ coordenadas
 - `GET/POST /api/citas`, `/api/citas/:id/estado`, `/api/citas/:id/receptor`, `/api/citas/:id/ficha`
-- `GET/POST /api/clientes`, `/api/cliente/:id/confirmar-direccion`
+- `GET/POST /api/clientes`, `/api/cliente/:id/confirmar-direccion`, `/api/cliente/:id/profesional`
+- `GET/POST /api/profesionales` — equipo de profesionales de la cuenta (multi-profesional)
 - `GET /api/dashboard`, `/api/dashboard/serie`, `/api/dashboard/serie-anual`, `/api/dashboard/filtros`
 - `GET /api/agenda.csv` · `/api/agenda.xls` · `/api/clientes.csv` · `/api/clientes.xls` — exportación con filtros
 - `GET /api/agenda/chequear-retrasos` (cron) / `POST` (manual, admin) — dispara los avisos de demora
@@ -169,9 +176,6 @@ costo de API aparte, sin markup).
   Mapbox/OSRM) sin tocar el resto del motor.
 - **Aprobación de Meta para WhatsApp Business** y alta de número en Twilio:
   son trámites del lado de Meta/Twilio, no de código — ver `docs/CANALES.md`.
-- **Multi-profesional** (varios electricistas en un mismo estudio): el motor
-  de agenda asume un solo profesional/agenda por cuenta; para varios, hay que
-  sumar un `profesionalId` a cada cita.
 - **Precios de `oficios.json`** son valores de referencia en UYU — hay que
   ajustarlos con el precio real de cada profesional y su competencia local
   antes de vender.

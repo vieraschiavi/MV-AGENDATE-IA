@@ -4,6 +4,12 @@ El mismo agente (`src/ai/agente.js`, con la misma memoria de conversación por
 cliente) atiende en todos los canales. Cada canal es un adaptador que traduce
 entrada/salida hacia `conversar(sessionId, texto, canal)`.
 
+**Multi-profesional:** un mismo número de WhatsApp (o el mismo webchat/teléfono)
+puede representar a un estudio con varios profesionales (ver "Equipo" en
+`/config.html`). El agente identifica en la conversación cuál corresponde
+(por el oficio pedido o porque el cliente lo nombra) antes de cotizar — no
+hace falta un canal ni un número separado por profesional.
+
 ## 1. Webchat (incluido, cero configuración)
 
 `public/demo.html` y el widget embebible (`public/widget.js`) llaman a

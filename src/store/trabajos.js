@@ -4,6 +4,7 @@
 import { randomUUID } from 'node:crypto';
 import { kvGet, kvSet } from './redis.js';
 import { listarOficios } from '../ai/cotizador.js';
+import { listarProfesionales } from './config.js';
 
 const CLAVE = 'trabajos:db';
 
@@ -88,6 +89,7 @@ function sembrarDemo() {
         id: nuevoId('CITA'),
         clienteId: db.clientes[i % db.clientes.length].id,
         clienteNombre: cliente.nombre,
+        profesionalId: 'default',
         oficio: of.clave,
         oficioNombre: of.nombre,
         trabajo: trabajo.clave,
@@ -122,6 +124,7 @@ function normalizarCliente(c) {
     lng: c.lng ?? null,
     receptorHabitual: c.receptorHabitual || null, // nombre de quien suele atender si no es el titular
     notas: c.notas || '',
+    profesionalId: c.profesionalId || null, // qué profesional del equipo suele atenderlo (cuentas multi-profesional)
     creado: c.creado || iso(hoy())
   };
 }
@@ -164,6 +167,16 @@ export async function confirmarDireccionCliente(clienteId, direccionInformada, l
   return { ok: true, coincide, direccionEnBase: cli.direccion, lat: cli.lat, lng: cli.lng };
 }
 
+/** Asigna qué profesional del equipo atiende habitualmente a este cliente (cuentas multi-profesional). */
+export async function asignarProfesionalCliente(clienteId, profesionalId) {
+  await cargar();
+  const cli = db.clientes.find((c) => c.id === clienteId);
+  if (!cli) return { ok: false, error: 'Cliente no encontrado.' };
+  cli.profesionalId = profesionalId || null;
+  await guardar();
+  return { ok: true, profesionalId: cli.profesionalId };
+}
+
 // ---------- Citas / trabajos ----------
 export async function listarCitas(filtro = {}) {
   await cargar();
@@ -176,6 +189,7 @@ export async function listarCitas(filtro = {}) {
   if (filtro.clienteId) cs = cs.filter((c) => c.clienteId === filtro.clienteId);
   if (filtro.anio) cs = cs.filter((c) => c.fecha.slice(0, 4) === String(filtro.anio));
   if (filtro.mes) cs = cs.filter((c) => c.fecha.slice(0, 7) === filtro.mes);
+  if (filtro.profesionalId) cs = cs.filter((c) => c.profesionalId === filtro.profesionalId);
   return cs.sort((a, b) => (a.fecha + a.inicio).localeCompare(b.fecha + b.inicio));
 }
 export async function citasDelDia(fecha) { return listarCitas({ fecha }); }
@@ -196,10 +210,14 @@ export async function crearCita(datos) {
   }
   const lat = Number.isFinite(datos.lat) ? datos.lat : cliente.lat;
   const lng = Number.isFinite(datos.lng) ? datos.lng : cliente.lng;
+  // Profesional del equipo que atiende (cuentas multi-profesional): si no se
+  // especifica, cae en el único configurado (o el primero de la lista).
+  const profesionalId = datos.profesionalId || listarProfesionales()[0]?.id || 'default';
   const cita = {
     id: nuevoId('CITA'),
     clienteId: cliente.id,
     clienteNombre: cliente.nombre,
+    profesionalId,
     oficio: datos.oficio,
     oficioNombre: datos.oficioNombre || datos.oficio,
     trabajo: datos.trabajo,
@@ -231,10 +249,11 @@ export async function crearCita(datos) {
  * canceladas y las que todavía no tienen coordenadas (no se puede estimar su
  * traslado, mejor no asumir 0).
  */
-export async function agendaDelDiaConUbicacion(fecha, excluirCitaId) {
+export async function agendaDelDiaConUbicacion(fecha, excluirCitaId, profesionalId) {
   const cs = await citasDelDia(fecha);
   return cs
-    .filter((c) => c.estado !== 'cancelada' && c.id !== excluirCitaId && Number.isFinite(c.lat) && Number.isFinite(c.lng))
+    .filter((c) => c.estado !== 'cancelada' && c.id !== excluirCitaId && Number.isFinite(c.lat) && Number.isFinite(c.lng)
+      && (!profesionalId || c.profesionalId === profesionalId))
     .map((c) => ({ inicio: c.inicio, fin: c.fin, ubicacion: { lat: c.lat, lng: c.lng } }));
 }
 
@@ -298,8 +317,8 @@ export async function resumenDashboard(f = {}) {
 export async function serieMensual(f = {}) {
   await cargar();
   const meses = ultimosMeses(12);
-  const idsFiltrados = new Set((await listarCitas({ oficio: f.oficio, estado: f.estado })).map((c) => c.id));
-  const usarFiltro = !!(f.oficio || f.estado);
+  const idsFiltrados = new Set((await listarCitas({ oficio: f.oficio, estado: f.estado, profesionalId: f.profesionalId })).map((c) => c.id));
+  const usarFiltro = !!(f.oficio || f.estado || f.profesionalId);
   const cant = Object.fromEntries(meses.map((m) => [m, 0]));
   const fact = Object.fromEntries(meses.map((m) => [m, 0]));
   for (const c of db.citas) {
@@ -319,11 +338,12 @@ export async function serieMensual(f = {}) {
 }
 
 /** Evolución anual: totales por año calendario, para comparar año contra año. */
-export async function serieAnual() {
+export async function serieAnual(f = {}) {
   await cargar();
-  const anios = [...new Set(db.citas.map((c) => c.fecha.slice(0, 4)))].sort();
+  const todas = f.profesionalId ? db.citas.filter((c) => c.profesionalId === f.profesionalId) : db.citas;
+  const anios = [...new Set(todas.map((c) => c.fecha.slice(0, 4)))].sort();
   return anios.map((anio) => {
-    const cs = db.citas.filter((c) => c.fecha.slice(0, 4) === anio);
+    const cs = todas.filter((c) => c.fecha.slice(0, 4) === anio);
     const completadas = cs.filter((c) => c.estado === 'completada');
     return { anio, trabajos: cs.length, facturado: completadas.reduce((a, c) => a + (c.cotizacion?.total || 0), 0) };
   });

@@ -10,13 +10,36 @@ import { cotizar, cotizarToolDef, listarOficios } from './cotizador.js';
 import { geocodificar, geocodificarToolDef } from './geocoding.js';
 import { proponerHorarios, proponerHorariosToolDef, configuracionDescansoPorDefecto } from '../store/agenda.js';
 import { crearCita, confirmarDireccionCliente, buscarClientePorTelefono, agendaDelDiaConUbicacion } from '../store/trabajos.js';
-import { get as cfg } from '../store/config.js';
+import { get as cfg, listarProfesionales } from '../store/config.js';
 import { registrarUso } from '../store/uso.js';
 
 const MODEL = 'claude-opus-4-8';
-const nombreProfesional = () => cfg('nombreProfesional') || 'tu profesional de confianza';
-const oficioProfesional = () => cfg('oficioProfesional') || 'electricista';
 const telefonoProfesional = () => cfg('agenciaTelefono') || '+598 99 000 000';
+
+// ---------- Profesional seleccionado por sesión (cuentas con varios trabajadores) ----------
+
+const profesionalPorSesion = new Map();
+
+/** Profesional activo de esta conversación: el único configurado, el que ya
+ *  eligió el agente con elegir_profesional, o el primero como fallback. */
+function profesionalActual(sessionId) {
+  const lista = listarProfesionales();
+  if (lista.length === 1) return lista[0];
+  const id = profesionalPorSesion.get(sessionId);
+  return (id && lista.find((p) => p.id === id)) || lista[0];
+}
+
+/** Arma la config de descanso/jornada de un profesional puntual (ver store/config.js#listarProfesionales). */
+function configuracionDeProfesional(prof) {
+  const d = configuracionDescansoPorDefecto;
+  const diasLibres = prof.diasLibres;
+  return {
+    dias_libres: diasLibres ? String(diasLibres).split(',').map(Number).filter((n) => !Number.isNaN(n)) : d.dias_libres,
+    horario_laboral: { inicio: prof.horarioInicio || d.horario_laboral.inicio, fin: prof.horarioFin || d.horario_laboral.fin },
+    almuerzo: { inicio: prof.almuerzoInicio || d.almuerzo.inicio, fin: prof.almuerzoFin || d.almuerzo.fin },
+    buffer_entre_citas_min: d.buffer_entre_citas_min
+  };
+}
 
 // Cliente de Claude creado en caliente a partir de la API key configurada en el
 // panel. Se recrea automáticamente si la clave cambia; null → modo demo.
@@ -90,31 +113,42 @@ const confirmarCitaToolDef = {
   }
 };
 
+const elegirProfesionalToolDef = {
+  name: 'elegir_profesional',
+  description:
+    'Registra qué profesional del equipo va a atender este pedido (solo hace falta en cuentas con más de un profesional — vas a ver la lista completa en tus instrucciones). Llamala una sola vez, apenas identifiques cuál corresponde por el oficio pedido o porque el cliente lo nombra, y antes de cotizar.',
+  input_schema: {
+    type: 'object',
+    properties: { profesionalId: { type: 'string', description: 'id del profesional, tal como aparece en la lista de tus instrucciones' } },
+    required: ['profesionalId']
+  }
+};
+
 const TOOLS = [cotizarToolDef, geocodificarToolDef, proponerHorariosToolDef, confirmarDireccionToolDef, registrarReceptorToolDef, confirmarCitaToolDef];
 
-/** Arma la config de descanso/jornada a partir de lo cargado por el profesional en /config.html. */
-function configuracionDesdeCfg() {
-  const d = configuracionDescansoPorDefecto;
-  const diasLibres = cfg('diasLibres');
-  return {
-    dias_libres: diasLibres ? diasLibres.split(',').map(Number).filter((n) => !Number.isNaN(n)) : d.dias_libres,
-    horario_laboral: { inicio: cfg('horarioInicio') || d.horario_laboral.inicio, fin: cfg('horarioFin') || d.horario_laboral.fin },
-    almuerzo: { inicio: cfg('almuerzoInicio') || d.almuerzo.inicio, fin: cfg('almuerzoFin') || d.almuerzo.fin },
-    buffer_entre_citas_min: d.buffer_entre_citas_min
-  };
+/** Herramientas disponibles para esta conversación: suma elegir_profesional solo si la cuenta tiene más de un profesional. */
+function construirTools() {
+  return listarProfesionales().length > 1 ? [elegirProfesionalToolDef, ...TOOLS] : TOOLS;
 }
 
-async function ejecutarHerramienta(nombre, input, canal) {
+async function ejecutarHerramienta(nombre, input, canal, sessionId) {
+  const prof = profesionalActual(sessionId);
   switch (nombre) {
+    case 'elegir_profesional': {
+      const existe = listarProfesionales().some((p) => p.id === input.profesionalId);
+      if (existe) profesionalPorSesion.set(sessionId, input.profesionalId);
+      return JSON.stringify({ ok: existe, profesionalId: existe ? input.profesionalId : null });
+    }
     case 'cotizar_trabajo':
-      return JSON.stringify(cotizar({ oficio: oficioProfesional(), ...input }));
+      return JSON.stringify(cotizar({ oficio: prof.oficio, ...input }));
     case 'geocodificar_direccion':
       return JSON.stringify(await geocodificar(input.direccion));
     case 'buscar_horarios_disponibles': {
-      // Agenda real del día (con ubicación), para calcular el traslado hacia
-      // y desde las citas vecinas — no solo la duración del trabajo nuevo.
-      const citasDelDia = input.fecha ? await agendaDelDiaConUbicacion(input.fecha) : [];
-      return JSON.stringify(proponerHorarios({ configuracion: configuracionDesdeCfg(), ...input, citasDelDia }));
+      // Agenda real del día (con ubicación) de ESTE profesional, para calcular
+      // el traslado hacia y desde sus citas vecinas — no solo la duración del
+      // trabajo nuevo, y sin mezclar la agenda de otros profesionales del equipo.
+      const citasDelDia = input.fecha ? await agendaDelDiaConUbicacion(input.fecha, undefined, prof.id) : [];
+      return JSON.stringify(proponerHorarios({ configuracion: configuracionDeProfesional(prof), ...input, citasDelDia }));
     }
     case 'confirmar_direccion_cliente': {
       let clienteId = input.clienteId;
@@ -128,15 +162,15 @@ async function ejecutarHerramienta(nombre, input, canal) {
     case 'registrar_persona_receptora':
       return JSON.stringify({ registrado: true, ...input });
     case 'confirmar_cita': {
-      const oficio = oficioProfesional();
       const oficios = listarOficios();
-      const datosOficio = oficios.find((o) => o.clave === oficio);
+      const datosOficio = oficios.find((o) => o.clave === prof.oficio);
       const trabajoNombre = datosOficio?.trabajos.find((t) => t.clave === input.trabajo)?.nombre || input.trabajo;
       const cita = await crearCita({
         clienteNombre: input.clienteNombre,
         telefono: input.telefono,
-        oficio,
-        oficioNombre: datosOficio?.nombre || oficio,
+        profesionalId: prof.id,
+        oficio: prof.oficio,
+        oficioNombre: datosOficio?.nombre || prof.oficio,
         trabajo: input.trabajo,
         trabajoNombre,
         fecha: input.fecha,
@@ -159,8 +193,15 @@ async function ejecutarHerramienta(nombre, input, canal) {
 
 // ---------- Prompt del agente ----------
 
-function buildSystem() {
-  return `Sos el asistente virtual de ${nombreProfesional()}, que trabaja como ${oficioProfesional()}. Atendés clientes por WhatsApp, voz y webchat que quieren pedir un trabajo o servicio.
+function buildSystem(sessionId) {
+  const lista = listarProfesionales();
+  const multiple = lista.length > 1;
+  const prof = profesionalActual(sessionId);
+  const marca = cfg('agenciaNombre') || cfg('nombreProfesional') || 'nuestro equipo';
+  const intro = multiple
+    ? `Sos el asistente virtual de ${marca}, un equipo con varios profesionales. Estos son los profesionales disponibles (id: nombre — oficio):\n${lista.map((p) => `- ${p.id}: ${p.nombre} — ${p.oficio}`).join('\n')}\nApenas identifiques por el pedido del cliente (o porque lo nombra) cuál corresponde, llamá a elegir_profesional con su id — una sola vez, antes de cotizar.`
+    : `Sos el asistente virtual de ${prof.nombre}, que trabaja como ${prof.oficio}.`;
+  return `${intro} Atendés clientes por WhatsApp, voz y webchat que quieren pedir un trabajo o servicio.
 
 Flujo esperado en cada conversación:
 1. Entendé qué necesita el cliente y a qué tipo de trabajo predefinido corresponde. Usá cotizar_trabajo apenas lo sepas — nunca inventes precios.
@@ -205,7 +246,8 @@ const BADGE = process.env.DEMO_SIN_BADGE ? '' : '⚙️ [Modo demo] ';
 function responderDemo(texto, canal) {
   const t = String(texto ?? '').toLowerCase();
   const oficios = listarOficios();
-  const propio = oficios.find((o) => o.clave === oficioProfesional()) || oficios[0];
+  const prof = listarProfesionales()[0];
+  const propio = oficios.find((o) => o.clave === prof.oficio) || oficios[0];
   if (/(cuanto|precio|presupuesto|cotiz|cuesta)/.test(t) && propio) {
     const trabajo = propio.trabajos[0];
     const r = cotizar({ oficio: propio.clave, trabajo: trabajo.clave, distanciaKm: 5 });
@@ -214,7 +256,7 @@ function responderDemo(texto, canal) {
   if (/(turno|horario|agend|cita|cuando)/.test(t)) {
     return `${BADGE}Perfecto, para coordinar el horario necesito: qué trabajo necesitás, tu dirección y cuándo te queda bien. Con eso te propongo 2-3 horarios ya considerando el traslado.`;
   }
-  return `${BADGE}Hola, soy el asistente de ${nombreProfesional()} (${propio?.nombre || oficioProfesional()}). Contame qué necesitás y te paso presupuesto y horarios disponibles. (Servidor en modo demo: cargá tu clave de IA en el panel para respuestas con IA real.)`;
+  return `${BADGE}Hola, soy el asistente de ${prof.nombre} (${propio?.nombre || prof.oficio}). Contame qué necesitás y te paso presupuesto y horarios disponibles. (Servidor en modo demo: cargá tu clave de IA en el panel para respuestas con IA real.)`;
 }
 
 // ---------- Conversación con Claude ----------
@@ -239,8 +281,8 @@ export async function conversar(sessionId, texto, canal = 'webchat') {
       respuesta = await client.messages.create({
         model: MODEL,
         max_tokens: 16000,
-        system: [{ type: 'text', text: buildSystem(), cache_control: { type: 'ephemeral' } }],
-        tools: TOOLS,
+        system: [{ type: 'text', text: buildSystem(sessionId), cache_control: { type: 'ephemeral' } }],
+        tools: construirTools(),
         messages: mensajes
       });
       registrarUso(respuesta.usage, canal);
@@ -254,7 +296,7 @@ export async function conversar(sessionId, texto, canal = 'webchat') {
             .map(async (b) => ({
               type: 'tool_result',
               tool_use_id: b.id,
-              content: await ejecutarHerramienta(b.name, b.input, canal)
+              content: await ejecutarHerramienta(b.name, b.input, canal, sessionId)
             }))
         );
         mensajes.push({ role: 'user', content: resultados });
@@ -283,4 +325,4 @@ export async function conversar(sessionId, texto, canal = 'webchat') {
   }
 }
 
-export { TOOLS, listarOficios };
+export { TOOLS, construirTools, listarOficios };

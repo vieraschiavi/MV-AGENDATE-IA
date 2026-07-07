@@ -33,11 +33,12 @@
 <script>
 mvShell('clientes');
 const $ = (s) => document.querySelector(s);
-let clientes = [];
+let clientes = [], profesionales = [];
 const abrir=(m)=>$('#'+m).style.display='grid'; const cerrar=(m)=>$('#'+m).style.display='none';
 
 async function cargar() {
   clientes = await (await fetch('/api/clientes')).json();
+  if (!profesionales.length) profesionales = await (await fetch('/api/profesionales')).json();
   renderRuta();
 }
 
@@ -73,6 +74,12 @@ async function renderPagina(id) {
       <div class="k">Email</div><div class="v">${c.email||'—'}</div>
       <div class="k">Receptor habitual</div><div class="v">${c.receptorHabitual||'—'}</div>
       <div class="k">Notas</div><div class="v">${c.notas||'—'}</div>
+      ${profesionales.length > 1 ? `<div class="k">Atendido por</div><div class="v">
+        <select onchange="cambiarProfesionalCliente('${id}',this.value)">
+          <option value="">Sin asignar</option>
+          ${profesionales.map(p=>`<option value="${p.id}" ${p.id===c.profesionalId?'selected':''}>${p.nombre}</option>`).join('')}
+        </select>
+      </div>` : ''}
       <div class="k">Dirección</div><div class="v">
         <div style="display:flex;gap:8px;align-items:center;">
           <input id="nuevaDir" style="flex:1;" value="${c.direccion||''}">
@@ -91,6 +98,11 @@ async function renderPagina(id) {
         <td><a href="/api/citas/${ci.id}/ficha" target="_blank" onclick="event.stopPropagation()">Ver ficha</a></td>
       </tr>`).join('') + '</table>' : '<div class="mv-empty">Sin trabajos registrados todavía.</div>'}</div>
   `;
+}
+
+async function cambiarProfesionalCliente(id, profesionalId) {
+  await mvFetchAdmin(`/api/cliente/${id}/profesional`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profesionalId})});
+  clientes = await (await fetch('/api/clientes')).json();
 }
 
 async function confirmarDireccion(id) {
