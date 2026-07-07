@@ -7,6 +7,7 @@ import { networkInterfaces } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { conversar, enModoDemo, listarOficios } from './ai/agente.js';
+import { responderAyuda } from './ai/ayuda.js';
 import { cotizar } from './ai/cotizador.js';
 import { geocodificar, geocodificarInverso } from './ai/geocoding.js';
 import { proponerHorarios } from './store/agenda.js';
@@ -88,6 +89,21 @@ app.post('/api/chat', async (req, res) => {
   } catch (err) {
     console.error('[api/chat]', err);
     res.status(500).json({ error: 'Error interno del agente.' });
+  }
+});
+
+// --- Asistente de ayuda (dudas sobre el programa — distinto del agente de negocio) ---
+app.post('/api/ayuda', async (req, res) => {
+  if (await esBot(req)) return res.status(403).json({ error: 'Acceso denegado.' });
+  const { mensaje, sessionId } = req.body ?? {};
+  if (!mensaje || typeof mensaje !== 'string') return res.status(400).json({ error: 'Falta el campo "mensaje".' });
+  const sid = sessionId || `ayuda:${randomUUID()}`;
+  try {
+    const respuesta = await responderAyuda(sid, mensaje);
+    res.json({ respuesta, sessionId: sid, ia: !enModoDemo() });
+  } catch (err) {
+    console.error('[api/ayuda]', err);
+    res.status(500).json({ error: 'Error interno del asistente de ayuda.' });
   }
 });
 

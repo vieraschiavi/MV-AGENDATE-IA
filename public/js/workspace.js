@@ -7,6 +7,7 @@
     { key: 'agenda', href: '/agenda.html', ico: '📅', label: 'Agenda' },
     { key: 'clientes', href: '/clientes.html', ico: '👥', label: 'Clientes' },
     { key: 'dashboards', href: '/dashboards.html', ico: '📊', label: 'Dashboards' },
+    { key: 'ayuda', href: '/ayuda.html', ico: '❓', label: 'Ayuda' },
   ];
 
   function claveAdmin() { return localStorage.getItem('mvAdminKey') || ''; }

@@ -69,6 +69,7 @@ src/
   programa.js             Lanzador para la versión PC (setup de clave + server)
   ai/
     agente.js             Cerebro del chatbot (Claude + herramientas: cotizar/agendar/confirmar)
+    ayuda.js               Asistente de ayuda del programa (Claude + guía local sin API key)
     cotizador.js           Motor de cotización por oficio y tipo de trabajo
     geocoding.js           Dirección de texto ↔ coordenadas (Nominatim/OSM, gratis)
   channels/
@@ -100,6 +101,7 @@ test/                   Suite de tests (cotizador, agenda, aviso de retraso, age
 ## 4. Endpoints principales
 
 - `POST /api/chat` — chat del agente (webchat/demo)
+- `POST /api/ayuda` — asistente de ayuda del programa (dudas de uso/configuración)
 - `GET /api/oficios` · `POST /api/cotizar` — catálogo y cotización directa
 - `POST /api/agenda/proponer` — horarios propuestos considerando traslados
 - `GET /api/geocoding?direccion=` · `GET /api/geocoding/inverso?lat=&lng=` — dirección ↔ coordenadas
@@ -124,7 +126,8 @@ npm start          # pide la API key la primera vez (o Enter para modo demo)
 
 Páginas: `/` (landing), `/demo.html` (demo chat + cotizador + agenda),
 `/config.html` (configuración), `/panel.html` (agenda de hoy), `/dashboards.html`,
-`/agenda.html` (gestión de citas), `/clientes.html`, `/comprar.html`.
+`/agenda.html` (gestión de citas), `/clientes.html`, `/ayuda.html` (tutorial +
+asistente de dudas con IA), `/comprar.html`.
 
 ## 6. Planes y precios
 
