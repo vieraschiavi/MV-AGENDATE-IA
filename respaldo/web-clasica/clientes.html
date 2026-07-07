@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clientes — MV Agendate IA</title>
+<link rel="icon" href="/logo-mv.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/workspace.css">
+</head>
+<body>
+<div class="mv-pagehead" id="pagehead">
+  <div><div class="mv-crumb" id="crumb">Espacio de trabajo</div><h1 id="titulo">👥 Clientes</h1></div>
+  <button class="btn cel" id="btnNuevo" style="margin-left:auto;">+ Nuevo cliente</button>
+</div>
+<div class="mv-content">
+  <div id="vistaLista"><div class="mv-tablewrap"><div id="listaCli"></div></div></div>
+  <div id="vistaPagina" class="mv-pageview card" style="display:none;"></div>
+</div>
+
+<div class="modal" id="mForm"><div class="box"><h3>➕ Nueva ficha de cliente</h3>
+  <div class="form2">
+    <div><label>Nombre</label><input id="cNombre"></div>
+    <div><label>Teléfono</label><input id="cTel"></div>
+    <div><label>Email</label><input id="cEmail"></div>
+    <div><label>Quién suele atender (si no es el titular)</label><input id="cReceptor"></div>
+  </div>
+  <label>Dirección de la base</label><input id="cDireccion">
+  <label>Notas</label><textarea id="cNotas" style="min-height:52px;"></textarea>
+  <div style="margin-top:12px;"><button class="btn cel" id="btnGuardarCli">Guardar ficha</button> <button class="btn sec" onclick="cerrar('mForm')">Cancelar</button></div>
+</div></div>
+
+<script src="/js/workspace.js"></script>
+<script>
+mvShell('clientes');
+const $ = (s) => document.querySelector(s);
+let clientes = [], profesionales = [];
+const abrir=(m)=>$('#'+m).style.display='grid'; const cerrar=(m)=>$('#'+m).style.display='none';
+
+async function cargar() {
+  clientes = await (await fetch('/api/clientes')).json();
+  if (!profesionales.length) profesionales = await (await fetch('/api/profesionales')).json();
+  renderRuta();
+}
+
+function renderLista() {
+  $('#vistaLista').style.display = '';
+  $('#vistaPagina').style.display = 'none';
+  $('#crumb').textContent = 'Espacio de trabajo';
+  $('#titulo').textContent = '👥 Clientes';
+  if (!clientes.length) { $('#listaCli').innerHTML = '<div class="mv-empty">Sin fichas aún.</div>'; return; }
+  $('#listaCli').innerHTML = `<table class="mv-table"><tr><th>Nombre</th><th>Contacto</th><th>Dirección</th><th>Receptor habitual</th></tr>` +
+    clientes.map(c => `<tr class="row" onclick="location.hash='cliente/${c.id}'">
+      <td><strong>${c.nombre||c.id}</strong></td>
+      <td>${c.telefono||c.email||'—'}</td>
+      <td>${c.direccion||'sin dirección cargada'}</td>
+      <td>${c.receptorHabitual||'—'}</td>
+    </tr>`).join('') +
+    `<tr class="addrow" onclick="abrirNuevo()"><td colspan="4">+ Nuevo cliente</td></tr></table>`;
+}
+
+async function renderPagina(id) {
+  $('#vistaLista').style.display = 'none';
+  $('#vistaPagina').style.display = '';
+  let c = clientes.find(x=>x.id===id);
+  if (!c) { clientes = await (await fetch('/api/clientes')).json(); c = clientes.find(x=>x.id===id); }
+  if (!c) { location.hash=''; return; }
+  const citas = await (await fetch(`/api/citas?clienteId=${id}`)).json();
+  $('#crumb').innerHTML = '<a href="#" onclick="location.hash=\'\';return false;">Clientes</a> / ' + (c.nombre||c.id);
+  $('#titulo').textContent = c.nombre || c.id;
+  $('#vistaPagina').innerHTML = `
+    <div class="icon-title"><div class="av">👤</div><h2>${c.nombre||c.id}</h2></div>
+    <div class="mv-prop">
+      <div class="k">Teléfono</div><div class="v">${c.telefono||'—'}</div>
+      <div class="k">Email</div><div class="v">${c.email||'—'}</div>
+      <div class="k">Receptor habitual</div><div class="v">${c.receptorHabitual||'—'}</div>
+      <div class="k">Notas</div><div class="v">${c.notas||'—'}</div>
+      ${profesionales.length > 1 ? `<div class="k">Atendido por</div><div class="v">
+        <select onchange="cambiarProfesionalCliente('${id}',this.value)">
+          <option value="">Sin asignar</option>
+          ${profesionales.map(p=>`<option value="${p.id}" ${p.id===c.profesionalId?'selected':''}>${p.nombre}</option>`).join('')}
+        </select>
+      </div>` : ''}
+      <div class="k">Dirección</div><div class="v">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="nuevaDir" style="flex:1;" value="${c.direccion||''}">
+          <button class="btn sec" onclick="confirmarDireccion('${id}')">Confirmar</button>
+        </div>
+        <div id="avisoDir"></div>
+      </div>
+    </div>
+    <h2 class="mv-h" style="margin-top:20px;">Trabajos</h2>
+    <div class="mv-tablewrap">${citas.length ? `<table class="mv-table"><tr><th>Trabajo</th><th>Fecha</th><th>Precio</th><th>Estado</th><th></th></tr>` +
+      citas.map(ci=>`<tr class="row" onclick="window.open('/api/citas/${ci.id}/ficha','_blank')">
+        <td>${ci.trabajoNombre}</td>
+        <td>${ci.fecha} ${ci.inicio}</td>
+        <td><strong style="color:var(--cel);">${ci.cotizacion?.total?'$ '+ci.cotizacion.total.toLocaleString('es-UY'):'—'}</strong></td>
+        <td><span class="pill ${ci.estado}"><i></i>${ci.estado}</span></td>
+        <td><a href="/api/citas/${ci.id}/ficha" target="_blank" onclick="event.stopPropagation()">Ver ficha</a></td>
+      </tr>`).join('') + '</table>' : '<div class="mv-empty">Sin trabajos registrados todavía.</div>'}</div>
+  `;
+}
+
+async function cambiarProfesionalCliente(id, profesionalId) {
+  await mvFetchAdmin(`/api/cliente/${id}/profesional`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profesionalId})});
+  clientes = await (await fetch('/api/clientes')).json();
+}
+
+async function confirmarDireccion(id) {
+  const direccionInformada = $('#nuevaDir').value.trim();
+  const r = await (await fetch(`/api/cliente/${id}/confirmar-direccion`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({direccionInformada})})).json();
+  $('#avisoDir').innerHTML = r.coincide === false ? '<div class="aviso warn">Dirección actualizada (no coincidía con la base).</div>' : '<div class="aviso ok">✅ Dirección confirmada.</div>';
+  clientes = await (await fetch('/api/clientes')).json();
+}
+
+function renderRuta() {
+  const h = location.hash.replace(/^#/, '');
+  if (h.startsWith('cliente/')) renderPagina(h.slice('cliente/'.length));
+  else renderLista();
+}
+window.addEventListener('hashchange', renderRuta);
+
+function abrirNuevo() { document.querySelectorAll('#mForm input, #mForm textarea').forEach(e=>e.value=''); abrir('mForm'); }
+$('#btnNuevo').onclick = abrirNuevo;
+$('#btnGuardarCli').onclick = async () => {
+  const body={ nombre:$('#cNombre').value, telefono:$('#cTel').value, email:$('#cEmail').value,
+    direccion:$('#cDireccion').value, receptorHabitual:$('#cReceptor').value, notas:$('#cNotas').value };
+  if(!body.nombre) return alert('Poné al menos el nombre.');
+  const r=await (await mvFetchAdmin('/api/cliente',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
+  if(r.ok){ cerrar('mForm'); await cargar(); location.hash='cliente/'+r.cliente.id; } else alert(r.error||'Error');
+};
+
+cargar();
+</script>
+<script src="/js/contacto.js" defer></script>
+</body>
+</html>

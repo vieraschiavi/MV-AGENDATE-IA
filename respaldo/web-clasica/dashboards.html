@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboards — MV Agendate IA</title>
+<link rel="icon" href="/logo-mv.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/workspace.css">
+<style>
+  .filtros{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:12px; display:flex; gap:10px;
+    flex-wrap:wrap; align-items:center; margin-bottom:16px; box-shadow:0 2px 10px #0f2a430a; }
+  .filtros label{ font-size:.7rem; color:var(--muted); display:block; margin-bottom:2px; }
+  .filtros select{ min-width:120px; }
+  .barlist div{ display:flex; align-items:center; gap:8px; margin:5px 0; font-size:.84rem; }
+  .barlist .b{ height:15px; border-radius:4px; } .barlist .lab{ width:110px; flex:0 0 auto; color:#44535f; text-transform:capitalize; } .barlist .val{ margin-left:auto; font-weight:700; }
+  .leg{ display:flex; gap:14px; flex-wrap:wrap; font-size:.76rem; margin-top:8px; } .leg span{ display:flex; align-items:center; gap:5px; } .leg i{ width:12px; height:12px; border-radius:3px; display:inline-block; }
+  .exportar{ display:flex; gap:8px; flex-wrap:wrap; }
+  .exportar a{ background:#e8edf2; color:var(--navy); text-decoration:none; font-size:.82rem; padding:8px 12px; border-radius:9px; font-weight:600; }
+  .exportar a:hover{ background:#dbe4ec; }
+</style>
+</head>
+<body>
+<div class="mv-pagehead">
+  <div><div class="mv-crumb">Espacio de trabajo</div><h1>📊 Dashboards</h1></div>
+</div>
+<div class="mv-content">
+  <div class="filtros" id="filtros">
+    <div><label>Año</label><select id="fAnio"><option value="">Todos</option></select></div>
+    <div><label>Mes</label><select id="fMes"><option value="">Todos</option></select></div>
+    <div><label>Oficio</label><select id="fOficio"><option value="">Todos</option></select></div>
+    <div><label>Estado</label><select id="fEstado"><option value="">Todos</option></select></div>
+    <div id="fProfesionalBox" style="display:none;"><label>Profesional</label><select id="fProfesional"><option value="">Todos</option></select></div>
+    <button onclick="location.reload()" class="btn sec" style="align-self:end;">↺ Limpiar</button>
+    <div class="exportar" style="margin-left:auto;align-self:end;">
+      <a id="expCsv" href="/api/agenda.csv">⬇️ Agenda CSV</a>
+      <a id="expXls" href="/api/agenda.xls">⬇️ Agenda Excel</a>
+      <a href="/api/clientes.xls">⬇️ Clientes Excel</a>
+    </div>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="card wide">
+    <h2 class="mv-h">📈 Evolución mensual — trabajos y facturación (12 meses)</h2>
+    <div id="chart"></div>
+    <div class="leg" id="leg"></div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px;">
+    <div class="card"><h2 class="mv-h">Trabajos por oficio</h2><div class="barlist" id="cOficio"></div></div>
+    <div class="card"><h2 class="mv-h">Trabajos por estado</h2><div class="barlist" id="cEstado"></div></div>
+    <div class="card"><h2 class="mv-h">Trabajos por día de la semana</h2><div class="barlist" id="cDiaSemana"></div></div>
+    <div class="card"><h2 class="mv-h">Comparativa año contra año</h2><div class="barlist" id="cAnual"></div></div>
+  </div>
+</div>
+
+<script src="/js/workspace.js"></script>
+<script>
+mvShell('dashboards');
+const $ = (s) => document.querySelector(s);
+const COL = ['#1f7ae0','#2ea043','#e0b25c','#8e44ad','#e67e22','#16a085','#c0392b'];
+function qs() {
+  const p = {};
+  for (const [id,k] of [['fAnio','anio'],['fMes','mes'],['fOficio','oficio'],['fEstado','estado'],['fProfesional','profesionalId']]) {
+    const v = $('#'+id).value; if (v) p[k]=v;
+  }
+  return new URLSearchParams(p).toString();
+}
+function actualizarLinksExport() {
+  const q = qs();
+  $('#expCsv').href = '/api/agenda.csv' + (q ? '?'+q : '');
+  $('#expXls').href = '/api/agenda.xls' + (q ? '?'+q : '');
+}
+function barras(cont, obj, money) {
+  const ents = Object.entries(obj||{}).sort((a,b)=>b[1]-a[1]);
+  const max = Math.max(...ents.map(e=>e[1]), 1);
+  $('#'+cont).innerHTML = ents.map(([k,v],i)=>`<div><span class="lab">${k}</span><span class="b" style="width:${Math.max(6,v/max*130)}px;background:${COL[i%COL.length]}"></span><span class="val">${money?'$ '+v.toLocaleString('es-UY'):v}</span></div>`).join('') || '<span style="color:#999">Sin datos</span>';
+}
+function lineChart(meses, trabajos, facturacion) {
+  const W=1000, H=280, pad=36, n=meses.length;
+  const maxT = Math.max(...trabajos, 1);
+  const maxF = Math.max(...facturacion, 1);
+  const x = (i)=> pad + i*(W-2*pad)/Math.max(1,n-1);
+  const yT = (v)=> H-pad - v/maxT*(H-2*pad);
+  const yF = (v)=> H-pad - v/maxF*(H-2*pad);
+  const gx = meses.map((m,i)=>`<text x="${x(i)}" y="${H-12}" font-size="10" fill="#8a8a8a" text-anchor="middle">${m.slice(5)}</text>`).join('');
+  const lineaTrabajos = trabajos.map((v,i)=>`${x(i).toFixed(1)},${yT(v).toFixed(1)}`).join(' ');
+  const lineaFact = facturacion.map((v,i)=>`${x(i).toFixed(1)},${yF(v).toFixed(1)}`).join(' ');
+  $('#chart').innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;">
+    <line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#e6ebf1"/>${gx}
+    <polyline points="${lineaTrabajos}" fill="none" stroke="#1f7ae0" stroke-width="2"/>
+    <polyline points="${lineaFact}" fill="none" stroke="#2ea043" stroke-width="2" stroke-dasharray="4,3"/>
+    </svg>`;
+  $('#leg').innerHTML = '<span><i style="background:#1f7ae0"></i>Trabajos</span><span><i style="background:#2ea043"></i>Facturación (escala propia)</span>';
+}
+async function cargar() {
+  const q = qs();
+  actualizarLinksExport();
+  const [d, s, opt, anual] = await Promise.all([
+    fetch('/api/dashboard?'+q).then(r=>r.json()),
+    fetch('/api/dashboard/serie?'+q).then(r=>r.json()),
+    fetch('/api/dashboard/filtros').then(r=>r.json()),
+    fetch('/api/dashboard/serie-anual?'+q).then(r=>r.json())
+  ]);
+  if (!$('#fOficio').dataset.load) {
+    $('#fOficio').innerHTML='<option value="">Todos</option>'+opt.oficios.map(x=>`<option>${x}</option>`).join('');
+    $('#fEstado').innerHTML='<option value="">Todos</option>'+opt.estados.map(x=>`<option>${x}</option>`).join('');
+    $('#fAnio').innerHTML='<option value="">Todos</option>'+opt.anios.map(x=>`<option>${x}</option>`).join('');
+    $('#fMes').innerHTML='<option value="">Todos</option>'+s.meses.map(m=>`<option value="${m}">${m}</option>`).join('');
+    if (opt.profesionales.length > 1) {
+      $('#fProfesional').innerHTML = '<option value="">Todos</option>' + opt.profesionales.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
+      $('#fProfesionalBox').style.display = '';
+    }
+    $('#fOficio').dataset.load='1';
+  }
+  const ult = s.meses.length-1;
+  const deltaTrabajos = s.trabajos[ult] - s.trabajos[ult-1];
+  const deltaFact = s.facturacion[ult] - s.facturacion[ult-1];
+  const delta = (v) => v===0 ? '' : `<span class="d ${v>0?'up':'down'}">${v>0?'▲ +':'▼ '}${v} vs mes ant.</span>`;
+  $('#kpis').innerHTML = [
+    ['Trabajos totales', d.total, ''],
+    ['Completados', d.completadas, ''],
+    ['Cancelados', d.canceladas, ''],
+    ['Sueldo total (completados)', '$ '+(d.sueldo_total||0).toLocaleString('es-UY'), ''],
+    ['Ticket promedio', '$ '+(d.ticket_promedio||0).toLocaleString('es-UY'), ''],
+    ['Trabajos (12m)', s.total_trabajos, delta(deltaTrabajos)],
+    ['Facturado (12m)', '$ '+s.total_facturado.toLocaleString('es-UY'), delta(deltaFact)]
+  ].map(([l,n,dd])=>`<div class="kpi"><div class="n">${n}</div><div class="l">${l}</div>${dd}</div>`).join('');
+  lineChart(s.meses, s.trabajos, s.facturacion);
+  barras('cOficio', d.por_oficio); barras('cEstado', d.por_estado);
+  const diaSemana = Object.fromEntries(d.por_dia_semana.map(x=>[x.dia, x.cantidad]));
+  barras('cDiaSemana', diaSemana);
+  const anualObj = Object.fromEntries(anual.map(a=>[a.anio, a.trabajos]));
+  barras('cAnual', anualObj);
+}
+['fAnio','fMes','fOficio','fEstado','fProfesional'].forEach(id=>$('#'+id).addEventListener('change', cargar));
+cargar();
+</script>
+<script src="/js/contacto.js" defer></script>
+</body>
+</html>

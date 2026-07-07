@@ -49,6 +49,7 @@ catálogo de precios.
 |---|---|
 | Runtime | Node.js ≥ 20 (ES modules) |
 | Servidor | Express |
+| Workspace (panel de gestión) | React 18 + Vite (SPA en `/app/`, build commiteado — el deploy no necesita build step) |
 | IA | `@anthropic-ai/sdk` (Claude) — chatbot, ChatVoice |
 | Voz (TTS) | **Piper** (neuronal, offline, gratis) — voz `es_AR-daniela` rioplatense; opcional ElevenLabs (voz clonada) |
 | Voz (ASR) | Deepgram (opcional, ChatVoice premium en tiempo real) |
@@ -91,7 +92,9 @@ src/
   data/oficios.json        Catálogo de oficios, trabajos, precios y tiempos de referencia
   setup/                   Setup de API key por consola + embeber clave (base64)
 
-public/                 Web estática (landing, demo, dashboards, agenda, clientes, panel, comprar)
+public/                 Web estática (landing, demo, comprar, config) + build de la SPA en public/app/
+webapp/                 Workspace en React 18 + Vite (panel/agenda/clientes/dashboards/ayuda) → npm run build
+respaldo/web-clasica/   Versión anterior del workspace (HTML + JS vanilla), por si hay que restaurarla
 movil/                  App Android (PWA instalable / APK)
 api/index.js            Entrypoint serverless de Vercel
 vercel.json             Config de deploy + Cron Job del aviso de retrasos
@@ -125,9 +128,11 @@ npm start          # pide la API key la primera vez (o Enter para modo demo)
 ```
 
 Páginas: `/` (landing), `/demo.html` (demo chat + cotizador + agenda),
-`/config.html` (configuración), `/panel.html` (agenda de hoy), `/dashboards.html`,
-`/agenda.html` (gestión de citas), `/clientes.html`, `/ayuda.html` (tutorial +
-asistente de dudas con IA), `/comprar.html`.
+`/config.html` (configuración), `/comprar.html`, y el **workspace React** en
+`/app/` (panel del día, agenda, clientes, dashboards y ayuda con IA — las URLs
+viejas `/panel.html`, `/agenda.html`, etc. redirigen solas). Para tocar el
+workspace: `cd webapp && npm install && npm run build` (el build queda
+commiteado en `public/app/`, así el deploy sigue sin build step).
 
 ## 6. Planes y precios
 
