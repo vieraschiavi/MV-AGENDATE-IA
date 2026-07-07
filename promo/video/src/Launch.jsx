@@ -17,9 +17,9 @@ export const HEIGHT = 1920;
 export const FPS = 30;
 
 const SCENE_1 = 0;
-const SCENE_1_LEN = 300; // 10s — titular
+const SCENE_1_LEN = 210; // 7s — titular (recortado: antes sobraban ~3s de silencio tras la locución)
 const SCENE_2 = SCENE_1 + SCENE_1_LEN;
-const SCENE_2_LEN = 360; // 12s — 3 funciones (texto)
+const SCENE_2_LEN = 270; // 9s — 3 funciones (texto) — ídem, menos aire muerto antes del corte
 const SCENE_3 = SCENE_2 + SCENE_2_LEN;
 const PANEL_LEN = 120; // 4s de "vida" por panel...
 const PANEL_ADVANCE = 100; // ...pero el siguiente arranca 100f después: 20f (0.67s) de disolución cruzada real
@@ -204,15 +204,18 @@ const Scene2 = () => {
 // ---------- Escena 3: recorrido por los paneles reales del producto ----------
 // Capturas reales (sin sidebar, a pantalla completa) para que el contenido se
 // vea grande y legible — no un mockup en miniatura del programa entero.
+// Cada captura tiene su propio recorte (cortado siempre en un borde limpio de
+// tarjeta/fila, nunca a mitad de contenido) así que cada una trae su propia
+// relación de aspecto — object-fit:cover sobre una altura compartida las
+// distorsionaría o recortaría de más.
 const SCREENS = [
-  { archivo: 'panel-agenda.png', titulo: 'Agenda con traslados reales', texto: 'Tablero por estado, sin cruzar horarios' },
-  { archivo: 'panel-dashboards.png', titulo: 'Dashboards completos', texto: 'Facturación y comparativas mes a mes' },
-  { archivo: 'panel-clientes.png', titulo: 'CRM de clientes', texto: 'Ficha con el historial de cada trabajo' },
-  { archivo: 'panel-ayuda.png', titulo: 'Ayuda con IA integrada', texto: 'Tutorial y dudas del programa resueltas al instante' },
+  { archivo: 'panel-agenda.png', ratio: 1700 / 936, titulo: 'Agenda con traslados reales', texto: 'Tablero por estado, sin cruzar horarios' },
+  { archivo: 'panel-dashboards.png', ratio: 1700 / 1171, titulo: 'Dashboards completos', texto: 'Facturación y comparativas mes a mes' },
+  { archivo: 'panel-clientes.png', ratio: 1700 / 820, titulo: 'CRM de clientes', texto: 'Ficha con el historial de cada trabajo' },
+  { archivo: 'panel-ayuda.png', ratio: 1700 / 619, titulo: 'Ayuda con IA integrada', texto: 'Tutorial y dudas del programa resueltas al instante' },
 ];
 
 const MOCKUP_W = 980;
-const MOCKUP_IMG_H = 465; // misma proporción que las capturas (1700x807) — sin distorsión ni recorte forzado
 
 // Disolución cruzada real (dos paneles superpuestos en la ventana de solape) +
 // Ken Burns (zoom lento y continuo) para que la escena se sienta viva, no una
@@ -235,6 +238,7 @@ const PanelMockup = ({ item }) => {
   const kenBurns = interpolate(frame, [0, PANEL_LEN], [1, 1.06], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
   const drift = interpolate(frame, [0, PANEL_LEN], [0, -14], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
   const enter = interpolate(frame, [0, 20], [0.97, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.out(Easing.cubic) });
+  const mockupImgH = Math.round(MOCKUP_W / item.ratio);
 
   return (
     <AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center' }}>
@@ -259,7 +263,7 @@ const PanelMockup = ({ item }) => {
               mvagendate.ia
             </div>
           </div>
-          <div style={{ width: MOCKUP_W, height: MOCKUP_IMG_H, overflow: 'hidden' }}>
+          <div style={{ width: MOCKUP_W, height: mockupImgH, overflow: 'hidden' }}>
             <Img
               src={staticFile(item.archivo)}
               style={{
@@ -372,10 +376,10 @@ export const Launch = () => (
         offline, la misma que usa el producto en su ChatVoice). Cada pista
         arranca unos cuadros después de que entra el texto/panel de su
         escena, para que no se sientan pisados. */}
-    <Sequence from={SCENE_1 + 15} durationInFrames={SCENE_1_LEN - 15}>
+    <Sequence from={SCENE_1 + 6} durationInFrames={SCENE_1_LEN - 6}>
       <Audio src={staticFile('audio/escena1.wav')} />
     </Sequence>
-    <Sequence from={SCENE_2 + 15} durationInFrames={SCENE_2_LEN - 15}>
+    <Sequence from={SCENE_2 + 6} durationInFrames={SCENE_2_LEN - 6}>
       <Audio src={staticFile('audio/escena2.wav')} />
     </Sequence>
     {PANEL_AUDIO.map((archivo, i) => (
@@ -383,7 +387,7 @@ export const Launch = () => (
         <Audio src={staticFile(`audio/${archivo}`)} />
       </Sequence>
     ))}
-    <Sequence from={SCENE_4 + 10} durationInFrames={SCENE_4_LEN - 10}>
+    <Sequence from={SCENE_4 + 6} durationInFrames={SCENE_4_LEN - 6}>
       <Audio src={staticFile('audio/escena3.wav')} />
     </Sequence>
   </AbsoluteFill>
