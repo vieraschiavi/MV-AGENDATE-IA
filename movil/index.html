@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f2a43">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<title>MV Agendate IA</title>
+<style>
+  :root { --azul:#0f2a43; --azul2:#16405f; --cel:#1f7ae0; --oro:#e3a72f; --fondo:#f2f5f9; --tinta:#22303e; }
+  * { margin:0; box-sizing:border-box; font-family:'Segoe UI', system-ui, sans-serif; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; }
+  body { background:var(--fondo); color:var(--tinta); display:flex; flex-direction:column; overscroll-behavior:none; }
+  header { background:linear-gradient(135deg, var(--azul), var(--azul2)); color:#fff; padding:calc(14px + env(safe-area-inset-top)) 18px 14px; display:flex; align-items:center; gap:10px; box-shadow:0 2px 12px #0003; }
+  header .logo { width:36px; height:36px; border-radius:9px; display:block; }
+  header h1 { font-size:1.05rem; } header h1 span { color:var(--oro); }
+  main { flex:1; overflow-y:auto; padding:16px; padding-bottom:calc(76px + env(safe-area-inset-bottom)); }
+  .vista { display:none; } .vista.activa { display:block; animation:ap .18s ease; }
+  @keyframes ap { from { opacity:0; transform:translateY(6px);} to { opacity:1; transform:none;} }
+  h2 { font-size:1.15rem; color:var(--azul); margin-bottom:12px; }
+  .card { background:#fff; border-radius:16px; padding:16px; margin-bottom:12px; box-shadow:0 3px 14px #0f2a4314; }
+  /* Home / oficios */
+  .hero { background:linear-gradient(135deg, var(--azul), #1d5a8a); color:#fff; border-radius:18px; padding:20px; margin-bottom:16px; }
+  .hero b { color:var(--oro); }
+  .hero p { font-size:.88rem; opacity:.9; margin-top:6px; }
+  .filtros { display:flex; gap:8px; margin-bottom:12px; overflow-x:auto; padding-bottom:4px; }
+  .chip { flex:0 0 auto; background:#fff; border:1.5px solid #d7e0ea; border-radius:20px; padding:8px 16px; font-size:.85rem; color:#44535f; }
+  .chip.on { background:var(--cel); border-color:var(--cel); color:#fff; font-weight:600; }
+  .cita { display:flex; flex-direction:column; gap:4px; }
+  .cita .precio { color:var(--cel); font-weight:800; font-size:1.15rem; }
+  .cita .titulo { font-weight:600; font-size:.98rem; }
+  .cita .meta { font-size:.82rem; color:#64748b; }
+  /* Cotizador */
+  label { display:block; font-size:.78rem; font-weight:600; color:#54626f; margin:10px 0 4px; }
+  input, select { width:100%; padding:12px; border:1.5px solid #d7e0ea; border-radius:12px; font-size:1rem; background:#fff; }
+  .fila2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .btn { width:100%; margin-top:14px; background:var(--cel); color:#fff; border:0; border-radius:12px; padding:14px; font-size:1.02rem; font-weight:700; }
+  .btn.oro { background:var(--oro); color:var(--azul); }
+  #resCot { display:none; margin-top:14px; background:linear-gradient(135deg,#fdf7ea,#fff); border:2px solid var(--oro); border-radius:14px; padding:16px; text-align:center; }
+  #resCot .rango { font-size:1.35rem; font-weight:800; color:var(--azul); }
+  #resCot small { color:#64748b; display:block; margin-top:6px; font-size:.78rem; }
+  #horariosCot .horario { background:#eef6ff; border-radius:10px; padding:10px 12px; margin-top:8px; font-size:.85rem; text-align:left; }
+  /* Chat */
+  #chatMsgs { display:flex; flex-direction:column; gap:10px; min-height:50vh; }
+  .msg { max-width:84%; padding:11px 14px; border-radius:16px; font-size:.94rem; line-height:1.45; white-space:pre-wrap; }
+  .msg.u { align-self:flex-end; background:var(--cel); color:#fff; border-bottom-right-radius:5px; }
+  .msg.b { align-self:flex-start; background:#fff; box-shadow:0 2px 8px #0f2a4310; border-bottom-left-radius:5px; }
+  #chatForm { position:fixed; left:0; right:0; bottom:calc(58px + env(safe-area-inset-bottom)); display:none; gap:8px; padding:10px 14px; background:var(--fondo); }
+  #chatForm.activa { display:flex; }
+  #chatForm input { flex:1; border-radius:24px; padding:12px 18px; }
+  #chatForm button { background:var(--cel); color:#fff; border:0; border-radius:50%; width:46px; height:46px; font-size:18px; flex:0 0 auto; }
+  /* Tabs */
+  nav { position:fixed; left:0; right:0; bottom:0; background:#fff; display:flex; box-shadow:0 -3px 16px #0f2a431f; padding-bottom:env(safe-area-inset-bottom); }
+  nav button { flex:1; background:none; border:0; padding:9px 0 7px; font-size:.68rem; color:#8493a3; display:flex; flex-direction:column; align-items:center; gap:2px; }
+  nav button .ic { font-size:20px; }
+  nav button.on { color:var(--cel); font-weight:700; }
+</style>
+</head>
+<body>
+
+<header><img class="logo" src="icon.svg" alt="MV"><h1 style="flex:1">MV <span>Agendate IA</span></h1><button id="cfgSrv" style="background:none;border:0;font-size:18px;opacity:.7;color:#fff;">⚙️</button></header>
+
+<main>
+  <!-- INICIO: agenda del día -->
+  <section class="vista activa" id="vHome">
+    <div class="hero">Agendá y cotizá tus trabajos en <b>minutos</b><p>Asistente con IA por WhatsApp y voz que te atiende al instante, 24/7.</p></div>
+    <div id="bannerDemo" style="display:none;background:#fff6e6;border:1px solid #f0d38a;color:#8a5a00;border-radius:12px;padding:10px 12px;font-size:.82rem;margin-bottom:10px;">🔎 <b>Modo demostración</b> — sin servidor conectado. Conectá el servidor de tu negocio con ⚙️ para ver tu agenda real en vivo.</div>
+    <h2 style="font-size:1rem;">🗓️ Agenda de hoy</h2>
+    <div id="listaCitas"></div>
+  </section>
+
+  <!-- COTIZAR -->
+  <section class="vista" id="vCotizar">
+    <h2>💰 Cotizador instantáneo</h2>
+    <div class="card">
+      <label>Oficio</label><select id="cOficio"></select>
+      <label>Trabajo</label><select id="cTrabajo"></select>
+      <div class="fila2">
+        <div><label>Distancia estimada (km)</label><input id="cDistancia" type="number" inputmode="numeric" value="5"></div>
+        <div><label>Urgencia</label><select id="cUrgencia"><option value="normal">Normal</option><option value="mismo_dia">Mismo día</option><option value="urgente">Urgente</option></select></div>
+      </div>
+      <button class="btn" id="cBtn">Cotizar</button>
+      <div id="resCot"></div>
+      <div id="horariosCot"></div>
+    </div>
+  </section>
+
+  <!-- CHAT -->
+  <section class="vista" id="vChat">
+    <h2>💬 Asistente MV</h2>
+    <div id="chatMsgs"></div>
+  </section>
+
+  <!-- CONTACTO -->
+  <section class="vista" id="vContacto">
+    <h2>📞 Hablá con nosotros</h2>
+    <div class="card">
+      <p style="font-size:.92rem;line-height:1.6;">¿Preferís que te llame una persona? Dejanos tus datos y te contactamos en el día.</p>
+      <label>Nombre</label><input id="cNombre">
+      <label>Teléfono o email</label><input id="cContacto">
+      <label>¿Qué necesitás?</label><input id="cInteres" placeholder="Ej: instalar un tomacorriente">
+      <button class="btn oro" id="cBtnContacto">Quiero que me llamen</button>
+      <div id="cOk" style="display:none;margin-top:10px;color:#1a7f37;font-weight:600;font-size:.9rem;">✅ ¡Listo! Te contactamos a la brevedad.</div>
+    </div>
+  </section>
+</main>
+
+<form id="chatForm"><input id="chatIn" placeholder="Escribí tu consulta..." autocomplete="off"><button type="submit">➤</button></form>
+
+<nav>
+  <button class="on" data-v="vHome"><span class="ic">🗓️</span>Agenda</button>
+  <button data-v="vCotizar"><span class="ic">💰</span>Cotizar</button>
+  <button data-v="vChat"><span class="ic">💬</span>Chat</button>
+  <button data-v="vContacto"><span class="ic">📞</span>Contacto</button>
+</nav>
+
+<script>
+const $ = (s) => document.querySelector(s);
+// Base de la API: mismo origen cuando corre desde el servidor (/movil);
+// como APK (Capacitor) se configura con el engranaje ⚙️ y queda guardada.
+const esApp = location.protocol === 'capacitor:' || location.protocol === 'file:' || location.hostname === 'localhost' && !location.pathname.startsWith('/movil');
+let API = esApp ? (localStorage.getItem('mvServidor') || '') : '';
+let sessionId = null;
+
+// --- MODO DEMOSTRACIÓN OFFLINE ---
+// Si no hay servidor configurado o no se puede conectar, la app igual funciona
+// con un catálogo de oficios de ejemplo (todo del lado del cliente), para que
+// nunca se vea "vacía" aunque se abra sin conexión.
+const DEMO_OFICIOS = [
+  { clave: 'electricista', nombre: 'Electricista', trabajos: [
+    { clave: 'diagnostico', nombre: 'Diagnóstico / revisión general', duracion_min: 30, mano_obra: 600, materiales_base: 0 },
+    { clave: 'instalacion_toma', nombre: 'Instalación de toma corriente', duracion_min: 45, mano_obra: 900, materiales_base: 350 }
+  ], traslado_por_km: 20, traslado_minimo: 150 },
+  { clave: 'plomero', nombre: 'Plomero / gasista', trabajos: [
+    { clave: 'diagnostico', nombre: 'Diagnóstico de pérdida / falla', duracion_min: 30, mano_obra: 600, materiales_base: 0 },
+    { clave: 'destape_cañeria', nombre: 'Destape de cañería', duracion_min: 60, mano_obra: 1000, materiales_base: 200 }
+  ], traslado_por_km: 20, traslado_minimo: 150 }
+];
+let usandoDemoOffline = false;
+
+function cotizarOffline(oficioClave, trabajoClave, distanciaKm) {
+  const of = DEMO_OFICIOS.find((o) => o.clave === oficioClave) || DEMO_OFICIOS[0];
+  const tr = of.trabajos.find((t) => t.clave === trabajoClave) || of.trabajos[0];
+  const traslado = Math.max(Math.round(distanciaKm * of.traslado_por_km), distanciaKm > 0 ? of.traslado_minimo : 0);
+  const total = tr.mano_obra + tr.materiales_base + traslado;
+  return { oficio: of.nombre, trabajo: tr.nombre, duracion_estimada_min: tr.duracion_min, moneda: 'UYU',
+    desglose: { mano_obra: tr.mano_obra, materiales: tr.materiales_base, traslado }, total };
+}
+function respuestaDemoChat(t) {
+  const q = t.toLowerCase();
+  if (/cuanto|precio|presupuesto|cotiz|cuesta/.test(q)) return 'Puedo darte una cotización orientativa: andá a la pestaña "Cotizar". Para una cotización con IA y precios en vivo, conectá la app al servidor de tu negocio (engranaje ⚙️).';
+  if (/turno|horario|agend|cita|cuando/.test(q)) return 'Con gusto coordino un horario. En modo demostración no puedo ver tu agenda real; conectá el servidor de tu negocio y lo hago al instante.';
+  return 'Estás en el modo demostración (sin servidor). Puedo cotizar de forma orientativa. Para el chat con IA real y tu agenda en vivo, conectá la app al servidor de tu negocio con el engranaje ⚙️.';
+}
+
+// Configuración del servidor con modal propio (prompt() no es confiable en todos los WebView)
+const modalCfg = document.createElement('div');
+modalCfg.style.cssText = 'position:fixed;inset:0;background:#0f2a43f2;z-index:9999;display:none;place-items:center;padding:24px;';
+modalCfg.innerHTML = `
+  <div style="background:#fff;border-radius:18px;padding:22px;max-width:420px;width:100%;">
+    <h2 style="color:#0f2a43;margin-bottom:6px;">⚙️ Servidor del negocio</h2>
+    <p style="font-size:.85rem;color:#5a6b7c;margin-bottom:12px;">Pegá la dirección que te dio tu proveedor de MV Agendate IA (ej: https://tu-negocio.vercel.app). Sin conectar, la app funciona en <strong>modo demostración</strong> con catálogo de ejemplo.</p>
+    <input id="inSrv" placeholder="https://..." style="margin-bottom:12px;" autocapitalize="off" autocorrect="off">
+    <button class="btn" id="btnSrvOk" style="margin-top:0;">Guardar y conectar</button>
+    <button class="btn" id="btnSrvCerrar" style="margin-top:8px;background:#e8edf2;color:#22303e;">Cerrar</button>
+  </div>`;
+document.body.appendChild(modalCfg);
+function abrirCfg() {
+  modalCfg.querySelector('#inSrv').value = localStorage.getItem('mvServidor') || '';
+  modalCfg.style.display = 'grid';
+}
+document.getElementById('cfgSrv').onclick = abrirCfg;
+modalCfg.querySelector('#btnSrvCerrar').onclick = () => { modalCfg.style.display = 'none'; };
+modalCfg.querySelector('#btnSrvOk').onclick = () => {
+  let url = modalCfg.querySelector('#inSrv').value.trim().replace(/\/$/, '');
+  if (url && !/^https?:\/\//.test(url)) url = 'https://' + url;
+  localStorage.setItem('mvServidor', url);
+  API = url;
+  modalCfg.style.display = 'none';
+  cargarOficios();
+  cargarAgendaHoy();
+};
+
+// Tabs
+document.querySelectorAll('nav button').forEach((b) => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach((x) => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.vista').forEach((v) => v.classList.toggle('activa', v.id === b.dataset.v));
+  $('#chatForm').classList.toggle('activa', b.dataset.v === 'vChat');
+});
+
+// ---- Agenda de hoy ----
+function pintarCitas(citas) {
+  $('#listaCitas').innerHTML = citas.map((c) => `
+    <div class="card cita">
+      <div class="precio">${c.cotizacion?.total ? '$ ' + c.cotizacion.total.toLocaleString('es-UY') : '—'}</div>
+      <div class="titulo">${c.trabajoNombre} — ${c.clienteNombre}</div>
+      <div class="meta">🕐 ${c.inicio}-${c.fin} · 📍 ${c.direccion || 'sin dirección'} · ${c.estado}</div>
+    </div>`).join('') || '<div class="card">No tenés citas agendadas para hoy.</div>';
+}
+async function cargarAgendaHoy() {
+  if (esApp && !API) { $('#bannerDemo').style.display = 'block'; $('#listaCitas').innerHTML = '<div class="card">Conectá el servidor de tu negocio para ver tu agenda real.</div>'; return; }
+  try {
+    const hoy = new Date().toISOString().slice(0, 10);
+    const r = await fetch(API + '/api/citas/dia/' + hoy);
+    const citas = await r.json();
+    $('#bannerDemo').style.display = 'none';
+    pintarCitas(citas);
+  } catch { $('#bannerDemo').style.display = 'block'; $('#listaCitas').innerHTML = '<div class="card">No pude conectar con el servidor.</div>'; }
+}
+cargarAgendaHoy();
+
+// ---- Cotizador ----
+let oficiosCargados = [];
+async function cargarOficios() {
+  try {
+    if (esApp && !API) throw new Error('offline');
+    oficiosCargados = await (await fetch(API + '/api/oficios')).json();
+    usandoDemoOffline = false;
+  } catch { oficiosCargados = DEMO_OFICIOS; usandoDemoOffline = true; }
+  $('#cOficio').innerHTML = oficiosCargados.map((o) => `<option value="${o.clave}">${o.nombre}</option>`).join('');
+  actualizarTrabajosMovil();
+}
+function actualizarTrabajosMovil() {
+  const of = oficiosCargados.find((o) => o.clave === $('#cOficio').value) || oficiosCargados[0];
+  $('#cTrabajo').innerHTML = (of?.trabajos || []).map((t) => `<option value="${t.clave}">${t.nombre}</option>`).join('');
+}
+$('#cOficio').onchange = actualizarTrabajosMovil;
+cargarOficios();
+
+$('#cBtn').onclick = async () => {
+  const oficio = $('#cOficio').value, trabajo = $('#cTrabajo').value, distanciaKm = Number($('#cDistancia').value) || 0, urgencia = $('#cUrgencia').value;
+  let d;
+  try {
+    if (esApp && !API || usandoDemoOffline) throw new Error('offline');
+    const r = await fetch(API + '/api/cotizar', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ oficio, trabajo, distanciaKm, urgencia }) });
+    d = await r.json();
+  } catch { d = cotizarOffline(oficio, trabajo, distanciaKm); }
+  const caja = $('#resCot');
+  caja.style.display = 'block';
+  if (d.error) { caja.innerHTML = '⚠️ ' + d.error; return; }
+  caja.innerHTML = `<div class="rango">$ ${d.total.toLocaleString('es-UY')}</div>
+    Duración estimada: <strong>${d.duracion_estimada_min} minutos</strong>
+    <small>Mano de obra: $${d.desglose.mano_obra} · Materiales: $${d.desglose.materiales} · Traslado: $${d.desglose.traslado}</small>`;
+
+  const horariosBox = $('#horariosCot');
+  if (esApp && !API) { horariosBox.innerHTML = ''; return; }
+  try {
+    const manana = new Date(Date.now() + 86400000);
+    const r2 = await fetch(API + '/api/agenda/proponer', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+      fecha: manana.toISOString().slice(0,10), diaSemana: manana.getDay(),
+      ubicacionCliente: { lat: -34.90, lng: -56.16 }, duracionMin: d.duracion_estimada_min, citasDelDia: []
+    }) });
+    const prop = await r2.json();
+    horariosBox.innerHTML = prop.propuestas?.length
+      ? '<strong>Horarios propuestos para mañana:</strong>' + prop.propuestas.map((p) => `<div class="horario">🕐 ${p.inicio}-${p.fin}</div>`).join('')
+      : '';
+  } catch { horariosBox.innerHTML = ''; }
+};
+
+// ---- Chat ----
+function burb(t, q) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + q;
+  div.textContent = t;
+  $('#chatMsgs').appendChild(div);
+  div.scrollIntoView({ behavior:'smooth', block:'end' });
+  return div;
+}
+burb('¡Hola! 👋 Soy tu asistente virtual. Contame qué trabajo necesitás y te paso presupuesto y horarios. ¿En qué te ayudo?', 'b');
+$('#chatForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const t = $('#chatIn').value.trim();
+  if (!t) return;
+  burb(t, 'u');
+  $('#chatIn').value = '';
+  const esp = burb('…', 'b');
+  try {
+    if (esApp && !API) throw new Error('sin servidor');
+    const r = await fetch(API + '/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ mensaje: t, sessionId }) });
+    const d = await r.json();
+    sessionId = d.sessionId || sessionId;
+    esp.textContent = d.respuesta || 'Error inesperado.';
+  } catch { esp.textContent = respuestaDemoChat(t); }   // sin servidor → respuesta demo local
+});
+
+// ---- Contacto ----
+$('#cBtnContacto').onclick = async () => {
+  const contacto = $('#cContacto').value.trim();
+  if (!contacto) return alert('Dejanos un teléfono o email.');
+  try {
+    if (esApp && !API) throw new Error('sin servidor');
+    await fetch(API + '/api/chat', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ mensaje: `Soy ${$('#cNombre').value || 'un interesado'}, contacto: ${contacto}. Necesito: ${$('#cInteres').value || 'consulta general'}. Por favor coordiname un horario.`, sessionId }) });
+  } catch {
+    // En modo demostración guardamos la consulta localmente para no perderla.
+    const leads = JSON.parse(localStorage.getItem('mvLeadsDemo') || '[]');
+    leads.push({ nombre:$('#cNombre').value, contacto, interes:$('#cInteres').value });
+    localStorage.setItem('mvLeadsDemo', JSON.stringify(leads));
+  }
+  $('#cOk').style.display = 'block';
+};
+
+// ---- PWA ----
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+
+// ---- Buzón de contacto (mailto a vieraschiavi@gmail.com) ----
+(function(){
+  const DEST='vieraschiavi@gmail.com';
+  const b=document.createElement('button');
+  b.textContent='✉ Contacto';
+  b.style.cssText='position:fixed;right:14px;bottom:74px;z-index:9998;background:#1f7ae0;color:#fff;border:0;border-radius:24px;padding:11px 16px;font:600 .9rem system-ui;box-shadow:0 8px 22px #0006;';
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:#0b1f33cc;z-index:9999;display:none;align-items:center;justify-content:center;padding:16px;';
+  ov.innerHTML=`<div style="background:#fff;color:#1e2b38;max-width:420px;width:100%;border-radius:16px;padding:20px;font-family:system-ui;">
+    <button id="mcX" style="float:right;background:none;border:0;font-size:1.3rem;color:#8a99a8;">×</button>
+    <h3 style="margin:0 0 4px;color:#0f2a43;">Escribinos tu consulta</h3>
+    <div style="display:flex;gap:8px;"><div style="flex:1"><label style="font-size:.75rem;color:#5a6b7c;">Nombre</label><input id="mcN" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #cfd9e4;border-radius:8px;"></div>
+    <div style="flex:1"><label style="font-size:.75rem;color:#5a6b7c;">Teléfono</label><input id="mcT" inputmode="tel" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #cfd9e4;border-radius:8px;"></div></div>
+    <label style="font-size:.75rem;color:#5a6b7c;">Tu email</label><input id="mcM" type="email" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #cfd9e4;border-radius:8px;">
+    <label style="font-size:.75rem;color:#5a6b7c;">Asunto</label><input id="mcA" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #cfd9e4;border-radius:8px;">
+    <label style="font-size:.75rem;color:#5a6b7c;">Tu pregunta</label><textarea id="mcP" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #cfd9e4;border-radius:8px;min-height:80px;"></textarea>
+    <button id="mcS" style="margin-top:12px;width:100%;background:#1f7ae0;color:#fff;border:0;border-radius:10px;padding:12px;font-weight:700;">Enviar consulta</button></div>`;
+  document.body.appendChild(b); document.body.appendChild(ov);
+  b.onclick=()=>ov.style.display='flex';
+  ov.addEventListener('click',e=>{ if(e.target===ov||e.target.id==='mcX') ov.style.display='none'; });
+  ov.querySelector('#mcS').onclick=()=>{
+    const g=id=>ov.querySelector(id).value.trim();
+    const asu=g('#mcA'), pre=g('#mcP'); if(!asu||!pre){ alert('Completá al menos el asunto y la pregunta.'); return; }
+    const cuerpo=`${pre}\n\n— — —\nNombre: ${g('#mcN')||'(no indicado)'}\nEmail de contacto: ${g('#mcM')||'(no indicado)'}\nTeléfono de contacto: ${g('#mcT')||'(no indicado)'}\n`;
+    location.href=`mailto:${DEST}?subject=${encodeURIComponent('Consulta desde MV Agendate IA — '+asu)}&body=${encodeURIComponent(cuerpo)}`;
+  };
+})();
+</script>
+</body>
+</html>

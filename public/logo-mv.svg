@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#20456b"/>
+      <stop offset="1" stop-color="#0e2740"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="1008" height="1008" rx="232" fill="url(#bg)"/>
+  <rect x="40" y="40" width="944" height="944" rx="200" fill="none" stroke="#4a6f98" stroke-width="10" opacity="0.7"/>
+  <!-- M (blanco) -->
+  <polyline points="190,700 190,360 425,590 660,360 660,700"
+    fill="none" stroke="#ffffff" stroke-width="104" stroke-linejoin="miter" stroke-linecap="butt"/>
+  <!-- V (verde) — el tope sube unas unidades respecto de la M: al ser un
+       ángulo interno (miter) en la M y una punta abierta (butt) en la V, a
+       igual coordenada Y la M "pincha" más arriba que la V; se compensa acá
+       para que ambas queden alineadas arriba de verdad. -->
+  <polyline points="548,264 720,700 892,264"
+    fill="none" stroke="#5cb531" stroke-width="118" stroke-linejoin="miter" stroke-linecap="butt"/>
+</svg>

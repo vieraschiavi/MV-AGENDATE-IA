@@ -1,14 +1,27 @@
 {
-  "name": "mv-agendate-ia-nucleo",
+  "name": "mv-agendate-ia",
   "version": "0.1.0",
-  "description": "Cotizador multi-oficio + motor de agenda con traslados + aviso de retraso, para integrar al proyecto MV Asistente Inmobiliario y convertirlo en MV Agendate IA.",
+  "description": "MV Agendate IA — Chatbot/ChatVoice con IA que atiende clientes de cualquier oficio por WhatsApp o voz: cotiza trabajos predefinidos, agenda citas optimizando traslados y descansos, avisa retrasos automáticamente y ofrece un dashboard con CRM de clientes y facturación.",
   "type": "module",
-  "main": "demo-server.js",
+  "main": "src/server.js",
   "scripts": {
-    "demo": "node demo-server.js"
+    "start": "node src/programa.js",
+    "servidor": "node src/server.js",
+    "configurar": "node src/setup/configurar.js",
+    "embeber-clave": "node src/setup/embeber.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.32.0",
-    "express": "^4.19.2"
-  }
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@upstash/redis": "^1.38.0",
+    "botid": "^1.5.11",
+    "express": "^4.21.0",
+    "ws": "^8.21.0"
+  },
+  "license": "UNLICENSED",
+  "private": true
 }

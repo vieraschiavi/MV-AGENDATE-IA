@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Sólo las letras MV, centradas en la zona segura del ícono adaptativo -->
+  <g transform="translate(512,512) scale(0.86) translate(-538,-530)">
+    <polyline points="190,700 190,360 425,590 660,360 660,700"
+      fill="none" stroke="#ffffff" stroke-width="104" stroke-linejoin="miter" stroke-linecap="butt"/>
+    <polyline points="548,264 720,700 892,264"
+      fill="none" stroke="#5cb531" stroke-width="118" stroke-linejoin="miter" stroke-linecap="butt"/>
+  </g>
+</svg>

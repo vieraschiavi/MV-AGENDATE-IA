@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comprar — MV Agendate IA</title>
+<link rel="icon" href="/logo-mv.svg" type="image/svg+xml">
+<style>
+  :root{ --navy:#0f2a43; --navy2:#16466e; --cel:#1f7ae0; --oro:#e0b25c; --line:#e6ebf1; --ok:#1a7f37; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:#eef2f7; color:#1e2b38; }
+  header{ background:linear-gradient(135deg,var(--navy),var(--navy2)); color:#fff; padding:14px 22px; display:flex; align-items:center; gap:12px; }
+  header img{ width:36px; height:36px; border-radius:9px; } header strong{ font-size:1.05rem; } header a{ margin-left:auto; color:#e0b25c; text-decoration:none; }
+  .wrap{ max-width:960px; margin:22px auto; padding:0 16px; display:grid; grid-template-columns:1.3fr 1fr; gap:20px; }
+  @media(max-width:780px){ .wrap{ grid-template-columns:1fr; } }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px; box-shadow:0 6px 22px #0f2a430c; margin-bottom:16px; }
+  h2{ color:var(--navy); font-size:1.1rem; margin:0 0 12px; }
+  .plan{ border:2px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:10px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
+  .plan.on{ border-color:var(--cel); background:#f6faff; } .plan .p{ font-weight:800; color:var(--cel); } .plan small{ display:block; color:#5a6b7c; font-size:.8rem; }
+  label{ font-size:.8rem; color:#5a6b7c; display:block; margin:10px 0 3px; }
+  input,select{ width:100%; padding:10px 12px; border:1px solid #cfd9e4; border-radius:9px; font-size:.92rem; }
+  .medios{ display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; } .medio{ flex:1; min-width:120px; border:2px solid var(--line); border-radius:10px; padding:10px; text-align:center; cursor:pointer; font-size:.85rem; } .medio.on{ border-color:var(--cel); background:#f6faff; }
+  .btn{ background:var(--cel); color:#fff; border:0; border-radius:11px; padding:14px; font-weight:700; font-size:1rem; cursor:pointer; width:100%; margin-top:14px; }
+  .resumen .row{ display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--line); font-size:.9rem; }
+  .tot{ font-size:1.5rem; font-weight:800; color:var(--navy); }
+  #panel{ display:none; } .ok{ color:var(--ok); } .box{ background:#f6f9fc; border:1px solid var(--line); border-radius:10px; padding:14px; font-size:.88rem; margin-top:10px; }
+  .box code{ background:#eef2f7; padding:1px 6px; border-radius:4px; }
+</style>
+</head>
+<body>
+<header><img src="/logo-mv.svg" alt="MV"><strong>Comprar MV Agendate IA</strong><a href="/">Inicio</a></header>
+<div class="wrap">
+  <div>
+    <div class="card">
+      <h2>1. Elegí tu plan</h2>
+      <div id="planes"></div>
+    </div>
+    <div class="card">
+      <h2>2. Versión a descargar</h2>
+      <select id="version">
+        <option value="pc">💻 PC / Servidor (completa)</option>
+        <option value="apk">📱 Android (APK)</option>
+        <option value="ios">🍏 iOS (próximamente)</option>
+        <option value="todas">📦 Todas las versiones</option>
+      </select>
+      <p style="font-size:.8rem;color:#5a6b7c;margin-top:8px;">Las versiones móviles son clientes livianos que se conectan al servidor PC (por eso salen más económicas).</p>
+    </div>
+    <div class="card">
+      <h2>3. Tus datos y medio de pago</h2>
+      <label>Nombre / Negocio</label><input id="nombre">
+      <label>Email</label><input id="email" type="email" placeholder="tu@email.com">
+      <label>Medio de pago</label>
+      <div class="medios" id="medios">
+        <div class="medio on" data-m="mercadopago">🟦 MercadoPago<br><small>tarjeta, saldo, etc.</small></div>
+        <div class="medio" data-m="transferencia">🏦 Transferencia<br><small>a Itaú (USD)</small></div>
+      </div>
+      <div id="modalidadWrap">
+        <label>Modalidad de pago</label>
+        <div class="medios" id="modalidad">
+          <div class="medio" data-r="0">💳 Pago único<br><small>una sola vez</small></div>
+          <div class="medio on" data-r="1">🔁 Suscripción mensual<br><small>se renueva sola cada mes</small></div>
+        </div>
+        <p id="modalidadNota" style="font-size:.78rem;color:#5a6b7c;margin-top:6px;"></p>
+      </div>
+      <button class="btn" id="btnComprar">Continuar al pago →</button>
+    </div>
+  </div>
+  <div>
+    <div class="card resumen">
+      <h2>Resumen</h2>
+      <div class="row"><span id="rPlan">—</span><span id="rPrecio">—</span></div>
+      <div class="row"><span>Versión</span><span id="rVer">PC</span></div>
+      <div class="row" style="border:0;margin-top:8px;"><span>Total</span><span class="tot" id="rTot">USD 0</span></div>
+      <p id="notaVariable" style="font-size:.78rem;color:#8a5a00;margin-top:8px;"></p>
+    </div>
+    <div class="card" id="panel">
+      <h2>4. Pago</h2>
+      <div id="pagoInfo"></div>
+      <div id="descarga"></div>
+    </div>
+  </div>
+</div>
+<script>
+const $ = (s) => document.querySelector(s);
+let PLANES = {}, plan = 'basico', medio = 'mercadopago', recurrente = false, pedidoId = null;
+// Plan preseleccionado desde la landing (?plan=basico|full)
+const _planUrl = new URLSearchParams(location.search).get('plan');
+fetch('/api/planes').then(r=>r.json()).then(d=>{ PLANES=d.planes; if(_planUrl && PLANES[_planUrl]) plan=_planUrl; render(); });
+function render() {
+  $('#planes').innerHTML = Object.entries(PLANES).map(([k,p])=>`<div class="plan ${k===plan?'on':''}" data-k="${k}"><div><strong>${p.nombre}</strong><small>${p.incluye}</small></div><div class="p">USD ${p.precio}</div></div>`).join('');
+  document.querySelectorAll('.plan').forEach(el=>el.onclick=()=>{ plan=el.dataset.k; if(plan!=='full') recurrente=false; render(); });
+  const p = PLANES[plan]||{};
+  const sufijo = (medio === 'mercadopago' && recurrente) ? '/mes' : '';
+  $('#rPlan').textContent = p.nombre||'—'; $('#rPrecio').textContent = 'USD '+(p.precio||0)+sufijo; $('#rTot').textContent='USD '+(p.precio||0)+sufijo;
+  $('#rVer').textContent = $('#version').options[$('#version').selectedIndex].text;
+  $('#notaVariable').textContent = p.nota_costo_variable || '';
+  actualizarModalidad();
+}
+function actualizarModalidad() {
+  // La transferencia es siempre pago único (no hay forma de automatizarla), y
+  // la suscripción mensual solo aplica al plan Full (el Básico no usa APIs de IA).
+  $('#modalidadWrap').style.display = (medio === 'mercadopago' && plan === 'full') ? 'block' : 'none';
+  $('#modalidadNota').textContent = recurrente
+    ? 'Se cobra automáticamente cada mes en tu tarjeta hasta que canceles. Podés cancelar cuando quieras.'
+    : 'Pagás una sola vez ahora; sin renovación automática.';
+}
+$('#version').onchange = render;
+document.querySelectorAll('#medios .medio').forEach(el=>el.onclick=()=>{ document.querySelectorAll('#medios .medio').forEach(x=>x.classList.toggle('on',x===el)); medio=el.dataset.m; render(); });
+document.querySelectorAll('#modalidad .medio').forEach(el=>el.onclick=()=>{ document.querySelectorAll('#modalidad .medio').forEach(x=>x.classList.toggle('on',x===el)); recurrente = el.dataset.r === '1'; render(); });
+$('#btnComprar').onclick = async () => {
+  const email=$('#email').value.trim(); if(!email) return alert('Poné tu email.');
+  const body = { plan, version:$('#version').value, email, nombre:$('#nombre').value, medio, recurrente: medio==='mercadopago' && recurrente };
+  const r = await (await fetch('/api/comprar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
+  if(!r.ok) return alert(r.error);
+  pedidoId = r.pedido.id;
+  // MercadoPago: redirigir al checkout (único o de suscripción). El resto de
+  // los medios va directo a la página de gracias, que verifica el pago y
+  // habilita la descarga sola.
+  if(r.init_point){ window.location.href = r.init_point; return; }
+  window.location.href = '/gracias.html?pedido=' + encodeURIComponent(pedidoId);
+};
+// Si volvemos acá con ?pedido=ID, es porque un pago con MercadoPago FALLÓ o quedó
+// pendiente de aprobación — dejamos elegir otro medio o reintentar.
+const _ret = new URLSearchParams(location.search).get('pedido');
+if(_ret){
+  $('#panel').style.display='block';
+  $('#pagoInfo').innerHTML = `<div class="box">El pago del pedido <code>${_ret}</code> no se completó. Podés reintentar eligiendo un medio de pago abajo, o <a href="/gracias.html?pedido=${_ret}">ver el estado de ese pedido</a>.</div>`;
+}
+</script>
+<script type="module" src="/js/botid-init.js"></script>
+</body>
+</html>

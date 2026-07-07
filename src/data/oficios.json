@@ -1,0 +1,185 @@
+{
+  "_nota": "Valores de referencia en pesos uruguayos (UYU), a validar contra precios reales del profesional y de la competencia local. traslado_por_km y traslado_minimo se suman a mano_obra + materiales.",
+  "electricista": {
+    "nombre": "Electricista",
+    "traslado_por_km": 20,
+    "traslado_minimo": 150,
+    "trabajos": {
+      "diagnostico": { "nombre": "Diagnóstico / revisión general", "duracion_min": 30, "mano_obra": 600, "materiales_base": 0 },
+      "instalacion_toma": { "nombre": "Instalación de toma corriente", "duracion_min": 45, "mano_obra": 900, "materiales_base": 350 },
+      "instalacion_luminaria": { "nombre": "Instalación de luminaria / artefacto", "duracion_min": 40, "mano_obra": 800, "materiales_base": 200 },
+      "cambio_tablero": { "nombre": "Cambio o revisión de tablero eléctrico", "duracion_min": 120, "mano_obra": 3500, "materiales_base": 1500 },
+      "cortocircuito": { "nombre": "Reparación de cortocircuito", "duracion_min": 60, "mano_obra": 1200, "materiales_base": 300 }
+    }
+  },
+  "plomero": {
+    "nombre": "Plomero / gasista",
+    "traslado_por_km": 20,
+    "traslado_minimo": 150,
+    "trabajos": {
+      "diagnostico": { "nombre": "Diagnóstico de pérdida / falla", "duracion_min": 30, "mano_obra": 600, "materiales_base": 0 },
+      "destape_cañeria": { "nombre": "Destape de cañería", "duracion_min": 60, "mano_obra": 1000, "materiales_base": 200 },
+      "cambio_griferia": { "nombre": "Cambio de grifería", "duracion_min": 45, "mano_obra": 900, "materiales_base": 800 },
+      "instalacion_termotanque": { "nombre": "Instalación de termotanque / calefón", "duracion_min": 150, "mano_obra": 3800, "materiales_base": 500 },
+      "reparacion_perdida": { "nombre": "Reparación de pérdida de agua", "duracion_min": 75, "mano_obra": 1400, "materiales_base": 400 }
+    }
+  },
+  "pintor": {
+    "nombre": "Pintor",
+    "traslado_por_km": 15,
+    "traslado_minimo": 150,
+    "trabajos": {
+      "presupuesto_visita": { "nombre": "Visita de relevamiento / presupuesto", "duracion_min": 30, "mano_obra": 0, "materiales_base": 0 },
+      "pintura_ambiente_chico": { "nombre": "Pintura de ambiente chico (hasta 12 m2)", "duracion_min": 240, "mano_obra": 4500, "materiales_base": 2200 },
+      "pintura_ambiente_grande": { "nombre": "Pintura de ambiente grande (12-25 m2)", "duracion_min": 420, "mano_obra": 7500, "materiales_base": 3800 },
+      "arreglo_humedad": { "nombre": "Arreglo de mancha de humedad", "duracion_min": 90, "mano_obra": 1800, "materiales_base": 600 },
+      "pintura_exterior_frente": { "nombre": "Pintura de frente / exterior", "duracion_min": 480, "mano_obra": 9000, "materiales_base": 4500 }
+    }
+  },
+  "mecanico": {
+    "nombre": "Mecánico (a domicilio)",
+    "traslado_por_km": 25,
+    "traslado_minimo": 200,
+    "trabajos": {
+      "diagnostico": { "nombre": "Diagnóstico con scanner", "duracion_min": 40, "mano_obra": 900, "materiales_base": 0 },
+      "cambio_bateria": { "nombre": "Cambio de batería", "duracion_min": 30, "mano_obra": 600, "materiales_base": 4500 },
+      "cambio_pastillas_freno": { "nombre": "Cambio de pastillas de freno", "duracion_min": 90, "mano_obra": 1800, "materiales_base": 2500 },
+      "arranque_auxilio": { "nombre": "Auxilio por falla de arranque", "duracion_min": 45, "mano_obra": 1200, "materiales_base": 0 }
+    }
+  },
+  "abogado": {
+    "nombre": "Abogado",
+    "traslado_por_km": 0,
+    "traslado_minimo": 0,
+    "trabajos": {
+      "consulta": { "nombre": "Consulta inicial (presencial o video)", "duracion_min": 45, "mano_obra": 1500, "materiales_base": 0 },
+      "redaccion_contrato": { "nombre": "Redacción de contrato simple", "duracion_min": 60, "mano_obra": 6000, "materiales_base": 0 },
+      "seguimiento_expediente": { "nombre": "Reunión de seguimiento de expediente", "duracion_min": 30, "mano_obra": 1200, "materiales_base": 0 }
+    }
+  },
+  "escribano": {
+    "nombre": "Escribano",
+    "traslado_por_km": 20,
+    "traslado_minimo": 300,
+    "trabajos": {
+      "consulta": { "nombre": "Consulta inicial", "duracion_min": 45, "mano_obra": 1500, "materiales_base": 0 },
+      "certificacion_firma": { "nombre": "Certificación de firma", "duracion_min": 20, "mano_obra": 800, "materiales_base": 0 },
+      "escritura_compraventa": { "nombre": "Escritura de compraventa (reunión de firma)", "duracion_min": 90, "mano_obra": 12000, "materiales_base": 0 }
+    }
+  },
+  "psicologo": {
+    "nombre": "Psicólogo",
+    "traslado_por_km": 0,
+    "traslado_minimo": 0,
+    "trabajos": {
+      "sesion_individual": { "nombre": "Sesión individual", "duracion_min": 50, "mano_obra": 1800, "materiales_base": 0 },
+      "sesion_pareja": { "nombre": "Sesión de pareja", "duracion_min": 60, "mano_obra": 2400, "materiales_base": 0 },
+      "primera_consulta": { "nombre": "Primera consulta / evaluación", "duracion_min": 60, "mano_obra": 2000, "materiales_base": 0 }
+    }
+  },
+  "cerrajero": {
+    "nombre": "Cerrajero",
+    "traslado_por_km": 20,
+    "traslado_minimo": 200,
+    "trabajos": {
+      "apertura_puerta": { "nombre": "Apertura de puerta (llave perdida/trabada)", "duracion_min": 30, "mano_obra": 1200, "materiales_base": 0 },
+      "cambio_cerradura": { "nombre": "Cambio de cerradura", "duracion_min": 45, "mano_obra": 900, "materiales_base": 1500 },
+      "duplicado_llaves_seguridad": { "nombre": "Duplicado de llave de seguridad", "duracion_min": 25, "mano_obra": 500, "materiales_base": 800 }
+    }
+  },
+  "tecnico_electrodomesticos": {
+    "nombre": "Técnico de electrodomésticos",
+    "traslado_por_km": 20,
+    "traslado_minimo": 150,
+    "trabajos": {
+      "diagnostico": { "nombre": "Diagnóstico a domicilio", "duracion_min": 30, "mano_obra": 600, "materiales_base": 0 },
+      "reparacion_lavarropas": { "nombre": "Reparación de lavarropas", "duracion_min": 75, "mano_obra": 1600, "materiales_base": 900 },
+      "reparacion_heladera": { "nombre": "Reparación de heladera/freezer", "duracion_min": 90, "mano_obra": 2000, "materiales_base": 1200 }
+    }
+  },
+  "tecnico_aire_acondicionado": {
+    "nombre": "Técnico de aire acondicionado / refrigeración",
+    "traslado_por_km": 20,
+    "traslado_minimo": 200,
+    "trabajos": {
+      "limpieza_service": { "nombre": "Limpieza / service preventivo", "duracion_min": 60, "mano_obra": 1400, "materiales_base": 300 },
+      "carga_gas": { "nombre": "Carga de gas refrigerante", "duracion_min": 60, "mano_obra": 1500, "materiales_base": 1800 },
+      "instalacion_split": { "nombre": "Instalación de equipo split", "duracion_min": 180, "mano_obra": 4500, "materiales_base": 1200 }
+    }
+  },
+  "jardinero": {
+    "nombre": "Jardinero / paisajista",
+    "traslado_por_km": 15,
+    "traslado_minimo": 150,
+    "trabajos": {
+      "corte_cesped": { "nombre": "Corte de césped y prolijado", "duracion_min": 90, "mano_obra": 1200, "materiales_base": 0 },
+      "poda_arboles": { "nombre": "Poda de árboles/arbustos", "duracion_min": 120, "mano_obra": 2000, "materiales_base": 0 },
+      "diseno_jardin": { "nombre": "Diseño y plantación de jardín", "duracion_min": 240, "mano_obra": 4500, "materiales_base": 3000 }
+    }
+  },
+  "gomeria_movil": {
+    "nombre": "Gomería / auxilio mecánico liviano",
+    "traslado_por_km": 25,
+    "traslado_minimo": 200,
+    "trabajos": {
+      "cambio_neumatico": { "nombre": "Cambio de neumático a domicilio", "duracion_min": 30, "mano_obra": 700, "materiales_base": 0 },
+      "reparacion_pinchadura": { "nombre": "Reparación de pinchadura", "duracion_min": 25, "mano_obra": 500, "materiales_base": 250 }
+    }
+  },
+  "contador": {
+    "nombre": "Contador",
+    "traslado_por_km": 0,
+    "traslado_minimo": 0,
+    "trabajos": {
+      "consulta": { "nombre": "Consulta inicial", "duracion_min": 45, "mano_obra": 1400, "materiales_base": 0 },
+      "declaracion_iva": { "nombre": "Declaración jurada / IVA mensual", "duracion_min": 60, "mano_obra": 2500, "materiales_base": 0 },
+      "constitucion_empresa": { "nombre": "Constitución de empresa unipersonal/SAS", "duracion_min": 60, "mano_obra": 8000, "materiales_base": 0 }
+    }
+  },
+  "veterinario": {
+    "nombre": "Veterinario a domicilio",
+    "traslado_por_km": 20,
+    "traslado_minimo": 200,
+    "trabajos": {
+      "consulta_domicilio": { "nombre": "Consulta general a domicilio", "duracion_min": 40, "mano_obra": 1500, "materiales_base": 0 },
+      "vacunacion": { "nombre": "Vacunación", "duracion_min": 20, "mano_obra": 900, "materiales_base": 600 },
+      "control_geriatrico": { "nombre": "Control geriátrico / seguimiento", "duracion_min": 40, "mano_obra": 1300, "materiales_base": 0 }
+    }
+  },
+  "kinesiologo": {
+    "nombre": "Kinesiólogo / masajista",
+    "traslado_por_km": 15,
+    "traslado_minimo": 150,
+    "trabajos": {
+      "sesion_domicilio": { "nombre": "Sesión de kinesiología a domicilio", "duracion_min": 45, "mano_obra": 1600, "materiales_base": 0 },
+      "masaje_descontracturante": { "nombre": "Masaje descontracturante", "duracion_min": 50, "mano_obra": 1400, "materiales_base": 0 }
+    }
+  },
+  "profesor_particular": {
+    "nombre": "Profesor particular / tutor",
+    "traslado_por_km": 10,
+    "traslado_minimo": 100,
+    "trabajos": {
+      "clase_individual": { "nombre": "Clase particular individual", "duracion_min": 60, "mano_obra": 900, "materiales_base": 0 },
+      "clase_grupal": { "nombre": "Clase grupal (hasta 4 alumnos)", "duracion_min": 90, "mano_obra": 1500, "materiales_base": 0 }
+    }
+  },
+  "cuidador": {
+    "nombre": "Cuidador de niños / adultos mayores",
+    "traslado_por_km": 0,
+    "traslado_minimo": 0,
+    "trabajos": {
+      "turno_4h": { "nombre": "Turno de cuidado (4 horas)", "duracion_min": 240, "mano_obra": 2400, "materiales_base": 0 },
+      "turno_8h": { "nombre": "Turno de cuidado (8 horas)", "duracion_min": 480, "mano_obra": 4400, "materiales_base": 0 }
+    }
+  },
+  "fletero": {
+    "nombre": "Flete / mudanza",
+    "traslado_por_km": 30,
+    "traslado_minimo": 300,
+    "trabajos": {
+      "flete_chico": { "nombre": "Flete chico (pocos bultos)", "duracion_min": 60, "mano_obra": 1500, "materiales_base": 0 },
+      "mudanza_completa": { "nombre": "Mudanza completa (casa/apto)", "duracion_min": 300, "mano_obra": 8000, "materiales_base": 0 }
+    }
+  }
+}

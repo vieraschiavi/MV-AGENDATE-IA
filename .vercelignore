@@ -1,0 +1,11 @@
+# Cosas que NO deben subir a Vercel (pesan o no aplican a serverless).
+# Nota: siempre con / inicial — sin ancla, un patrón como "promo/*.mp4" también
+# matchea public/promo/*.mp4 (el video real que sirve la home) y lo borra del
+# build. Ya pasó dos veces con /data/ (ver git log) — se ancla todo por las dudas.
+/voces/
+/promo/*.mp4
+/dist/
+/movil/
+/data/
+*.log
+node_modules/

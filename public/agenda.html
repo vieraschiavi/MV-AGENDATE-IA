@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agenda — MV Agendate IA</title>
+<link rel="icon" href="/logo-mv.svg" type="image/svg+xml">
+<style>
+  :root{ --navy:#0f2a43; --navy2:#16466e; --cel:#1f7ae0; --line:#e6ebf1; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:#eef2f7; color:#1e2b38; }
+  header{ background:linear-gradient(135deg,var(--navy),var(--navy2)); color:#fff; padding:14px 22px; display:flex; align-items:center; gap:12px; }
+  header img{ width:36px; height:36px; border-radius:9px; } header strong{ font-size:1.05rem; }
+  nav.top{ margin-left:auto; display:flex; gap:16px; } nav.top a{ color:#cfe0f0; text-decoration:none; font-size:.9rem; } nav.top a.on{ color:#e0b25c; font-weight:700; }
+  .wrap{ max-width:1200px; margin:18px auto; padding:0 16px; }
+  .bar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+  select,input{ padding:9px 11px; border:1px solid #cfd9e4; border-radius:9px; font-size:.9rem; background:#fff; }
+  .btn{ background:var(--navy); color:#fff; border:0; border-radius:9px; padding:9px 14px; font-size:.88rem; cursor:pointer; text-decoration:none; display:inline-block; }
+  .btn.sec{ background:#e8edf2; color:#22303e; } .btn.cel{ background:var(--cel); }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:12px; box-shadow:0 3px 12px #0f2a430c; }
+  .cita{ display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; }
+  .cita .t{ font-weight:700; } .cita .m{ font-size:.83rem; color:#5a6b7c; }
+  .precio{ color:var(--cel); font-weight:800; }
+  .est{ font-size:.75rem; padding:3px 9px; border-radius:20px; font-weight:600; }
+  .acc{ display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .acc button, .acc a{ font-size:.8rem; padding:6px 10px; }
+  .modal{ position:fixed; inset:0; background:#0f2a43dd; display:none; place-items:center; padding:18px; z-index:9; }
+  .modal .box{ background:#fff; border-radius:16px; padding:20px; max-width:560px; width:100%; max-height:88vh; overflow:auto; }
+  .modal h3{ margin:0 0 10px; color:var(--navy); }
+  label{ font-size:.78rem; color:#5a6b7c; display:block; margin:8px 0 3px; }
+  .form2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+</style>
+</head>
+<body>
+<header>
+  <img src="/logo-mv.svg" alt="MV"><strong>Agenda</strong>
+  <nav class="top"><a href="/dashboards.html">Dashboards</a><a href="/agenda.html" class="on">Agenda</a><a href="/clientes.html">Clientes</a><a href="/panel.html">Panel del día</a><a href="/">Inicio</a></nav>
+</header>
+<div class="wrap">
+  <div class="bar">
+    <input id="admKey" type="password" placeholder="Clave admin (si aplica)" style="width:170px;">
+    <input id="fFecha" type="date">
+    <select id="fOficio"><option value="">Oficio</option></select>
+    <select id="fEstado"><option value="">Estado</option><option>pendiente</option><option>confirmada</option><option>en_curso</option><option>completada</option><option>cancelada</option></select>
+    <button class="btn cel" id="btnNueva">+ Nueva cita</button>
+    <a class="btn sec" href="/api/agenda.csv">⬇ CSV</a>
+    <a class="btn sec" href="/api/agenda.xls">⬇ Excel</a>
+  </div>
+  <div id="lista"></div>
+</div>
+
+<div class="modal" id="mForm"><div class="box"><h3>Nueva cita</h3>
+  <div class="form2">
+    <div><label>Cliente</label><input id="pCliente"></div>
+    <div><label>Teléfono</label><input id="pTelefono"></div>
+    <div><label>Oficio</label><select id="pOficio"></select></div>
+    <div><label>Trabajo</label><select id="pTrabajo"></select></div>
+    <div><label>Fecha</label><input id="pFecha" type="date"></div>
+    <div><label>Hora inicio</label><input id="pInicio" type="time"></div>
+    <div><label>Hora fin</label><input id="pFin" type="time"></div>
+    <div><label>Distancia estimada (km)</label><input id="pDistancia" type="number" value="5"></div>
+  </div>
+  <label>Dirección</label><input id="pDireccion" style="width:100%;">
+  <label>Quién atiende (si no es el titular)</label><input id="pReceptor" style="width:100%;">
+  <div id="pCotizacion" style="margin-top:10px;font-size:.85rem;color:#5a6b7c;"></div>
+  <div style="margin-top:12px;"><button class="btn cel" id="btnGuardar">Guardar cita</button> <button class="btn sec" onclick="cerrar('mForm')">Cancelar</button></div>
+</div></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const COLE = { pendiente:'#fff6e6;color:#8a5a00', confirmada:'#eaf1fb;color:#16466e', en_curso:'#f0eafd;color:#6a3fb0', completada:'#e6f6ec;color:#1a7f37', cancelada:'#f0f0f0;color:#777' };
+let citas = [], oficios = [];
+const hdr = () => { const h = {'Content-Type':'application/json'}; const k=$('#admKey').value.trim(); if(k) h['X-Admin-Key']=k; return h; };
+const filtro = () => ({ fecha:$('#fFecha').value, oficio:$('#fOficio').value, estado:$('#fEstado').value });
+
+async function cargarOficios() {
+  oficios = await (await fetch('/api/oficios')).json();
+  const opts = oficios.map(o=>`<option value="${o.clave}">${o.nombre}</option>`).join('');
+  $('#fOficio').innerHTML = '<option value="">Oficio</option>' + opts;
+  $('#pOficio').innerHTML = opts;
+  actualizarTrabajos();
+}
+function actualizarTrabajos() {
+  const of = oficios.find(o=>o.clave===$('#pOficio').value) || oficios[0];
+  $('#pTrabajo').innerHTML = (of?.trabajos||[]).map(t=>`<option value="${t.clave}">${t.nombre}</option>`).join('');
+}
+$('#pOficio').onchange = actualizarTrabajos;
+
+async function cotizarPreview() {
+  const body = { oficio: $('#pOficio').value, trabajo: $('#pTrabajo').value, distanciaKm: Number($('#pDistancia').value)||0 };
+  if (!body.oficio || !body.trabajo) return;
+  const r = await (await fetch('/api/cotizar', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) })).json();
+  $('#pCotizacion').textContent = r.total != null ? `Presupuesto estimado: $ ${r.total.toLocaleString('es-UY')} (${r.duracion_estimada_min} min)` : '';
+}
+['pOficio','pTrabajo','pDistancia'].forEach(id=>$('#'+id).addEventListener('change', cotizarPreview));
+
+async function cargar() {
+  const q = new URLSearchParams(Object.entries(filtro()).filter(([,v])=>v));
+  citas = await (await fetch('/api/citas?'+q)).json();
+  $('#lista').innerHTML = citas.map((c) => `<div class="card"><div class="cita">
+    <div><div class="t">${c.clienteNombre} — ${c.trabajoNombre}</div>
+    <div class="m">📍 ${c.direccion||'—'}${c.receptor?' · atiende '+c.receptor:''} · ${c.oficioNombre} · ${c.fecha} ${c.inicio}-${c.fin}</div></div>
+    <div style="text-align:right;"><div class="precio">${c.cotizacion?.total ? '$ '+c.cotizacion.total.toLocaleString('es-UY') : '—'}</div>
+    <span class="est" style="background:${COLE[c.estado]||'#eee'}">${c.estado}</span></div>
+    </div><div class="acc">
+      <a class="btn sec" href="/api/citas/${c.id}/ficha" target="_blank">📄 Ficha / PDF</a>
+      <select onchange="cambiarEstado('${c.id}',this.value)" style="font-size:.8rem;padding:5px;">
+        <option value="">Cambiar estado…</option><option>pendiente</option><option>confirmada</option><option>en_curso</option><option>completada</option><option>cancelada</option></select>
+    </div></div>`).join('') || '<div class="card">Sin citas con ese filtro.</div>';
+}
+['#fFecha','#fOficio','#fEstado'].forEach(s=>$(s).onchange=cargar);
+const abrir=(m)=>$('#'+m).style.display='grid'; const cerrar=(m)=>$('#'+m).style.display='none';
+
+async function cambiarEstado(id,est){ if(!est) return; await fetch(`/api/citas/${id}/estado`,{method:'POST',headers:hdr(),body:JSON.stringify({estado:est})}); cargar(); }
+
+$('#btnNueva').onclick=()=>{ document.querySelectorAll('#mForm input').forEach(e=>e.value=''); $('#pDistancia').value=5; abrir('mForm'); cotizarPreview(); };
+$('#btnGuardar').onclick=async()=>{
+  const cot = await (await fetch('/api/cotizar', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ oficio:$('#pOficio').value, trabajo:$('#pTrabajo').value, distanciaKm: Number($('#pDistancia').value)||0 }) })).json();
+  const of = oficios.find(o=>o.clave===$('#pOficio').value);
+  const trabajo = of?.trabajos.find(t=>t.clave===$('#pTrabajo').value);
+  const body = {
+    clienteNombre: $('#pCliente').value, telefono: $('#pTelefono').value,
+    oficio: $('#pOficio').value, oficioNombre: of?.nombre, trabajo: $('#pTrabajo').value, trabajoNombre: trabajo?.nombre,
+    fecha: $('#pFecha').value, inicio: $('#pInicio').value, fin: $('#pFin').value || $('#pInicio').value,
+    direccion: $('#pDireccion').value, receptor: $('#pReceptor').value || null,
+    cotizacion: cot.total != null ? { mano_obra: cot.desglose.mano_obra, materiales: cot.desglose.materiales, traslado: cot.desglose.traslado, total: cot.total } : null
+  };
+  if(!body.clienteNombre || !body.fecha || !body.inicio) return alert('Completá al menos cliente, fecha y hora.');
+  const r=await (await fetch('/api/citas',{method:'POST',headers:hdr(),body:JSON.stringify(body)})).json();
+  if(r.ok){ cerrar('mForm'); cargar(); } else alert(r.error||'Error');
+};
+cargarOficios().then(cargar);
+</script>
+<script src="/js/contacto.js" defer></script>
+</body>
+</html>
