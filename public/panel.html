@@ -1,80 +1,53 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Panel del día — MV Agendate IA</title>
 <link rel="icon" href="/logo-mv.svg" type="image/svg+xml">
-<style>
-  :root { --azul:#0f2a43; --cel:#1f7ae0; --gris:#f4f6f9; }
-  * { margin:0; box-sizing:border-box; font-family:'Segoe UI', system-ui, sans-serif; }
-  body { background:var(--gris); color:#22303e; }
-  header { background:var(--azul); color:#fff; padding:18px 24px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; }
-  header a { color:#e3a72f; text-decoration:none; font-weight:600; }
-  main { max-width:1100px; margin:24px auto; padding:0 16px; }
-  .kpis { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:24px; }
-  .kpi { background:#fff; border-radius:12px; padding:20px; text-align:center; box-shadow:0 3px 12px #0001; }
-  .kpi .n { font-size:2.2rem; font-weight:800; color:var(--cel); }
-  section { background:#fff; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 3px 12px #0001; }
-  h2 { color:var(--azul); font-size:1.1rem; margin-bottom:12px; }
-  table { width:100%; border-collapse:collapse; font-size:.88rem; }
-  th { text-align:left; color:#6a7885; font-weight:600; padding:8px; border-bottom:2px solid #e8edf2; }
-  td { padding:8px; border-bottom:1px solid #eef2f6; }
-  .vacio { color:#8896a3; padding:14px 8px; }
-  .tag { background:#e8f0fb; color:var(--cel); border-radius:12px; padding:2px 10px; font-size:.78rem; }
-  select { padding:5px 8px; border-radius:8px; border:1px solid #cfd9e4; font-size:.8rem; }
-  button.btn { background:#1f7ae0; color:#fff; border:0; border-radius:8px; padding:8px 14px; cursor:pointer; font-size:.85rem; }
-</style>
+<link rel="stylesheet" href="/css/workspace.css">
 </head>
 <body>
-<header>
-  <span style="display:flex;align-items:center;gap:10px;"><img src="/logo-mv.svg" alt="MV" style="width:34px;height:34px;border-radius:8px;"><strong>Panel del día</strong></span>
-  <span style="display:flex;gap:14px;font-size:.9rem;flex-wrap:wrap;"><a href="/dashboards.html">📊 Dashboards</a><a href="/agenda.html">🗓️ Agenda</a><a href="/clientes.html">👥 Clientes</a><a href="/">Inicio</a></span>
-</header>
-<main>
+<div class="mv-pagehead">
+  <div><div class="mv-crumb">Espacio de trabajo</div><h1>🗓️ Panel del día</h1></div>
+</div>
+<div class="mv-content">
   <div class="kpis">
-    <div class="kpi"><div class="n" id="kHoy">–</div>Citas de hoy</div>
-    <div class="kpi"><div class="n" id="kEnCurso">–</div>En curso</div>
-    <div class="kpi"><div class="n" id="kDemo">–</div>Visitas a la demo</div>
+    <div class="kpi"><div class="n" id="kHoy">–</div><div class="l">Citas de hoy</div></div>
+    <div class="kpi"><div class="n" id="kEnCurso">–</div><div class="l">En curso</div></div>
+    <div class="kpi"><div class="n" id="kDemo">–</div><div class="l">Visitas a la demo</div></div>
   </div>
-  <section>
-    <h2>⏰ Aviso automático de retrasos</h2>
-    <p style="font-size:.88rem;color:#5a6b7c;margin-bottom:10px;">Si marcás un trabajo "en curso" y se estima que vas a llegar 30+ min tarde a la siguiente cita, se le avisa solo por WhatsApp al próximo cliente. En el servidor local esto corre cada 5 min; podés forzarlo ahora:</p>
-    <button class="btn" id="btnChequear">Revisar retrasos ahora</button>
+  <div class="card" style="margin-bottom:16px;">
+    <h2 class="mv-h">⏰ Aviso automático de retrasos</h2>
+    <p style="font-size:.88rem;color:var(--muted);margin:0 0 10px;">Si marcás un trabajo "en curso" y se estima que vas a
+      llegar 30+ min tarde a la siguiente cita, se le avisa solo por WhatsApp al próximo cliente. En el servidor local
+      esto corre cada 5 min; podés forzarlo ahora:</p>
+    <button class="btn cel" id="btnChequear">Revisar retrasos ahora</button>
     <div id="retrasoResultado" style="font-size:.85rem;margin-top:8px;color:#44535f;"></div>
-  </section>
-  <section><h2>🗓️ Agenda de hoy</h2><div id="tHoy"></div></section>
-</main>
+  </div>
+  <div class="card">
+    <h2 class="mv-h">🗓️ Agenda de hoy</h2>
+    <div class="mv-tablewrap" id="tHoy"></div>
+  </div>
+</div>
+<script src="/js/workspace.js"></script>
 <script>
+mvShell('panel');
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 
 function tabla(filas, cols) {
-  if (!filas.length) return '<div class="vacio">Sin citas para hoy.</div>';
-  return '<table><tr>' + cols.map((c) => '<th>' + c.titulo + '</th>').join('') + '</tr>' +
+  if (!filas.length) return '<div class="mv-empty">Sin citas para hoy.</div>';
+  return '<table class="mv-table"><tr>' + cols.map((c) => '<th>' + c.titulo + '</th>').join('') + '</tr>' +
     filas.map((f) => '<tr>' + cols.map((c) => '<td>' + c.render(f) + '</td>').join('') + '</tr>').join('') + '</table>';
 }
 
-function claveAdmin() { return localStorage.getItem('mvAdminKey') || ''; }
-async function fetchAdmin(url, opts = {}) {
-  opts.headers = { ...(opts.headers || {}), 'X-Admin-Key': claveAdmin() };
-  let r = await fetch(url, opts);
-  if (r.status === 401) {
-    const k = prompt('Clave de administración:');
-    if (k == null) return r;
-    localStorage.setItem('mvAdminKey', k);
-    opts.headers['X-Admin-Key'] = k;
-    r = await fetch(url, opts);
-  }
-  return r;
-}
-
 async function cambiarEstado(id, estado) {
-  await fetchAdmin(`/api/citas/${id}/estado`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ estado }) });
+  await mvFetchAdmin(`/api/citas/${id}/estado`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ estado }) });
   cargar();
 }
 
 async function cargar() {
-  const resp = await fetchAdmin('/api/panel');
+  const resp = await mvFetchAdmin('/api/panel');
   if (resp.status === 401) return;
   const d = await resp.json();
   kHoy.textContent = d.hoy.length;
@@ -95,7 +68,7 @@ async function cargar() {
 document.getElementById('btnChequear').onclick = async () => {
   const out = document.getElementById('retrasoResultado');
   out.textContent = 'Revisando…';
-  const r = await fetchAdmin('/api/agenda/chequear-retrasos', { method: 'POST' });
+  const r = await mvFetchAdmin('/api/agenda/chequear-retrasos', { method: 'POST' });
   const d = await r.json();
   out.textContent = d.avisos?.length ? `✅ ${d.avisos.length} aviso(s) de retraso enviados.` : 'Sin retrasos detectados por ahora.';
 };

@@ -5,25 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dashboards — MV Agendate IA</title>
 <link rel="icon" href="/logo-mv.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/workspace.css">
 <style>
-  :root{ --navy:#0f2a43; --navy2:#16466e; --cel:#1f7ae0; --green:#2ea043; --line:#e6ebf1; }
-  *{ box-sizing:border-box; }
-  body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:#eef2f7; color:#1e2b38; }
-  header{ background:linear-gradient(135deg,var(--navy),var(--navy2)); color:#fff; padding:14px 22px; display:flex; align-items:center; gap:12px; box-shadow:0 2px 14px #0f2a4333; }
-  header img{ width:36px; height:36px; border-radius:9px; } header strong{ font-size:1.05rem; }
-  nav.top{ margin-left:auto; display:flex; gap:14px; flex-wrap:wrap; } nav.top a{ color:#cfe0f0; text-decoration:none; font-size:.9rem; } nav.top a.on{ color:#e0b25c; font-weight:700; }
-  .wrap{ max-width:1240px; margin:16px auto; padding:0 16px; }
-  .filtros{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px; box-shadow:0 3px 12px #0f2a430c; }
-  .filtros label{ font-size:.72rem; color:#5a6b7c; display:block; margin-bottom:2px; }
-  select{ padding:8px 10px; border:1px solid #cfd9e4; border-radius:9px; font-size:.86rem; background:#fff; min-width:120px; }
-  .kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:16px; }
-  .kpi{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px; box-shadow:0 3px 12px #0f2a430c; }
-  .kpi .n{ font-size:1.7rem; font-weight:800; color:var(--cel); line-height:1.1; } .kpi .l{ font-size:.76rem; color:#5a6b7c; margin-top:3px; }
-  .kpi .d{ font-size:.72rem; font-weight:700; margin-top:2px; } .up{ color:#1a7f37; } .down{ color:#c0392b; }
-  .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; }
-  .card{ background:#fff; border:1px solid var(--line); border-radius:16px; padding:16px; box-shadow:0 3px 12px #0f2a430c; }
-  .card.wide{ grid-column:1/-1; }
-  h2{ margin:0 0 12px; font-size:1rem; color:var(--navy); }
+  .filtros{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:12px; display:flex; gap:10px;
+    flex-wrap:wrap; align-items:center; margin-bottom:16px; box-shadow:0 2px 10px #0f2a430a; }
+  .filtros label{ font-size:.7rem; color:var(--muted); display:block; margin-bottom:2px; }
+  .filtros select{ min-width:120px; }
   .barlist div{ display:flex; align-items:center; gap:8px; margin:5px 0; font-size:.84rem; }
   .barlist .b{ height:15px; border-radius:4px; } .barlist .lab{ width:110px; flex:0 0 auto; color:#44535f; text-transform:capitalize; } .barlist .val{ margin-left:auto; font-weight:700; }
   .leg{ display:flex; gap:14px; flex-wrap:wrap; font-size:.76rem; margin-top:8px; } .leg span{ display:flex; align-items:center; gap:5px; } .leg i{ width:12px; height:12px; border-radius:3px; display:inline-block; }
@@ -33,17 +20,16 @@
 </style>
 </head>
 <body>
-<header>
-  <img src="/logo-mv.svg" alt="MV"><strong>Dashboards de gestión</strong>
-  <nav class="top"><a href="/dashboards.html" class="on">Dashboards</a><a href="/agenda.html">Agenda</a><a href="/clientes.html">Clientes</a><a href="/panel.html">Panel del día</a><a href="/">Inicio</a></nav>
-</header>
-<div class="wrap">
+<div class="mv-pagehead">
+  <div><div class="mv-crumb">Espacio de trabajo</div><h1>📊 Dashboards</h1></div>
+</div>
+<div class="mv-content">
   <div class="filtros" id="filtros">
     <div><label>Año</label><select id="fAnio"><option value="">Todos</option></select></div>
     <div><label>Mes</label><select id="fMes"><option value="">Todos</option></select></div>
     <div><label>Oficio</label><select id="fOficio"><option value="">Todos</option></select></div>
     <div><label>Estado</label><select id="fEstado"><option value="">Todos</option></select></div>
-    <button onclick="location.reload()" style="align-self:end;padding:8px 12px;border:0;border-radius:9px;background:#e8edf2;cursor:pointer;">↺ Limpiar</button>
+    <button onclick="location.reload()" class="btn sec" style="align-self:end;">↺ Limpiar</button>
     <div class="exportar" style="margin-left:auto;align-self:end;">
       <a id="expCsv" href="/api/agenda.csv">⬇️ Agenda CSV</a>
       <a id="expXls" href="/api/agenda.xls">⬇️ Agenda Excel</a>
@@ -54,20 +40,22 @@
   <div class="kpis" id="kpis"></div>
 
   <div class="card wide">
-    <h2>📈 Evolución mensual — trabajos y facturación (12 meses)</h2>
+    <h2 class="mv-h">📈 Evolución mensual — trabajos y facturación (12 meses)</h2>
     <div id="chart"></div>
     <div class="leg" id="leg"></div>
   </div>
 
-  <div class="grid" style="margin-top:16px;">
-    <div class="card"><h2>Trabajos por oficio</h2><div class="barlist" id="cOficio"></div></div>
-    <div class="card"><h2>Trabajos por estado</h2><div class="barlist" id="cEstado"></div></div>
-    <div class="card"><h2>Trabajos por día de la semana</h2><div class="barlist" id="cDiaSemana"></div></div>
-    <div class="card"><h2>Comparativa año contra año</h2><div class="barlist" id="cAnual"></div></div>
+  <div class="grid2" style="margin-top:16px;">
+    <div class="card"><h2 class="mv-h">Trabajos por oficio</h2><div class="barlist" id="cOficio"></div></div>
+    <div class="card"><h2 class="mv-h">Trabajos por estado</h2><div class="barlist" id="cEstado"></div></div>
+    <div class="card"><h2 class="mv-h">Trabajos por día de la semana</h2><div class="barlist" id="cDiaSemana"></div></div>
+    <div class="card"><h2 class="mv-h">Comparativa año contra año</h2><div class="barlist" id="cAnual"></div></div>
   </div>
 </div>
 
+<script src="/js/workspace.js"></script>
 <script>
+mvShell('dashboards');
 const $ = (s) => document.querySelector(s);
 const COL = ['#1f7ae0','#2ea043','#e0b25c','#8e44ad','#e67e22','#16a085','#c0392b'];
 function qs() {
