@@ -8,7 +8,10 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { conversar, enModoDemo, listarOficios } from './ai/agente.js';
 import { responderAyuda } from './ai/ayuda.js';
-import { cotizar } from './ai/cotizador.js';
+import { cotizar, monedaActiva, oficiosActivos } from './ai/cotizador.js';
+import { sugerirPrecios } from './ai/precios.js';
+import { estimarImpuestos } from './ai/impuestos.js';
+import { listarPaises } from './data/paises.js';
 import { geocodificar, geocodificarInverso } from './ai/geocoding.js';
 import { proponerHorarios } from './store/agenda.js';
 import { revisarYAvisarAgendaDelDia } from './channels/aviso-retraso.js';
@@ -112,6 +115,74 @@ app.get('/api/oficios', (_req, res) => res.json(listarOficios()));
 app.post('/api/cotizar', (req, res) => {
   const r = cotizar({ oficio: cfg('oficioProfesional') || undefined, ...req.body });
   res.status(r.error ? 400 : 200).json(r);
+});
+
+// --- País y moneda activos (público: la UI formatea montos con esto) ---
+app.get('/api/parametros', (_req, res) => res.json(monedaActiva()));
+app.get('/api/paises', (_req, res) => res.json(listarPaises()));
+
+// Detalle completo de un oficio (precios, duraciones, traslado) — lo usa el
+// panel para clonar/ajustar el catálogo.
+app.get('/api/oficios/:clave', (req, res) => {
+  const o = oficiosActivos()[req.params.clave];
+  if (!o || req.params.clave === '_nota') return res.status(404).json({ error: 'Oficio no encontrado.' });
+  res.json({ clave: req.params.clave, ...o });
+});
+
+// --- Profesiones/oficios propios: cualquier profesional puede crear el suyo
+//     (médico, abogado, taller, etc.) o pisar los precios de uno base. ---
+app.post('/api/oficios', soloAdmin, (req, res) => {
+  const b = req.body ?? {};
+  const nombre = String(b.nombre || '').trim();
+  if (!nombre) return res.status(400).json({ ok: false, error: 'Falta el nombre de la profesión/oficio.' });
+  const clave = String(b.clave || nombre).trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '') || 'oficio_custom';
+  const trabajos = {};
+  for (const t of Array.isArray(b.trabajos) ? b.trabajos : []) {
+    const tNombre = String(t.nombre || '').trim();
+    if (!tNombre) continue;
+    const tClave = String(t.clave || tNombre).trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '');
+    trabajos[tClave] = {
+      nombre: tNombre,
+      duracion_min: Math.max(5, Number(t.duracion_min) || 60),
+      mano_obra: Math.max(0, Number(t.mano_obra) || 0),
+      materiales_base: Math.max(0, Number(t.materiales_base) || 0),
+    };
+  }
+  if (!Object.keys(trabajos).length) return res.status(400).json({ ok: false, error: 'Agregá al menos un tipo de trabajo con nombre.' });
+  let custom = {};
+  try { custom = JSON.parse(cfg('oficiosCustom') || '{}'); } catch { /* se regenera */ }
+  custom[clave] = {
+    nombre,
+    honorarios: !!b.honorarios,
+    traslado_por_km: Math.max(0, Number(b.traslado_por_km) || 0),
+    traslado_minimo: Math.max(0, Number(b.traslado_minimo) || 0),
+    trabajos,
+  };
+  setConfig({ oficiosCustom: JSON.stringify(custom) });
+  res.json({ ok: true, clave, oficio: custom[clave] });
+});
+app.delete('/api/oficios/:clave', soloAdmin, (req, res) => {
+  let custom = {};
+  try { custom = JSON.parse(cfg('oficiosCustom') || '{}'); } catch { /* vacío */ }
+  if (!(req.params.clave in custom)) return res.status(404).json({ ok: false, error: 'Ese oficio no es editable (solo se borran los creados por vos).' });
+  delete custom[req.params.clave];
+  setConfig({ oficiosCustom: JSON.stringify(custom) });
+  res.json({ ok: true });
+});
+
+// --- IA: investigación de precios de mercado del país (admin) ---
+app.post('/api/precios/sugerir', soloAdmin, async (req, res) => {
+  const r = await sugerirPrecios(String(req.body?.oficio || ''));
+  res.status(r.ok ? 200 : 400).json(r);
+});
+
+// --- IA: estimador de impuestos según la ley del país configurado ---
+app.post('/api/impuestos/estimar', async (req, res) => {
+  if (await esBot(req)) return res.status(403).json({ error: 'Acceso denegado.' });
+  const r = await estimarImpuestos(req.body?.ingresosMensuales);
+  res.status(r.ok ? 200 : 400).json(r);
 });
 
 // --- Geocoding gratuito (Nominatim/OSM): dirección de texto ↔ coordenadas ---

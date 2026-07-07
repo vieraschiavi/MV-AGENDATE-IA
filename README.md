@@ -6,11 +6,12 @@ cotizan cada trabajo con tu propia lista de precios, arman la agenda
 considerando el traslado real entre citas y tus descansos, y avisan solos si
 vas a llegar tarde — con un dashboard completo de clientes y facturación.
 
-Pensado para electricistas, plomeros, pintores, mecánicos, abogados,
-escribanos, psicólogos, cerrajeros, técnicos de electrodomésticos/aire
-acondicionado, jardineros, contadores, veterinarios, kinesiólogos, profesores
-particulares, cuidadores y fleteros — y cualquier otro oficio, agregando su
-catálogo de precios.
+Para **cualquier profesión u oficio de LATAM** que trabaje con agenda y
+desplazamientos: médicos, abogados, escribanos, psicólogos, contadores,
+electricistas, plomeros, talleres mecánicos, veterinarios, kinesiólogos y más.
+Hay 18 profesiones precargadas y se puede crear cualquier otra desde el panel,
+con la moneda del país del profesional (o USD) y precios sugeridos por IA
+según su mercado.
 
 ---
 
@@ -42,6 +43,13 @@ catálogo de precios.
    sobre su propia agenda (traslados calculados sin mezclar citas entre
    profesionales). Con uno solo configurado (el caso por defecto) no cambia
    nada del flujo de siempre.
+8. **Adaptado a todo LATAM**: el profesional elige su país y la moneda de
+   cotización se ajusta sola (o factura en USD a elección); la IA investiga
+   los precios de mercado de su país por tipo de trabajo y sugiere el
+   catálogo; y un estimador calcula la carga impositiva según la ley local
+   (monotributo/BPS, AFIP, SAT, SUNAT, etc.) y el neto mensual — orientativo,
+   con descargo. Los servicios profesionales cotizan como honorarios; los
+   oficios, como mano de obra + materiales.
 
 ## 2. Stack
 
@@ -73,6 +81,8 @@ src/
     ayuda.js               Asistente de ayuda del programa (Claude + guía local sin API key)
     cotizador.js           Motor de cotización por oficio y tipo de trabajo
     geocoding.js           Dirección de texto ↔ coordenadas (Nominatim/OSM, gratis)
+    precios.js             IA: investiga precios de mercado del país por tipo de trabajo
+    impuestos.js           IA: estima impuestos según la ley del país + guía local LATAM
   channels/
     voz.js                ChatVoice vía rápida (Twilio <Gather> + voz neural)
     voz-premium.js         ChatVoice en tiempo real (Deepgram ASR + Piper/ElevenLabs TTS)
@@ -105,7 +115,11 @@ test/                   Suite de tests (cotizador, agenda, aviso de retraso, age
 
 - `POST /api/chat` — chat del agente (webchat/demo)
 - `POST /api/ayuda` — asistente de ayuda del programa (dudas de uso/configuración)
-- `GET /api/oficios` · `POST /api/cotizar` — catálogo y cotización directa
+- `GET /api/oficios` · `GET /api/oficios/:clave` · `POST /api/cotizar` — catálogo y cotización directa
+- `POST /api/oficios` · `DELETE /api/oficios/:clave` — crear/borrar profesiones propias (cualquier rubro)
+- `GET /api/paises` · `GET /api/parametros` — países LATAM y moneda activa
+- `POST /api/precios/sugerir` — IA: qué se cobra en el mercado del país por cada trabajo
+- `POST /api/impuestos/estimar` — IA: carga impositiva según la ley del país + neto estimado
 - `POST /api/agenda/proponer` — horarios propuestos considerando traslados
 - `GET /api/geocoding?direccion=` · `GET /api/geocoding/inverso?lat=&lng=` — dirección ↔ coordenadas
 - `GET/POST /api/citas`, `/api/citas/:id/estado`, `/api/citas/:id/receptor`, `/api/citas/:id/ficha`

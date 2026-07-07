@@ -141,10 +141,14 @@ $('#formCot').addEventListener('submit', async (e) => {
   const caja = $('#resultado');
   caja.style.display = 'block';
   if (d.error) { caja.innerHTML = '⚠️ ' + d.error; return; }
+  const sim = d.simbolo || '$';
+  const etiqueta = d.etiqueta_mano_obra || 'Mano de obra';
   caja.innerHTML =
-    '<div class="rango">$ ' + d.total.toLocaleString('es-UY') + '</div>' +
+    '<div class="rango">' + sim + ' ' + d.total.toLocaleString('es-UY') + ' <span style="font-size:.9rem;color:#5a6b7c;">' + (d.moneda || '') + '</span></div>' +
     'Duración estimada: <strong>' + d.duracion_estimada_min + ' minutos</strong>' +
-    '<small>Mano de obra: $' + d.desglose.mano_obra + ' · Materiales: $' + d.desglose.materiales + ' · Traslado: $' + d.desglose.traslado + '</small>' +
+    '<small>' + etiqueta + ': ' + sim + d.desglose.mano_obra +
+      (d.tipo_cobro === 'honorarios' && !d.desglose.materiales ? '' : ' · Materiales: ' + sim + d.desglose.materiales) +
+      ' · Traslado: ' + sim + d.desglose.traslado + '</small>' +
     '<small>' + d.trabajo + ' (' + d.oficio + ')</small>';
 
   // Horarios de ejemplo, para mostrar el motor de agenda con traslados.

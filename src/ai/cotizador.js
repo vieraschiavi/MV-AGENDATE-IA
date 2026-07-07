@@ -11,11 +11,30 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { get as cfg } from '../store/config.js';
+import { parametrosMoneda } from '../data/paises.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const oficios = JSON.parse(
+const oficiosBase = JSON.parse(
   readFileSync(path.join(__dirname, '..', 'data', 'oficios.json'), 'utf-8')
 );
+
+/**
+ * Catálogo activo: los oficios base + los que el profesional creó o pisó
+ * desde /config.html (cualquier profesión: médico, abogado, taller, etc.).
+ * Un custom con la misma clave que uno base lo reemplaza (así se pueden
+ * ajustar los precios de referencia al mercado local sin tocar archivos).
+ */
+export function oficiosActivos() {
+  let custom = {};
+  try { custom = JSON.parse(cfg('oficiosCustom') || '{}'); } catch { /* config inválida: solo base */ }
+  return { ...oficiosBase, ...custom };
+}
+
+/** Moneda/símbolo activos según el país configurado (o USD a elección). */
+export function monedaActiva() {
+  return parametrosMoneda(cfg('pais') || 'uy', cfg('moneda'));
+}
 
 // Factor de mercado: ajusta el precio base según franja horaria / urgencia.
 // Estos multiplicadores son un punto de partida — conviene calibrarlos con
@@ -48,9 +67,10 @@ export function cotizar({
   urgencia = 'normal',
   horario = 'habil',
 }) {
+  const oficios = oficiosActivos();
   const datosOficio = oficios[oficio];
   if (!datosOficio) {
-    return { error: `Oficio no encontrado: ${oficio}`, oficios_disponibles: Object.keys(oficios) };
+    return { error: `Oficio no encontrado: ${oficio}`, oficios_disponibles: Object.keys(oficios).filter((k) => k !== '_nota') };
   }
   const datosTrabajo = datosOficio.trabajos[trabajo];
   if (!datosTrabajo) {
@@ -72,32 +92,43 @@ export function cotizar({
   );
   const total = manoObra + materiales + traslado;
 
+  // Servicios profesionales (abogado, médico, psicólogo, escribano…) cobran
+  // "honorarios", no "mano de obra" — misma cuenta, otra etiqueta.
+  const esHonorarios = !!datosOficio.honorarios;
+  const etiquetaManoObra = esHonorarios ? 'Honorarios' : 'Mano de obra';
+  const { moneda, simbolo } = monedaActiva();
+
   return {
     oficio: datosOficio.nombre,
     trabajo: datosTrabajo.nombre,
     duracion_estimada_min: datosTrabajo.duracion_min,
-    moneda: 'UYU',
+    moneda,
+    simbolo,
+    tipo_cobro: esHonorarios ? 'honorarios' : 'mano_obra_y_materiales',
+    etiqueta_mano_obra: etiquetaManoObra,
     desglose: { mano_obra: manoObra, materiales, traslado },
     factor_aplicado: { urgencia, horario, multiplicador: Number(factorTotal.toFixed(2)) },
     total,
     // Texto listo para mandar por WhatsApp
     mensaje_whatsapp:
       `Presupuesto estimado para *${datosTrabajo.nombre}* (${datosOficio.nombre}):\n` +
-      `- Mano de obra: $${manoObra}\n` +
-      (materiales > 0 ? `- Materiales (estimado): $${materiales}\n` : '') +
-      (traslado > 0 ? `- Traslado: $${traslado}\n` : '') +
-      `*Total estimado: $${total}*\n` +
+      `- ${etiquetaManoObra}: ${simbolo}${manoObra}\n` +
+      (materiales > 0 ? `- Materiales (estimado): ${simbolo}${materiales}\n` : '') +
+      (traslado > 0 ? `- Traslado: ${simbolo}${traslado}\n` : '') +
+      `*Total estimado: ${simbolo}${total} ${moneda}*\n` +
       `Duración aproximada del trabajo: ${datosTrabajo.duracion_min} minutos.\n` +
       `Este valor es una estimación; puede ajustarse al ver el trabajo en el lugar.`,
   };
 }
 
 export function listarOficios() {
-  return Object.entries(oficios)
+  return Object.entries(oficiosActivos())
     .filter(([clave]) => clave !== '_nota')
     .map(([clave, datos]) => ({
       clave,
       nombre: datos.nombre,
+      honorarios: !!datos.honorarios,
+      custom: !(clave in oficiosBase),
       trabajos: Object.entries(datos.trabajos).map(([tclave, t]) => ({ clave: tclave, nombre: t.nombre })),
     }));
 }

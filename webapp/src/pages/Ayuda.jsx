@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 
 const PASOS = [
   ['Cargá tu API key de Claude', <>En <code>/config.html</code> pegá tu clave de <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer">console.anthropic.com</a>. Sin ella el programa corre en modo demo (todo se puede probar igual).</>],
-  ['Elegí tu oficio y tus datos', 'Nombre, oficio (18 incluidos: electricista, plomero, abogado, psicólogo…), teléfono y logo. El chatbot atiende en tu nombre.'],
+  ['Elegí tu oficio y tus datos', 'Nombre, país (define tu moneda) y tu profesión — hay 18 precargadas y podés crear la tuya: médicos, abogados, talleres, lo que sea. El chatbot atiende en tu nombre.'],
   ['Ajustá jornada y descansos', 'Horario laboral, almuerzo y días libres. La agenda nunca ofrece horarios fuera de eso, y suma el tiempo de traslado real entre citas.'],
   ['Revisá tus precios', <>El agente cotiza solo con tu catálogo (<code>src/data/oficios.json</code>) — nunca inventa un número. Ajustá los valores de referencia a tus precios reales.</>],
   ['Conectá tus canales', 'WhatsApp (Meta Cloud API) y/o teléfono (Twilio) desde la misma pantalla de configuración, con botón de prueba. El webchat ya funciona sin configurar nada.'],
@@ -11,7 +11,7 @@ const PASOS = [
 
 const TEMAS = [
   ['🔑 Primeros pasos', <>Abrí <code>/config.html</code>, pegá tu API key de Claude, elegí oficio y nombre, ajustá jornada/almuerzo/días libres y probá el chatbot desde la misma página. Todo se aplica al instante, sin reiniciar.</>],
-  ['💰 Cotizador y precios', <>El agente cotiza solo con tu catálogo (mano de obra + materiales + traslado) y nunca inventa números. 18 oficios incluidos con valores de referencia en UYU — ajustalos a tus precios reales en <code>src/data/oficios.json</code>.</>],
+  ['💰 Cotizador y precios', <>El agente cotiza solo con tu catálogo (mano de obra + materiales + traslado) y nunca inventa números. Hay 18 profesiones precargadas y podés crear la tuya; la IA puede investigar los precios de mercado de tu país y sugerirte los valores (<code>/config.html</code>).</>],
   ['🗓️ Agenda con traslados', <>Propone horarios sumando el viaje real hacia y desde las citas vecinas, y respeta jornada, almuerzo y días libres. Vista Tabla o Tablero (kanban por estado), con exportación CSV/Excel. Las direcciones se geocodifican solas (gratis) y las ubicaciones compartidas por WhatsApp se usan directo.</>],
   ['📲 Conectar WhatsApp', <>Creá una app de WhatsApp Business en Meta for Developers, cargá Token / Phone Number ID / Verify Token en <code>/config.html</code> y apuntá el webhook a <code>https://tu-dominio/webhook/whatsapp</code>. Hay botón de prueba de conexión. Meta solo permite texto libre dentro de las 24 h del último mensaje del cliente.</>],
   ['📞 ChatVoice (teléfono)', <>Vía rápida: Twilio + voz neural — comprás el número desde <code>/config.html</code> sin entrar a Twilio. Premium: Deepgram (tiempo real) + voz Piper es_AR-daniela (rioplatense, gratis, offline — <code>promo/instalar-voz.sh</code>) o ElevenLabs (voz clonada). La premium requiere PC/VPS; en Vercel funciona la vía rápida.</>],

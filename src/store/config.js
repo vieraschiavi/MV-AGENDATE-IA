@@ -14,6 +14,12 @@ const ENV = {
   anthropicApiKey: 'ANTHROPIC_API_KEY',
   nombreProfesional: 'NOMBRE_PROFESIONAL', // a quién representa el agente (ej: "Juan Pérez")
   oficioProfesional: 'OFICIO_PROFESIONAL', // clave de src/data/oficios.json (ej: "electricista")
+  pais: 'PAIS',                            // clave de src/data/paises.js (ej: "uy", "ar", "mx")
+  moneda: 'MONEDA',                        // '' = moneda local del país | 'USD' = facturar en dólares
+  // Profesiones/oficios creados por el usuario (JSON con el mismo formato de
+  // oficios.json) — se fusionan con el catálogo base: cualquier profesional
+  // (médico, abogado, taller, etc.) puede armar el suyo desde /config.html.
+  oficiosCustom: 'OFICIOS_CUSTOM',
   agenciaNombre: 'AGENCIA_NOMBRE',         // nombre comercial mostrado en fichas/exportaciones
   agenciaTelefono: 'AGENCIA_TELEFONO',
   sitioUrl: 'SITIO_URL',                   // dominio público del deploy (para back_urls de MercadoPago, ej. https://mv-agendate-ia.vercel.app)

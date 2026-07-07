@@ -220,7 +220,7 @@ const EscenaCierre = () => {
         <div style={{ color: '#cfe0f0', fontSize: 33, marginTop: 18, textAlign: 'center', maxWidth: 860 }}>
           Pago único desde USD 129 · MercadoPago
           <br />
-          PC y Android · 18+ oficios · atención 24/7
+          PC y Android · cualquier profesión u oficio · 24/7
         </div>
         <div style={{ transform: `scale(${pulse})`, marginTop: 54, background: GOLD, color: NAVY, fontSize: 40, fontWeight: 800, padding: '26px 56px', borderRadius: 20 }}>
           Probá la demo gratis →

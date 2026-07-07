@@ -75,13 +75,26 @@
     <input id="anthropicApiKey" type="password" placeholder="sk-ant-... (dejá vacío para no cambiarla)" autocomplete="off">
     <div class="hint">Se guarda en tu servidor, nunca se expone al cliente. Al guardar, el chatbot pasa de "modo demo" a IA real automáticamente.</div>
 
+    <h2 style="margin-top:22px;">🌎 País y moneda</h2>
+    <div class="sub">Elegí tu país: la moneda de cotización y facturación se ajusta sola (o facturá en USD si preferís). El estimador de impuestos y el sugeridor de precios de mercado también usan esto.</div>
+    <div class="row">
+      <div><label>País</label><select id="pais"></select></div>
+      <div><label>Moneda de cotización</label>
+        <select id="moneda">
+          <option value="">Moneda local del país</option>
+          <option value="USD">USD (dólares)</option>
+        </select>
+      </div>
+    </div>
+
     <h2 style="margin-top:22px;">👷 Datos del profesional</h2>
     <div class="row">
       <div><label>Tu nombre (o el de tu negocio)</label><input id="nombreProfesional" placeholder="Juan Pérez"></div>
-      <div><label>Oficio</label>
+      <div><label>Profesión / oficio</label>
         <select id="oficioProfesional"></select>
       </div>
     </div>
+    <div class="hint">¿Tu profesión no está en la lista? Creala más abajo en "Mi profesión / precios de mercado" — sirve para cualquier rubro con agenda: médicos, abogados, escribanos, psicólogos, talleres, etc.</div>
     <div class="row">
       <div><label>Nombre comercial (fichas/exportaciones)</label><input id="agenciaNombre" placeholder="Electricidad Pérez"></div>
       <div><label>Teléfono de contacto</label><input id="agenciaTelefono" placeholder="+598 99 123 456"></div>
@@ -187,6 +200,38 @@
   </form>
 
   <div class="card">
+    <h2>🧰 Mi profesión / precios de mercado</h2>
+    <div class="sub">Creá tu propia profesión u oficio (cualquier rubro con agenda y visitas: médicos, abogados, talleres, estética, etc.) con tus tipos de trabajo y precios. Y si querés, la IA investiga qué se cobra en el mercado de tu país y te sugiere los valores.</div>
+
+    <label>Nombre de la profesión / oficio</label>
+    <div class="row">
+      <input id="coNombre" placeholder="Ej: Médico a domicilio, Taller mecánico, Escribana">
+      <label style="display:flex;align-items:center;gap:8px;margin:0;"><input type="checkbox" id="coHonorarios" style="width:auto;"> Cobra honorarios (sin materiales)</label>
+    </div>
+    <div class="row">
+      <div><label>Traslado por km</label><input id="coTrasladoKm" type="number" value="20"></div>
+      <div><label>Traslado mínimo</label><input id="coTrasladoMin" type="number" value="150"></div>
+    </div>
+    <label>Tipos de trabajo</label>
+    <div id="coTrabajos"></div>
+    <button type="button" class="btn gold" id="btnAgregarTrabajo" style="margin-top:8px;">+ Agregar tipo de trabajo</button>
+    <button type="button" class="btn" id="btnGuardarOficio">💾 Guardar profesión en el catálogo</button>
+    <div class="aviso" id="avisoOficio"></div>
+
+    <details style="margin-top:14px;">
+      <summary>🤖 Sugerir precios de mercado con IA</summary>
+      <div class="hint">La IA estima qué se cobra hoy en tu país (según el país configurado arriba) por cada trabajo del oficio elegido — mano de obra o honorarios y materiales cuando corresponde. Son valores de referencia: revisalos y aplicalos si te cierran.</div>
+      <div class="row" style="margin-top:10px;">
+        <div><label>Oficio a investigar</label><select id="ipOficio"></select></div>
+        <div style="display:flex;align-items:flex-end;"><button type="button" class="btn" id="btnInvestigar">🔎 Investigar mercado</button></div>
+      </div>
+      <div id="ipResultado" style="margin-top:10px;font-size:.88rem;"></div>
+      <button type="button" class="btn gold" id="btnAplicarPrecios" style="display:none;">✅ Aplicar estos precios al catálogo</button>
+      <div class="aviso" id="avisoPrecios"></div>
+    </details>
+  </div>
+
+  <div class="card">
     <h2>👷‍♂️ Equipo (varios profesionales)</h2>
     <div class="sub">Si en la cuenta trabaja más de un profesional (ej. un estudio con 3 electricistas), cargalos acá — cada uno con su propio oficio, jornada y agenda; el chatbot le pregunta al cliente cuál corresponde antes de cotizar. Si dejás la lista vacía, se usa el profesional único de "Datos del profesional" y "Jornada y descansos" de arriba.</div>
     <div id="listaProfesionales"></div>
@@ -212,7 +257,7 @@
 
 <script>
 const $ = (s) => document.querySelector(s);
-const CAMPOS = ['anthropicApiKey','nombreProfesional','oficioProfesional','agenciaNombre','agenciaTelefono','logoUrl','horarioInicio','horarioFin','almuerzoInicio','almuerzoFin','diasLibres','whatsappToken','whatsappPhoneId','whatsappVerifyToken','twilioAccountSid','twilioAuthToken','deepgramApiKey','elevenlabsApiKey','elevenlabsVoiceId','crmWebhookUrl','mercadopagoToken','demoLimite','demoMaxUsos','licenciaLocal'];
+const CAMPOS = ['anthropicApiKey','nombreProfesional','oficioProfesional','pais','moneda','agenciaNombre','agenciaTelefono','logoUrl','horarioInicio','horarioFin','almuerzoInicio','almuerzoFin','diasLibres','whatsappToken','whatsappPhoneId','whatsappVerifyToken','twilioAccountSid','twilioAuthToken','deepgramApiKey','elevenlabsApiKey','elevenlabsVoiceId','crmWebhookUrl','mercadopagoToken','demoLimite','demoMaxUsos','licenciaLocal'];
 
 // Combo de oficios (cargado desde el catálogo del cotizador) + chips de días libres.
 const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -232,11 +277,105 @@ function pintarDiasLibres() {
 $('#diasLibres').value = [...diasLibresSet].sort().join(',');
 pintarDiasLibres();
 let OFICIOS = [];
-fetch('/api/oficios').then((r) => r.json()).then((oficios) => {
-  OFICIOS = oficios;
-  $('#oficioProfesional').innerHTML = oficios.map((o) => `<option value="${o.clave}">${o.nombre}</option>`).join('');
-  cargarEquipo();
+function cargarOficiosUI() {
+  return fetch('/api/oficios').then((r) => r.json()).then((oficios) => {
+    OFICIOS = oficios;
+    const sel = $('#oficioProfesional').value;
+    $('#oficioProfesional').innerHTML = oficios.map((o) => `<option value="${o.clave}">${o.nombre}${o.custom ? ' (propio)' : ''}</option>`).join('');
+    if (sel) $('#oficioProfesional').value = sel;
+    $('#ipOficio').innerHTML = oficios.map((o) => `<option value="${o.clave}">${o.nombre}</option>`).join('');
+  });
+}
+cargarOficiosUI().then(cargarEquipo);
+fetch('/api/paises').then((r) => r.json()).then((paises) => {
+  const sel = $('#pais').value;
+  $('#pais').innerHTML = paises.map((p) => `<option value="${p.clave}">${p.nombre} (${p.moneda})</option>`).join('');
+  $('#pais').value = sel || 'uy';
 });
+
+// ---------- Mi profesión (oficio custom) ----------
+let trabajosCustom = [];
+function pintarTrabajosCustom() {
+  $('#coTrabajos').innerHTML = trabajosCustom.map((t, i) => `
+    <div class="row" style="margin-top:6px;">
+      <input data-tc="nombre" data-i="${i}" value="${t.nombre || ''}" placeholder="Ej: Consulta a domicilio">
+      <div style="display:flex;gap:6px;">
+        <input data-tc="duracion_min" data-i="${i}" type="number" value="${t.duracion_min || 60}" title="Duración (min)" style="width:33%;" placeholder="min">
+        <input data-tc="mano_obra" data-i="${i}" type="number" value="${t.mano_obra || 0}" title="Mano de obra / honorarios" style="width:33%;" placeholder="honorarios">
+        <input data-tc="materiales_base" data-i="${i}" type="number" value="${t.materiales_base || 0}" title="Materiales" style="width:33%;" placeholder="materiales">
+      </div>
+    </div>`).join('') || '<div class="hint">Sin trabajos aún — agregá el primero.</div>';
+  $('#coTrabajos').querySelectorAll('[data-tc]').forEach((el) => {
+    el.onchange = () => { trabajosCustom[Number(el.dataset.i)][el.dataset.tc] = el.type === 'number' ? Number(el.value) : el.value; };
+  });
+}
+pintarTrabajosCustom();
+$('#btnAgregarTrabajo').onclick = () => { trabajosCustom.push({ nombre: '', duracion_min: 60, mano_obra: 0, materiales_base: 0 }); pintarTrabajosCustom(); };
+$('#btnGuardarOficio').onclick = async () => {
+  const a = $('#avisoOficio');
+  const body = {
+    nombre: $('#coNombre').value, honorarios: $('#coHonorarios').checked,
+    traslado_por_km: Number($('#coTrasladoKm').value) || 0, traslado_minimo: Number($('#coTrasladoMin').value) || 0,
+    trabajos: trabajosCustom,
+  };
+  try {
+    const r = await fetch('/api/oficios', { method: 'POST', headers: headers(), body: JSON.stringify(body) });
+    const d = await r.json();
+    if (!r.ok || !d.ok) { a.textContent = d.error || 'No se pudo guardar.'; a.className = 'aviso err'; return; }
+    a.textContent = `✅ "${d.oficio.nombre}" guardado en el catálogo — ya se puede cotizar y agendar.`; a.className = 'aviso ok';
+    await cargarOficiosUI();
+  } catch { a.textContent = 'Error de red.'; a.className = 'aviso err'; }
+  setTimeout(() => { a.className = 'aviso'; }, 7000);
+};
+
+// ---------- Investigación de precios de mercado con IA ----------
+let sugerencia = null;
+$('#btnInvestigar').onclick = async () => {
+  const out = $('#ipResultado');
+  out.textContent = '🔎 Investigando precios de mercado con IA… (puede tardar unos segundos)';
+  $('#btnAplicarPrecios').style.display = 'none';
+  try {
+    const r = await fetch('/api/precios/sugerir', { method: 'POST', headers: headers(), body: JSON.stringify({ oficio: $('#ipOficio').value }) });
+    const d = await r.json();
+    if (!r.ok || !d.ok) { out.textContent = d.error || 'No se pudo investigar.'; return; }
+    sugerencia = d;
+    out.innerHTML = `<strong>${d.oficio} — mercado de ${d.pais} (${d.moneda})</strong>` +
+      (d.notas_generales ? `<div class="hint" style="margin:4px 0 8px;">${d.notas_generales}</div>` : '') +
+      '<table style="width:100%;border-collapse:collapse;font-size:.85rem;">' +
+      '<tr><th style="text-align:left;padding:4px;">Trabajo</th><th style="text-align:right;padding:4px;">Sugerido</th><th style="text-align:right;padding:4px;">Materiales</th><th style="text-align:right;padding:4px;">Rango de mercado</th></tr>' +
+      d.trabajos.map((t) => `<tr style="border-top:1px solid var(--line);"><td style="padding:4px;">${t.clave}${t.nota ? ` <span class="hint">(${t.nota})</span>` : ''}</td><td style="text-align:right;padding:4px;"><strong>${t.mano_obra.toLocaleString()}</strong></td><td style="text-align:right;padding:4px;">${t.materiales_base.toLocaleString()}</td><td style="text-align:right;padding:4px;">${t.rango_mercado[0].toLocaleString()} – ${t.rango_mercado[1].toLocaleString()}</td></tr>`).join('') +
+      '</table>' + `<div class="hint" style="margin-top:6px;">${d.descargo}</div>`;
+    $('#btnAplicarPrecios').style.display = '';
+  } catch { out.textContent = 'Error de red.'; }
+};
+$('#btnAplicarPrecios').onclick = async () => {
+  if (!sugerencia) return;
+  const a = $('#avisoPrecios');
+  // Clona el oficio completo (duraciones y traslado reales) con los precios
+  // sugeridos, y lo guarda como custom — pisa al base con la misma clave; el
+  // catálogo original queda intacto en el repo.
+  const detalle = await (await fetch(`/api/oficios/${$('#ipOficio').value}`)).json();
+  const body = {
+    clave: $('#ipOficio').value, nombre: detalle.nombre, honorarios: !!detalle.honorarios,
+    traslado_por_km: detalle.traslado_por_km, traslado_minimo: detalle.traslado_minimo,
+    trabajos: Object.entries(detalle.trabajos).map(([tClave, t]) => {
+      const sug = sugerencia.trabajos.find((x) => x.clave === tClave);
+      return {
+        clave: tClave, nombre: t.nombre, duracion_min: t.duracion_min,
+        mano_obra: sug ? sug.mano_obra : t.mano_obra,
+        materiales_base: sug ? sug.materiales_base : t.materiales_base,
+      };
+    }),
+  };
+  try {
+    const r = await fetch('/api/oficios', { method: 'POST', headers: headers(), body: JSON.stringify(body) });
+    const d = await r.json();
+    if (!r.ok || !d.ok) { a.textContent = d.error || 'No se pudo aplicar.'; a.className = 'aviso err'; return; }
+    a.textContent = '✅ Precios de mercado aplicados al catálogo.'; a.className = 'aviso ok';
+    await cargarOficiosUI();
+  } catch { a.textContent = 'Error de red.'; a.className = 'aviso err'; }
+  setTimeout(() => { a.className = 'aviso'; }, 7000);
+};
 
 // ---------- Equipo (varios profesionales por cuenta) ----------
 let equipo = [];

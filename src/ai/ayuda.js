@@ -28,7 +28,7 @@ export const TEMAS_AYUDA = [
   {
     claves: /(precio|cotiz|presupuesto|catalogo|catálogo|tarifa|lista de precios|oficio)/,
     titulo: 'Cotizador y precios',
-    texto: 'El agente cotiza SOLO con tu catálogo de precios (src/data/oficios.json — 18 oficios incluidos con trabajos, precios y tiempos de referencia en UYU). Nunca inventa un número: mano de obra + materiales + traslado. Ajustá los valores del catálogo a tus precios reales antes de vender. También podés cotizar a mano desde la demo o al crear una cita en /agenda.html.'
+    texto: 'El agente cotiza SOLO con tu catálogo de precios (src/data/oficios.json — 18 precargados y podés crear tu propia profesión desde /config.html, con la moneda de tu país). Nunca inventa un número: mano de obra + materiales + traslado. Ajustá los valores del catálogo a tus precios reales antes de vender. También podés cotizar a mano desde la demo o al crear una cita en /agenda.html.'
   },
   {
     claves: /(agenda|horario|traslado|viaje|cita|turno|almuerzo|descanso|d[ií]a libre)/,
@@ -79,6 +79,16 @@ export const TEMAS_AYUDA = [
     claves: /(vercel|deploy|nube|dominio|hosting|servidor)/,
     titulo: 'Deploy en Vercel',
     texto: 'El repo ya trae vercel.json (estático public/ + función serverless api/index.js + Cron Job del aviso de retraso). Conectá el repo en vercel.com, configurá las variables de entorno (o cargá todo después en /config.html) y agregá Redis de Upstash para que los datos persistan entre invocaciones serverless. El ChatVoice premium (tiempo real) requiere servidor persistente; el resto funciona completo en Vercel.'
+  },
+  {
+    claves: /(pa[ií]s|moneda|d[oó]lar|usd|impuesto|monotributo|iva|bps|afip|sat|sunat|neto|latam|argentina|m[eé]xico|chile|colombia|per[uú]|brasil)/,
+    titulo: 'País, moneda e impuestos (LATAM)',
+    texto: 'En /config.html → "País y moneda" elegís tu país de LATAM: la moneda de cotización y facturación se ajusta sola (o podés facturar en USD). En Dashboards, el estimador "Neto estimado" usa IA para calcular tu carga impositiva según la ley de tu país (régimen simplificado, aportes) y cuánto te queda neto — orientativo, no reemplaza a tu contador. Y en "Mi profesión / precios de mercado" la IA investiga qué se cobra en tu país por cada trabajo y te sugiere los precios.'
+  },
+  {
+    claves: /(mi profesi[oó]n|crear (oficio|profesi[oó]n)|no est[aá] (en la lista|mi))/,
+    titulo: 'Crear tu propia profesión',
+    texto: 'El catálogo sirve para cualquier profesión u oficio con agenda: médicos, abogados, escribanos, psicólogos, talleres, estética, etc. Hay 18 precargadas, y en /config.html → "Mi profesión / precios de mercado" creás la tuya con sus tipos de trabajo, duraciones y precios (marcando "honorarios" si sos un servicio profesional sin materiales). La IA puede sugerirte los precios del mercado de tu país.'
   },
   {
     claves: /(seguridad|admin|clave de administraci[oó]n|proteger)/,
