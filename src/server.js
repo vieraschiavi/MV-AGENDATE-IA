@@ -344,34 +344,39 @@ app.post('/api/config', adminOCuenta, async (req, res) => {
 // ==================== Telefonía (ChatVoice) y WhatsApp: autoconfiguración ====================
 const dominioPropio = (req) => `${req.protocol}://${req.headers['x-forwarded-host'] || req.headers.host}`;
 
-app.get('/api/telefonia/numeros-disponibles', soloAdmin, async (req, res) => {
+// Con una cuenta SaaS autenticada, estas rutas usan las credenciales de
+// Twilio de ESA cuenta (contexto de config por cuenta).
+app.get('/api/telefonia/numeros-disponibles', adminOCuenta, async (req, res) => {
   const r = await tw.numerosDisponibles(String(req.query.pais || 'UY').toUpperCase());
   res.status(r.ok ? 200 : 400).json(r);
 });
-app.get('/api/telefonia/mis-numeros', soloAdmin, async (_req, res) => {
+app.get('/api/telefonia/mis-numeros', adminOCuenta, async (_req, res) => {
   const r = await tw.misNumeros();
   res.status(r.ok ? 200 : 400).json(r);
 });
-app.post('/api/telefonia/comprar-numero', soloAdmin, async (req, res) => {
+app.post('/api/telefonia/comprar-numero', adminOCuenta, async (req, res) => {
   const numero = String(req.body?.numero || '').trim();
   if (!numero) return res.status(400).json({ ok: false, error: 'Falta el número a comprar.' });
   const r = await tw.comprarNumero(numero, dominioPropio(req));
+  // Guardamos el número comprado como el ChatVoice del dueño: en el modo SaaS
+  // el webhook de voz rutea las llamadas entrantes a la cuenta dueña.
+  if (r.ok) await guardarConfigSegunCuenta(req, { twilioNumero: numero }).catch(() => {});
   res.status(r.ok ? 200 : 400).json(r);
 });
-app.post('/api/telefonia/reapuntar-webhook', soloAdmin, async (req, res) => {
+app.post('/api/telefonia/reapuntar-webhook', adminOCuenta, async (req, res) => {
   const sid = String(req.body?.sid || '').trim();
   if (!sid) return res.status(400).json({ ok: false, error: 'Falta el SID del número.' });
   const r = await tw.configurarWebhook(sid, dominioPropio(req));
   res.status(r.ok ? 200 : 400).json(r);
 });
-app.post('/api/telefonia/llamar-prueba', soloAdmin, async (req, res) => {
+app.post('/api/telefonia/llamar-prueba', adminOCuenta, async (req, res) => {
   const telefono = String(req.body?.telefono || '').trim();
   if (!telefono) return res.status(400).json({ ok: false, error: 'Falta el teléfono a llamar.' });
   const r = await tw.llamarPrueba(telefono, dominioPropio(req));
   res.status(r.ok ? 200 : 400).json(r);
 });
 
-app.get('/api/whatsapp/probar', soloAdmin, async (_req, res) => {
+app.get('/api/whatsapp/probar', adminOCuenta, async (_req, res) => {
   const r = await probarConexionWhatsapp();
   res.status(r.ok ? 200 : 400).json(r);
 });

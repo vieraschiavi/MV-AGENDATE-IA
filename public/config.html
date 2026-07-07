@@ -142,6 +142,7 @@
       <div class="row" style="margin-top:14px;">
         <div><label>Twilio — Account SID</label><input id="twilioAccountSid" placeholder="AC..."></div>
         <div><label>Twilio — Auth Token</label><input id="twilioAuthToken" type="password" placeholder="••••" autocomplete="off"></div>
+        <div><label>Número del ChatVoice (E.164)</label><input id="twilioNumero" placeholder="+59899123456"><div class="hint">Se completa solo al comprar un número desde acá. Con cuenta online, las llamadas a este número las atiende TU asistente.</div></div>
       </div>
       <div class="row">
         <div><label>Deepgram API Key (voz→texto)</label><input id="deepgramApiKey" type="password" placeholder="••••" autocomplete="off"></div>
@@ -265,7 +266,7 @@
 
 <script>
 const $ = (s) => document.querySelector(s);
-const CAMPOS = ['anthropicApiKey','nombreProfesional','oficioProfesional','pais','moneda','aprobarCotizaciones','agenciaNombre','agenciaTelefono','logoUrl','horarioInicio','horarioFin','almuerzoInicio','almuerzoFin','diasLibres','whatsappToken','whatsappPhoneId','whatsappVerifyToken','twilioAccountSid','twilioAuthToken','deepgramApiKey','elevenlabsApiKey','elevenlabsVoiceId','crmWebhookUrl','mercadopagoToken','demoLimite','demoMaxUsos','licenciaLocal'];
+const CAMPOS = ['anthropicApiKey','nombreProfesional','oficioProfesional','pais','moneda','aprobarCotizaciones','agenciaNombre','agenciaTelefono','logoUrl','horarioInicio','horarioFin','almuerzoInicio','almuerzoFin','diasLibres','whatsappToken','whatsappPhoneId','whatsappVerifyToken','twilioAccountSid','twilioAuthToken','twilioNumero','deepgramApiKey','elevenlabsApiKey','elevenlabsVoiceId','crmWebhookUrl','mercadopagoToken','demoLimite','demoMaxUsos','licenciaLocal'];
 
 // Combo de oficios (cargado desde el catálogo del cotizador) + chips de días libres.
 const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];

@@ -65,10 +65,11 @@ según su mercado.
     por request (AsyncLocalStorage) superpone los overrides de la cuenta a la
     config global, así cotizador/agente/agenda la resuelven sin cambios. El
     webhook de WhatsApp rutea cada mensaje entrante a la cuenta dueña del
-    Phone Number ID (cada cuenta puede conectar su propio WhatsApp Business y
-    su API key de Claude). Sin token, todo sigue operando sobre la cuenta
-    `default` — el modo single-tenant no cambia. Voz (Twilio) por cuenta:
-    pendiente (hoy el ChatVoice corre sobre la config global).
+    Phone Number ID, y el de voz (Twilio) rutea cada llamada a la cuenta
+    dueña del número marcado — cada cuenta puede conectar su propio WhatsApp
+    Business, su número de teléfono y su API key de Claude, y su asistente
+    atiende con su catálogo y agenda en sus datos. Sin token, todo sigue
+    operando sobre la cuenta `default` — el modo single-tenant no cambia.
 
 ## 2. Stack
 

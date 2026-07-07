@@ -44,6 +44,11 @@ const ENV = {
   whatsappVerifyToken: 'WHATSAPP_VERIFY_TOKEN',
   twilioAccountSid: 'TWILIO_ACCOUNT_SID',
   twilioAuthToken: 'TWILIO_AUTH_TOKEN',
+  // Número de teléfono (E.164) que atiende el ChatVoice. En el modo SaaS,
+  // cada cuenta guarda el suyo y el webhook de voz rutea la llamada entrante
+  // a la cuenta dueña del número marcado (se completa solo al comprar un
+  // número desde /config.html con la sesión de la cuenta iniciada).
+  twilioNumero: 'TWILIO_NUMERO',
   deepgramApiKey: 'DEEPGRAM_API_KEY',
   elevenlabsApiKey: 'ELEVENLABS_API_KEY',
   elevenlabsVoiceId: 'ELEVENLABS_VOICE_ID',

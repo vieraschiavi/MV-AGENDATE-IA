@@ -98,7 +98,7 @@ export const TEMAS_AYUDA = [
   {
     claves: /(cuenta online|saas|iniciar sesi[oó]n|registrarme|login|sesi[oó]n|trial|prueba gratis|sin instalar)/,
     titulo: 'Cuenta online (SaaS)',
-    texto: 'Además de la versión descargable (pago único), podés usar MV Agendate IA como servicio online: en /app → "Cuenta online" creás tu cuenta con email y contraseña, con 14 días de prueba gratis y después USD 15/mes por MercadoPago. Tus clientes, citas y dashboards quedan privados y aislados de cualquier otra cuenta, y tu configuración también es propia: en /config.html (con tu sesión iniciada) definís TU profesión, país/moneda, precios, horarios y equipo sin tocar a nadie más. Hasta podés conectar tu propio WhatsApp Business y tu API key de Claude: los mensajes que lleguen a TU número los atiende TU asistente, con tu catálogo, y agenda en tus datos.'
+    texto: 'Además de la versión descargable (pago único), podés usar MV Agendate IA como servicio online: en /app → "Cuenta online" creás tu cuenta con email y contraseña, con 14 días de prueba gratis y después USD 15/mes por MercadoPago. Tus clientes, citas y dashboards quedan privados y aislados de cualquier otra cuenta, y tu configuración también es propia: en /config.html (con tu sesión iniciada) definís TU profesión, país/moneda, precios, horarios y equipo sin tocar a nadie más. Hasta podés conectar tu propio WhatsApp Business, tu número de teléfono (ChatVoice/Twilio) y tu API key de Claude: los mensajes y llamadas que lleguen a TUS números los atiende TU asistente, con tu catálogo, y agenda en tus datos.'
   },
   {
     claves: /(seguridad|admin|clave de administraci[oó]n|proteger)/,

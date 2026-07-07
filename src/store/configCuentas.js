@@ -16,7 +16,7 @@ export const CLAVES_CUENTA = [
   'horarioInicio', 'horarioFin', 'almuerzoInicio', 'almuerzoFin', 'diasLibres',
   'profesionales',
   'whatsappToken', 'whatsappPhoneId', 'whatsappVerifyToken',
-  'twilioAccountSid', 'twilioAuthToken',
+  'twilioAccountSid', 'twilioAuthToken', 'twilioNumero',
   'deepgramApiKey', 'elevenlabsApiKey', 'elevenlabsVoiceId',
   'crmWebhookUrl'
 ];
@@ -77,6 +77,22 @@ export async function cuentaPorPhoneId(phoneId, listaCuentaIds) {
   for (const id of listaCuentaIds) {
     const cfg = await obtenerOverrides(id);
     if (cfg.whatsappPhoneId === String(phoneId)) return { cuentaId: id, overrides: cfg };
+  }
+  return null;
+}
+
+/**
+ * Busca qué cuenta SaaS es dueña del número de teléfono que recibió una
+ * llamada (webhook de voz de Twilio, campo "To"). Compara en E.164 ignorando
+ * espacios/guiones. Devuelve { cuentaId, overrides } o null.
+ */
+const soloDigitos = (n) => String(n || '').replace(/[^\d]/g, '');
+export async function cuentaPorNumeroVoz(numero, listaCuentaIds) {
+  const buscado = soloDigitos(numero);
+  if (!buscado) return null;
+  for (const id of listaCuentaIds) {
+    const cfg = await obtenerOverrides(id);
+    if (cfg.twilioNumero && soloDigitos(cfg.twilioNumero) === buscado) return { cuentaId: id, overrides: cfg };
   }
   return null;
 }
