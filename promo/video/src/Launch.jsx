@@ -19,11 +19,13 @@ export const FPS = 30;
 const SCENE_1 = 0;
 const SCENE_1_LEN = 300; // 10s — titular
 const SCENE_2 = SCENE_1 + SCENE_1_LEN;
-const SCENE_2_LEN = 360; // 12s — 3 funciones
+const SCENE_2_LEN = 360; // 12s — 3 funciones (texto)
 const SCENE_3 = SCENE_2 + SCENE_2_LEN;
-const SCENE_3_LEN = 240; // 8s — cierre + CTA
+const SCENE_3_LEN = 480; // 16s — recorrido por los paneles reales (agenda/dashboards/clientes/ayuda)
+const SCENE_4 = SCENE_3 + SCENE_3_LEN;
+const SCENE_4_LEN = 240; // 8s — cierre + CTA
 
-export const DURATION_IN_FRAMES = SCENE_1_LEN + SCENE_2_LEN + SCENE_3_LEN; // 900 (30s)
+export const DURATION_IN_FRAMES = SCENE_1_LEN + SCENE_2_LEN + SCENE_3_LEN + SCENE_4_LEN; // 1380 (46s)
 
 const NAVY = '#0f2a43';
 const NAVY2 = '#16466e';
@@ -197,12 +199,72 @@ const Scene2 = () => {
   );
 };
 
-// ---------- Escena 3: cierre + CTA ----------
-const Scene3 = () => {
+// ---------- Escena 3: recorrido por los paneles reales del producto ----------
+const SCREENS = [
+  { archivo: 'panel-agenda.png', titulo: 'Agenda con traslados reales', texto: 'Tablero por estado, sin cruzar horarios' },
+  { archivo: 'panel-dashboards.png', titulo: 'Dashboards completos', texto: 'Facturación y comparativas mes a mes' },
+  { archivo: 'panel-clientes.png', titulo: 'CRM de clientes', texto: 'Ficha con el historial de cada trabajo' },
+  { archivo: 'panel-ayuda.png', titulo: 'Ayuda con IA integrada', texto: 'Tutorial y dudas del programa resueltas al instante' },
+];
+const SHOT_LEN = SCENE_3_LEN / SCREENS.length; // 120f (4s) cada uno
+
+const MOCKUP_W = 900;
+const MOCKUP_IMG_H = 562; // misma proporción que las capturas (1800x1125) — sin distorsión ni recorte forzado
+
+const PanelMockup = ({ item }) => {
+  const frame = useCurrentFrame();
+  const { opacity, translateY } = useFadeInOut(SHOT_LEN, { inLen: 16, outLen: 16, rise: 18 });
+  const enter = interpolate(frame, [0, 20], [0.97, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.out(Easing.cubic) });
+
+  return (
+    <AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ opacity, transform: `translateY(${translateY}px) scale(${enter})`, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div
+          style={{
+            width: MOCKUP_W,
+            borderRadius: 18,
+            overflow: 'hidden',
+            background: '#fff',
+            boxShadow: '0 30px 70px #00000055',
+            border: '1px solid #ffffff22',
+          }}
+        >
+          {/* Barra de navegador falsa — ancla el screenshot como "producto real", no un mockup genérico */}
+          <div style={{ height: 40, background: '#e6ebf1', display: 'flex', alignItems: 'center', gap: 8, padding: '0 16px' }}>
+            <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#e0605a' }} />
+            <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#e3b93f' }} />
+            <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#4ea559' }} />
+            <div style={{ marginLeft: 14, background: '#fff', borderRadius: 7, padding: '5px 16px', fontSize: 14, color: '#5a6b7c' }}>
+              mvagendate.ia
+            </div>
+          </div>
+          <div style={{ width: MOCKUP_W, height: MOCKUP_IMG_H, overflow: 'hidden' }}>
+            <Img src={staticFile(item.archivo)} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
+          </div>
+        </div>
+        <div style={{ color: GOLD, fontSize: 42, fontWeight: 800, marginTop: 34, textAlign: 'center' }}>{item.titulo}</div>
+        <div style={{ color: '#cfe0f0', fontSize: 27, marginTop: 8, textAlign: 'center', maxWidth: 760 }}>{item.texto}</div>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+const Scene3Panels = () => (
+  <Background>
+    {SCREENS.map((item, i) => (
+      <Sequence key={item.archivo} from={i * SHOT_LEN} durationInFrames={SHOT_LEN}>
+        <PanelMockup item={item} />
+      </Sequence>
+    ))}
+  </Background>
+);
+
+// ---------- Escena 4: cierre + CTA ----------
+const Scene4 = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const logoScale = spring({ frame, fps, config: { damping: 12, mass: 0.8 } });
-  const { opacity, translateY } = useFadeInOut(SCENE_3_LEN, { inLen: 16, outLen: 24 });
+  const { opacity, translateY } = useFadeInOut(SCENE_4_LEN, { inLen: 16, outLen: 24 });
   const pulse = 1 + Math.sin(frame / 10) * 0.03;
 
   return (
@@ -261,7 +323,10 @@ export const Launch = () => (
       <Scene2 />
     </Sequence>
     <Sequence from={SCENE_3} durationInFrames={SCENE_3_LEN}>
-      <Scene3 />
+      <Scene3Panels />
+    </Sequence>
+    <Sequence from={SCENE_4} durationInFrames={SCENE_4_LEN}>
+      <Scene4 />
     </Sequence>
 
     <Sequence from={SCENE_1 + 15} durationInFrames={SCENE_1_LEN - 15}>
@@ -270,7 +335,10 @@ export const Launch = () => (
     <Sequence from={SCENE_2 + 15} durationInFrames={SCENE_2_LEN - 15}>
       <Audio src={staticFile('audio/escena2.wav')} />
     </Sequence>
-    <Sequence from={SCENE_3 + 10} durationInFrames={SCENE_3_LEN - 10}>
+    <Sequence from={SCENE_3 + 15} durationInFrames={SCENE_3_LEN - 15}>
+      <Audio src={staticFile('audio/escena3-paneles.wav')} />
+    </Sequence>
+    <Sequence from={SCENE_4 + 10} durationInFrames={SCENE_4_LEN - 10}>
       <Audio src={staticFile('audio/escena3.wav')} />
     </Sequence>
   </AbsoluteFill>
