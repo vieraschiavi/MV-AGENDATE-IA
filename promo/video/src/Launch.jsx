@@ -3,6 +3,7 @@ import {
   AbsoluteFill,
   Sequence,
   Img,
+  Audio,
   staticFile,
   useCurrentFrame,
   useVideoConfig,
@@ -207,14 +208,17 @@ const Scene3 = () => {
   return (
     <Background>
       <AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center' }}>
+        {/* El PNG fuente tiene esquinas blancas sólidas (sin transparencia),
+            así que hace falta recortarlas con la misma proporción de
+            redondeo del propio ícono para que no se vean como un cuadrado
+            blanco de fondo sobre el navy de la escena. */}
         <Img
           src={staticFile('logo-mv.png')}
           style={{
             width: 220,
             height: 220,
-            borderRadius: 48,
+            borderRadius: '22%',
             transform: `scale(${logoScale})`,
-            boxShadow: '0 20px 60px #00000055',
             marginBottom: 44,
           }}
         />
@@ -244,6 +248,10 @@ const Scene3 = () => {
   );
 };
 
+// Locución en off — voz rioplatense Piper "es_AR-daniela" (gratis, offline,
+// la misma que usa el producto en su ChatVoice). Cada pista arranca unos
+// cuadros después de que entra el texto de su escena, para que no se sientan
+// pisados.
 export const Launch = () => (
   <AbsoluteFill style={{ backgroundColor: NAVY }}>
     <Sequence from={SCENE_1} durationInFrames={SCENE_1_LEN}>
@@ -254,6 +262,16 @@ export const Launch = () => (
     </Sequence>
     <Sequence from={SCENE_3} durationInFrames={SCENE_3_LEN}>
       <Scene3 />
+    </Sequence>
+
+    <Sequence from={SCENE_1 + 15} durationInFrames={SCENE_1_LEN - 15}>
+      <Audio src={staticFile('audio/escena1.wav')} />
+    </Sequence>
+    <Sequence from={SCENE_2 + 15} durationInFrames={SCENE_2_LEN - 15}>
+      <Audio src={staticFile('audio/escena2.wav')} />
+    </Sequence>
+    <Sequence from={SCENE_3 + 10} durationInFrames={SCENE_3_LEN - 10}>
+      <Audio src={staticFile('audio/escena3.wav')} />
     </Sequence>
   </AbsoluteFill>
 );
