@@ -21,7 +21,9 @@ const SCENE_1_LEN = 300; // 10s — titular
 const SCENE_2 = SCENE_1 + SCENE_1_LEN;
 const SCENE_2_LEN = 360; // 12s — 3 funciones (texto)
 const SCENE_3 = SCENE_2 + SCENE_2_LEN;
-const SCENE_3_LEN = 480; // 16s — recorrido por los paneles reales (agenda/dashboards/clientes/ayuda)
+const PANEL_LEN = 120; // 4s de "vida" por panel...
+const PANEL_ADVANCE = 100; // ...pero el siguiente arranca 100f después: 20f (0.67s) de disolución cruzada real
+const SCENE_3_LEN = 3 * PANEL_ADVANCE + PANEL_LEN; // 420f = 14s — recorrido por los paneles reales
 const SCENE_4 = SCENE_3 + SCENE_3_LEN;
 const SCENE_4_LEN = 240; // 8s — cierre + CTA
 
@@ -200,27 +202,46 @@ const Scene2 = () => {
 };
 
 // ---------- Escena 3: recorrido por los paneles reales del producto ----------
+// Capturas reales (sin sidebar, a pantalla completa) para que el contenido se
+// vea grande y legible — no un mockup en miniatura del programa entero.
 const SCREENS = [
   { archivo: 'panel-agenda.png', titulo: 'Agenda con traslados reales', texto: 'Tablero por estado, sin cruzar horarios' },
   { archivo: 'panel-dashboards.png', titulo: 'Dashboards completos', texto: 'Facturación y comparativas mes a mes' },
   { archivo: 'panel-clientes.png', titulo: 'CRM de clientes', texto: 'Ficha con el historial de cada trabajo' },
   { archivo: 'panel-ayuda.png', titulo: 'Ayuda con IA integrada', texto: 'Tutorial y dudas del programa resueltas al instante' },
 ];
-const SHOT_LEN = SCENE_3_LEN / SCREENS.length; // 120f (4s) cada uno
 
-const MOCKUP_W = 900;
-const MOCKUP_IMG_H = 562; // misma proporción que las capturas (1800x1125) — sin distorsión ni recorte forzado
+const MOCKUP_W = 980;
+const MOCKUP_IMG_H = 465; // misma proporción que las capturas (1700x807) — sin distorsión ni recorte forzado
 
+// Disolución cruzada real (dos paneles superpuestos en la ventana de solape) +
+// Ken Burns (zoom lento y continuo) para que la escena se sienta viva, no una
+// diapositiva estática.
 const PanelMockup = ({ item }) => {
   const frame = useCurrentFrame();
-  const { opacity, translateY } = useFadeInOut(SHOT_LEN, { inLen: 16, outLen: 16, rise: 18 });
+  const overlap = PANEL_LEN - PANEL_ADVANCE;
+  // La imagen se disuelve lenta y de a una con la siguiente (dura toda la
+  // ventana de solape, incluso después de que arranca el próximo panel) —
+  // pero el texto NO: termina de desvanecerse justo cuando arranca el
+  // próximo panel (frame local = PANEL_ADVANCE), así los títulos nunca
+  // quedan superpuestos e ilegibles entre sí.
+  const { opacity: opacityImg } = useFadeInOut(PANEL_LEN, { inLen: overlap, outLen: overlap, rise: 0 });
+  const opacityTxt = interpolate(
+    frame,
+    [0, 10, PANEL_ADVANCE - 10, PANEL_ADVANCE],
+    [0, 1, 1, 0],
+    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
+  );
+  const kenBurns = interpolate(frame, [0, PANEL_LEN], [1, 1.06], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const drift = interpolate(frame, [0, PANEL_LEN], [0, -14], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
   const enter = interpolate(frame, [0, 20], [0.97, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.out(Easing.cubic) });
 
   return (
     <AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ opacity, transform: `translateY(${translateY}px) scale(${enter})`, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div style={{ transform: `scale(${enter})`, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div
           style={{
+            opacity: opacityImg,
             width: MOCKUP_W,
             borderRadius: 18,
             overflow: 'hidden',
@@ -239,20 +260,32 @@ const PanelMockup = ({ item }) => {
             </div>
           </div>
           <div style={{ width: MOCKUP_W, height: MOCKUP_IMG_H, overflow: 'hidden' }}>
-            <Img src={staticFile(item.archivo)} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
+            <Img
+              src={staticFile(item.archivo)}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                objectPosition: 'top',
+                transform: `scale(${kenBurns}) translateY(${drift}px)`,
+              }}
+            />
           </div>
         </div>
-        <div style={{ color: GOLD, fontSize: 42, fontWeight: 800, marginTop: 34, textAlign: 'center' }}>{item.titulo}</div>
-        <div style={{ color: '#cfe0f0', fontSize: 27, marginTop: 8, textAlign: 'center', maxWidth: 760 }}>{item.texto}</div>
+        <div style={{ opacity: opacityTxt, color: GOLD, fontSize: 42, fontWeight: 800, marginTop: 34, textAlign: 'center' }}>{item.titulo}</div>
+        <div style={{ opacity: opacityTxt, color: '#cfe0f0', fontSize: 27, marginTop: 8, textAlign: 'center', maxWidth: 760 }}>{item.texto}</div>
       </div>
     </AbsoluteFill>
   );
 };
 
+// Sequences con `from` solapado (en vez de consecutivo): durante la ventana de
+// solape hay dos paneles montados a la vez, uno terminando de desvanecerse y
+// el siguiente apareciendo — esa superposición ES la disolución cruzada.
 const Scene3Panels = () => (
   <Background>
     {SCREENS.map((item, i) => (
-      <Sequence key={item.archivo} from={i * SHOT_LEN} durationInFrames={SHOT_LEN}>
+      <Sequence key={item.archivo} from={i * PANEL_ADVANCE} durationInFrames={PANEL_LEN}>
         <PanelMockup item={item} />
       </Sequence>
     ))}
@@ -310,10 +343,10 @@ const Scene4 = () => {
   );
 };
 
-// Locución en off — voz rioplatense Piper "es_AR-daniela" (gratis, offline,
-// la misma que usa el producto en su ChatVoice). Cada pista arranca unos
-// cuadros después de que entra el texto de su escena, para que no se sientan
-// pisados.
+// Locución corta por panel (una frase breve cada uno, igual que el resto del
+// video) — nada de un monólogo largo y continuo, que sonaba antinatural.
+const PANEL_AUDIO = ['panel1.wav', 'panel2.wav', 'panel3.wav', 'panel4.wav'];
+
 export const Launch = () => (
   <AbsoluteFill style={{ backgroundColor: NAVY }}>
     <Sequence from={SCENE_1} durationInFrames={SCENE_1_LEN}>
@@ -329,15 +362,27 @@ export const Launch = () => (
       <Scene4 />
     </Sequence>
 
+    {/* Música de fondo — leve y original (pad instrumental propio, sin
+        derechos de terceros), a lo largo de todo el video. El propio archivo
+        ya está mezclado a un nivel muy bajo (pico ≈ -19dB): acá no hace falta
+        atenuarlo mucho más, solo dejarlo por debajo de la locución. */}
+    <Audio src={staticFile('audio/musica.wav')} volume={0.9} />
+
+    {/* Locución en off — voz rioplatense Piper "es_AR-daniela" (gratis,
+        offline, la misma que usa el producto en su ChatVoice). Cada pista
+        arranca unos cuadros después de que entra el texto/panel de su
+        escena, para que no se sientan pisados. */}
     <Sequence from={SCENE_1 + 15} durationInFrames={SCENE_1_LEN - 15}>
       <Audio src={staticFile('audio/escena1.wav')} />
     </Sequence>
     <Sequence from={SCENE_2 + 15} durationInFrames={SCENE_2_LEN - 15}>
       <Audio src={staticFile('audio/escena2.wav')} />
     </Sequence>
-    <Sequence from={SCENE_3 + 15} durationInFrames={SCENE_3_LEN - 15}>
-      <Audio src={staticFile('audio/escena3-paneles.wav')} />
-    </Sequence>
+    {PANEL_AUDIO.map((archivo, i) => (
+      <Sequence key={archivo} from={SCENE_3 + i * PANEL_ADVANCE + 8} durationInFrames={PANEL_LEN - 8}>
+        <Audio src={staticFile(`audio/${archivo}`)} />
+      </Sequence>
+    ))}
     <Sequence from={SCENE_4 + 10} durationInFrames={SCENE_4_LEN - 10}>
       <Audio src={staticFile('audio/escena3.wav')} />
     </Sequence>
