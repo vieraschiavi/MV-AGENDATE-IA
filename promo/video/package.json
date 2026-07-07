@@ -1,0 +1,17 @@
+{
+  "name": "mv-agendate-ia-promo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "remotion studio src/index.jsx",
+    "render": "remotion render src/index.jsx Launch out/mv-agendate-ia.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.485",
+    "@remotion/renderer": "^4.0.485",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.485"
+  }
+}
