@@ -7,8 +7,9 @@
 // cualquier rubro: electricista, plomero, abogado, psicólogo, etc.
 import Anthropic from '@anthropic-ai/sdk';
 import { cotizar, cotizarToolDef, listarOficios } from './cotizador.js';
+import { geocodificar, geocodificarToolDef } from './geocoding.js';
 import { proponerHorarios, proponerHorariosToolDef, configuracionDescansoPorDefecto } from '../store/agenda.js';
-import { crearCita, confirmarDireccionCliente, buscarClientePorTelefono } from '../store/trabajos.js';
+import { crearCita, confirmarDireccionCliente, buscarClientePorTelefono, agendaDelDiaConUbicacion } from '../store/trabajos.js';
 import { get as cfg } from '../store/config.js';
 import { registrarUso } from '../store/uso.js';
 
@@ -40,7 +41,9 @@ const confirmarDireccionToolDef = {
     properties: {
       clienteId: { type: 'string', description: 'ID del cliente si ya se conoce' },
       telefono: { type: 'string', description: 'Teléfono del cliente (para buscarlo si no hay ID)' },
-      direccionInformada: { type: 'string', description: 'Dirección que dio el cliente en este chat' }
+      direccionInformada: { type: 'string', description: 'Dirección que dio el cliente en este chat' },
+      lat: { type: 'number', description: 'Latitud ya resuelta (por geocodificar_direccion o por una ubicación que compartió el cliente)' },
+      lng: { type: 'number', description: 'Longitud ya resuelta' }
     }
   }
 };
@@ -74,6 +77,8 @@ const confirmarCitaToolDef = {
       fin: { type: 'string', description: 'HH:MM' },
       direccion: { type: 'string' },
       direccionConfirmada: { type: 'boolean' },
+      lat: { type: 'number', description: 'Latitud del domicilio (de geocodificar_direccion o de la ubicación que compartió el cliente)' },
+      lng: { type: 'number', description: 'Longitud del domicilio' },
       receptor: { type: 'string', description: 'Nombre de quien recibe si no es el titular' },
       totalCotizado: { type: 'number' },
       desgloseCotizacion: {
@@ -85,7 +90,7 @@ const confirmarCitaToolDef = {
   }
 };
 
-const TOOLS = [cotizarToolDef, proponerHorariosToolDef, confirmarDireccionToolDef, registrarReceptorToolDef, confirmarCitaToolDef];
+const TOOLS = [cotizarToolDef, geocodificarToolDef, proponerHorariosToolDef, confirmarDireccionToolDef, registrarReceptorToolDef, confirmarCitaToolDef];
 
 /** Arma la config de descanso/jornada a partir de lo cargado por el profesional en /config.html. */
 function configuracionDesdeCfg() {
@@ -103,8 +108,14 @@ async function ejecutarHerramienta(nombre, input, canal) {
   switch (nombre) {
     case 'cotizar_trabajo':
       return JSON.stringify(cotizar({ oficio: oficioProfesional(), ...input }));
-    case 'buscar_horarios_disponibles':
-      return JSON.stringify(proponerHorarios({ configuracion: configuracionDesdeCfg(), ...input }));
+    case 'geocodificar_direccion':
+      return JSON.stringify(await geocodificar(input.direccion));
+    case 'buscar_horarios_disponibles': {
+      // Agenda real del día (con ubicación), para calcular el traslado hacia
+      // y desde las citas vecinas — no solo la duración del trabajo nuevo.
+      const citasDelDia = input.fecha ? await agendaDelDiaConUbicacion(input.fecha) : [];
+      return JSON.stringify(proponerHorarios({ configuracion: configuracionDesdeCfg(), ...input, citasDelDia }));
+    }
     case 'confirmar_direccion_cliente': {
       let clienteId = input.clienteId;
       if (!clienteId && input.telefono) {
@@ -112,7 +123,7 @@ async function ejecutarHerramienta(nombre, input, canal) {
         clienteId = cli?.id;
       }
       if (!clienteId) return JSON.stringify({ ok: true, coincide: null, error: 'Cliente nuevo, no hay dirección previa registrada.' });
-      return JSON.stringify(await confirmarDireccionCliente(clienteId, input.direccionInformada));
+      return JSON.stringify(await confirmarDireccionCliente(clienteId, input.direccionInformada, input.lat, input.lng));
     }
     case 'registrar_persona_receptora':
       return JSON.stringify({ registrado: true, ...input });
@@ -133,6 +144,8 @@ async function ejecutarHerramienta(nombre, input, canal) {
         fin: input.fin,
         direccion: input.direccion,
         direccionConfirmada: !!input.direccionConfirmada,
+        lat: input.lat,
+        lng: input.lng,
         receptor: input.receptor,
         cotizacion: input.totalCotizado != null ? { ...input.desgloseCotizacion, total: input.totalCotizado } : null,
         canal
@@ -152,10 +165,11 @@ function buildSystem() {
 Flujo esperado en cada conversación:
 1. Entendé qué necesita el cliente y a qué tipo de trabajo predefinido corresponde. Usá cotizar_trabajo apenas lo sepas — nunca inventes precios.
 2. Dale el presupuesto estimado (mano de obra + materiales + traslado) ANTES de ofrecer horarios.
-3. Pedí el teléfono y confirmá la dirección con confirmar_direccion_cliente (si cambió respecto a la base, listo, ya quedó actualizada).
-4. Preguntá si el titular va a estar presente; si no, registrá con registrar_persona_receptora el nombre de quien va a atender.
-5. Ofrecé 2-3 horarios concretos con buscar_horarios_disponibles (necesita fecha, día de la semana, duración del trabajo y la ubicación del cliente) — nunca preguntes "¿cuándo te queda bien?" en abstracto.
-6. Cuando el cliente acepte un horario, cerrá todo con confirmar_cita.
+3. Pedí el teléfono y la dirección. Si el cliente comparte su UBICACIÓN (vas a ver algo como "[Ubicación compartida: lat X, lng Y — dirección aproximada: ...]" en su mensaje), esas coordenadas ya son exactas: no hace falta geocodificarlas, usalas directo. Si en cambio escribe la dirección a mano, pasala por geocodificar_direccion para obtener sus coordenadas antes de ofrecer horarios.
+4. Confirmá la dirección con confirmar_direccion_cliente (pasale también lat/lng si ya los tenés) — si cambió respecto a la base, listo, ya quedó actualizada.
+5. Preguntá si el titular va a estar presente; si no, registrá con registrar_persona_receptora el nombre de quien va a atender.
+6. Ofrecé 2-3 horarios concretos con buscar_horarios_disponibles (necesita fecha, día de la semana, duración del trabajo y las coordenadas del cliente) — nunca preguntes "¿cuándo te queda bien?" en abstracto.
+7. Cuando el cliente acepte un horario, cerrá todo con confirmar_cita (incluí lat/lng si los tenés, así queda guardado para la próxima vez).
 
 Tono y estilo: profesional pero cercano, español rioplatense (vos/tenés), claro y sin exclamaciones exageradas. Emojis con moderación (uno como máximo, o ninguno). Respuestas cortas tipo chat: 2-5 oraciones. En WhatsApp y voz, aún más breve. Si el trabajo no encaja en ningún tipo predefinido, decilo con honestidad y ofrecé una visita de diagnóstico. Si preguntan algo fuera del rubro, redirigí con amabilidad y ofrecé el teléfono ${telefonoProfesional()} para casos urgentes.`;
 }

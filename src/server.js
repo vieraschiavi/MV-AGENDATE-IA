@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { conversar, enModoDemo, listarOficios } from './ai/agente.js';
 import { cotizar } from './ai/cotizador.js';
+import { geocodificar, geocodificarInverso } from './ai/geocoding.js';
 import { proponerHorarios } from './store/agenda.js';
 import { revisarYAvisarAgendaDelDia } from './channels/aviso-retraso.js';
 import { getConfigPublico, setConfig, get as cfg } from './store/config.js';
@@ -95,6 +96,16 @@ app.get('/api/oficios', (_req, res) => res.json(listarOficios()));
 app.post('/api/cotizar', (req, res) => {
   const r = cotizar({ oficio: cfg('oficioProfesional') || undefined, ...req.body });
   res.status(r.error ? 400 : 200).json(r);
+});
+
+// --- Geocoding gratuito (Nominatim/OSM): dirección de texto ↔ coordenadas ---
+app.get('/api/geocoding', async (req, res) => {
+  const r = await geocodificar(req.query.direccion);
+  res.status(r.ok ? 200 : 400).json(r);
+});
+app.get('/api/geocoding/inverso', async (req, res) => {
+  const r = await geocodificarInverso(Number(req.query.lat), Number(req.query.lng));
+  res.status(r.ok ? 200 : 400).json(r);
 });
 
 // --- Motor de agenda: horarios propuestos considerando traslados y descansos ---
@@ -240,7 +251,14 @@ const profesionalOpts = () => ({ agencia: cfg('agenciaNombre') || cfg('nombrePro
 app.get('/api/citas', async (req, res) => res.json(await trabajos.listarCitas(req.query ?? {})));
 app.get('/api/citas/dia/:fecha', async (req, res) => res.json(await trabajos.citasDelDia(req.params.fecha)));
 app.get('/api/citas/:id', async (req, res) => { const c = await trabajos.obtenerCita(req.params.id); res.status(c ? 200 : 404).json(c || { error: 'No encontrada' }); });
-app.post('/api/citas', soloAdmin, async (req, res) => res.json({ ok: true, cita: await trabajos.crearCita(req.body ?? {}) }));
+app.post('/api/citas', soloAdmin, async (req, res) => {
+  const datos = { ...req.body };
+  if (datos.direccion && !Number.isFinite(datos.lat)) {
+    const geo = await geocodificar(datos.direccion);
+    if (geo.ok) { datos.lat = geo.lat; datos.lng = geo.lng; }
+  }
+  res.json({ ok: true, cita: await trabajos.crearCita(datos) });
+});
 app.post('/api/citas/:id/estado', soloAdmin, async (req, res) => { const r = await trabajos.cambiarEstadoCita(req.params.id, req.body?.estado); res.status(r.ok ? 200 : 400).json(r); });
 app.post('/api/citas/:id/receptor', soloAdmin, async (req, res) => { const r = await trabajos.registrarReceptor(req.params.id, req.body?.nombreReceptor); res.status(r.ok ? 200 : 400).json(r); });
 app.get('/api/citas/:id/ficha', async (req, res) => {
@@ -252,7 +270,15 @@ app.get('/api/citas/:id/ficha', async (req, res) => {
 app.get('/api/clientes', async (_req, res) => res.json(await trabajos.listarClientes()));
 app.get('/api/cliente/:id', async (req, res) => { const c = await trabajos.obtenerCliente(req.params.id); res.status(c ? 200 : 404).json(c || { error: 'No encontrado' }); });
 app.post('/api/cliente', soloAdmin, async (req, res) => res.json({ ok: true, cliente: await trabajos.guardarCliente(req.body ?? {}) }));
-app.post('/api/cliente/:id/confirmar-direccion', async (req, res) => res.json(await trabajos.confirmarDireccionCliente(req.params.id, req.body?.direccionInformada)));
+app.post('/api/cliente/:id/confirmar-direccion', async (req, res) => {
+  const direccionInformada = req.body?.direccionInformada;
+  let lat, lng;
+  if (direccionInformada) {
+    const geo = await geocodificar(direccionInformada);
+    if (geo.ok) { lat = geo.lat; lng = geo.lng; }
+  }
+  res.json(await trabajos.confirmarDireccionCliente(req.params.id, direccionInformada, lat, lng));
+});
 
 // Dashboard (con filtros: oficio, estado, año, mes, fecha)
 app.get('/api/dashboard', async (req, res) => res.json(await trabajos.resumenDashboard(req.query ?? {})));

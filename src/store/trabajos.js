@@ -97,6 +97,8 @@ function sembrarDemo() {
         fin: `${String(10 + (k % 8)).padStart(2, '0')}:00`,
         direccion: cliente.direccion,
         direccionConfirmada: true,
+        lat: cliente.lat,
+        lng: cliente.lng,
         receptor: null,
         estado: 'completada',
         cotizacion: { mano_obra: Math.round(totalBase * 0.65), materiales: Math.round(totalBase * 0.2), traslado: Math.round(totalBase * 0.15), total: totalBase },
@@ -147,13 +149,19 @@ export async function guardarCliente(c) {
  * del cliente, o actualiza la dirección si cambió (lo pide el flujo del
  * agente antes de cerrar la cita — ver ai/agente.js).
  */
-export async function confirmarDireccionCliente(clienteId, direccionInformada) {
+export async function confirmarDireccionCliente(clienteId, direccionInformada, lat, lng) {
   await cargar();
   const cli = db.clientes.find((c) => c.id === clienteId);
   if (!cli) return { ok: false, coincide: false, error: 'Cliente no encontrado.' };
   const coincide = !direccionInformada || n(direccionInformada) === n(cli.direccion);
-  if (!coincide && direccionInformada) { cli.direccion = direccionInformada; await guardar(); }
-  return { ok: true, coincide, direccionEnBase: cli.direccion };
+  let cambio = false;
+  if (!coincide && direccionInformada) { cli.direccion = direccionInformada; cambio = true; }
+  // Actualiza las coordenadas si nos las pasaron (geocoding directo de un texto
+  // nuevo, o ubicación nativa que compartió el cliente por WhatsApp) — incluso
+  // si la dirección no cambió, sirve para completar coordenadas que faltaban.
+  if (Number.isFinite(lat) && Number.isFinite(lng)) { cli.lat = lat; cli.lng = lng; cambio = true; }
+  if (cambio) await guardar();
+  return { ok: true, coincide, direccionEnBase: cli.direccion, lat: cli.lat, lng: cli.lng };
 }
 
 // ---------- Citas / trabajos ----------
@@ -180,7 +188,14 @@ export async function crearCita(datos) {
   if (!cliente) {
     cliente = normalizarCliente({ nombre: datos.clienteNombre, telefono: datos.telefono, direccion: datos.direccion, lat: datos.lat, lng: datos.lng });
     db.clientes.push(cliente);
+  } else if (Number.isFinite(datos.lat) && Number.isFinite(datos.lng)) {
+    // Mantiene al cliente con la última ubicación conocida, para reusarla en
+    // el siguiente trabajo sin tener que volver a geocodificar.
+    cliente.lat = datos.lat;
+    cliente.lng = datos.lng;
   }
+  const lat = Number.isFinite(datos.lat) ? datos.lat : cliente.lat;
+  const lng = Number.isFinite(datos.lng) ? datos.lng : cliente.lng;
   const cita = {
     id: nuevoId('CITA'),
     clienteId: cliente.id,
@@ -194,6 +209,8 @@ export async function crearCita(datos) {
     fin: datos.fin,
     direccion: datos.direccion || cliente.direccion,
     direccionConfirmada: !!datos.direccionConfirmada,
+    lat: lat ?? null,
+    lng: lng ?? null,
     receptor: datos.receptor || null, // nombre de quien atiende si no es el titular
     estado: 'confirmada',
     cotizacion: datos.cotizacion || null,
@@ -205,6 +222,20 @@ export async function crearCita(datos) {
   await guardar();
   notificarCRM('cita.confirmada', cita);
   return cita;
+}
+
+/**
+ * Agenda de un día en el formato que necesita el motor de traslados
+ * (store/agenda.js#proponerHorarios): citas ordenadas con su ubicación, para
+ * calcular el viaje real hacia y desde cada hueco disponible. Excluye citas
+ * canceladas y las que todavía no tienen coordenadas (no se puede estimar su
+ * traslado, mejor no asumir 0).
+ */
+export async function agendaDelDiaConUbicacion(fecha, excluirCitaId) {
+  const cs = await citasDelDia(fecha);
+  return cs
+    .filter((c) => c.estado !== 'cancelada' && c.id !== excluirCitaId && Number.isFinite(c.lat) && Number.isFinite(c.lng))
+    .map((c) => ({ inicio: c.inicio, fin: c.fin, ubicacion: { lat: c.lat, lng: c.lng } }));
 }
 
 export async function cambiarEstadoCita(id, estado) {

@@ -25,7 +25,9 @@ catálogo de precios.
    configuró el profesional.
 3. **Confirma dirección y receptor**: pregunta si el domicilio es el mismo
    que figura en la base del cliente, y quién va a atender si no es el
-   titular.
+   titular. Si el cliente comparte su ubicación nativa de WhatsApp usa esas
+   coordenadas directo; si escribe la dirección a mano, la geocodifica sola
+   (Nominatim/OSM, gratis) para poder calcular el traslado real.
 4. **Avisa retrasos solo**: si un trabajo se extiende, le escribe por
    WhatsApp al próximo cliente 30 minutos antes, disculpando la demora — sin
    que el profesional escriba nada.
@@ -62,6 +64,7 @@ src/
   ai/
     agente.js             Cerebro del chatbot (Claude + herramientas: cotizar/agendar/confirmar)
     cotizador.js           Motor de cotización por oficio y tipo de trabajo
+    geocoding.js           Dirección de texto ↔ coordenadas (Nominatim/OSM, gratis)
   channels/
     voz.js                ChatVoice vía rápida (Twilio <Gather> + voz neural)
     voz-premium.js         ChatVoice en tiempo real (Deepgram ASR + Piper/ElevenLabs TTS)
@@ -85,7 +88,7 @@ public/                 Web estática (landing, demo, dashboards, agenda, client
 movil/                  App Android (PWA instalable / APK)
 api/index.js            Entrypoint serverless de Vercel
 vercel.json             Config de deploy + Cron Job del aviso de retrasos
-test/                   Suite de tests (cotizador, agenda, aviso de retraso, agente)
+test/                   Suite de tests (cotizador, agenda, aviso de retraso, agente, geocoding)
 ```
 
 ## 4. Endpoints principales
@@ -93,6 +96,7 @@ test/                   Suite de tests (cotizador, agenda, aviso de retraso, age
 - `POST /api/chat` — chat del agente (webchat/demo)
 - `GET /api/oficios` · `POST /api/cotizar` — catálogo y cotización directa
 - `POST /api/agenda/proponer` — horarios propuestos considerando traslados
+- `GET /api/geocoding?direccion=` · `GET /api/geocoding/inverso?lat=&lng=` — dirección ↔ coordenadas
 - `GET/POST /api/citas`, `/api/citas/:id/estado`, `/api/citas/:id/receptor`, `/api/citas/:id/ficha`
 - `GET/POST /api/clientes`, `/api/cliente/:id/confirmar-direccion`
 - `GET /api/dashboard`, `/api/dashboard/serie`, `/api/dashboard/serie-anual`, `/api/dashboard/filtros`
@@ -163,9 +167,6 @@ costo de API aparte, sin markup).
   `agenda.js` usa Haversine + velocidad promedio configurable; para más
   precisión, reemplazarla por una llamada a Google Distance Matrix (o
   Mapbox/OSRM) sin tocar el resto del motor.
-- **Geocoding**: hoy `agenda.js` recibe `{lat, lng}` ya resueltos. Falta
-  convertir la dirección que escribe el cliente en coordenadas (Google
-  Geocoding API o Nominatim/OSM, gratis).
 - **Aprobación de Meta para WhatsApp Business** y alta de número en Twilio:
   son trámites del lado de Meta/Twilio, no de código — ver `docs/CANALES.md`.
 - **Multi-profesional** (varios electricistas en un mismo estudio): el motor

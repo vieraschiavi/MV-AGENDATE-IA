@@ -29,6 +29,13 @@ desde el último mensaje del cliente, Meta rechaza el envío salvo que uses una
 plantilla (HSM) pre-aprobada — un trámite manual en Meta Business, no
 automatizable por API.
 
+**Ubicación compartida:** si el cliente manda su ubicación con el botón
+nativo de WhatsApp (📎 → Ubicación), el webhook la reconoce (`type:
+"location"`) y le pasa las coordenadas exactas al agente — no hace falta
+geocodificar nada en ese caso. Si en cambio escribe la dirección a mano, el
+agente la geocodifica solo con Nominatim/OSM (`src/ai/geocoding.js`, gratis,
+sin API key) antes de calcular horarios.
+
 ## 3. Teléfono — ChatVoice vía rápida (`src/channels/voz.js`)
 
 Usa Twilio `<Gather input="speech">` para el reconocimiento de voz y, para la
