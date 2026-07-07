@@ -71,7 +71,7 @@ export default function Cuenta() {
           <div className="card" style={{ maxWidth: 460 }}>
             <h2 className="mv-h">Usá MV desde el navegador, sin instalar nada</h2>
             <p style={{ fontSize: '.88rem', color: 'var(--muted)', margin: '0 0 12px' }}>
-              14 días de prueba gratis, después USD 15/mes por MercadoPago. Tus datos quedan privados y aislados, disponibles desde cualquier dispositivo.
+              14 días de prueba gratis, después USD 15/mes por MercadoPago. Tus datos y tu configuración (profesión, país, precios, horarios, equipo, canales) quedan privados y aislados, disponibles desde cualquier dispositivo.
             </p>
             <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
               <button className={`btn ${modo === 'login' ? '' : 'sec'}`} onClick={() => setModo('login')} type="button">Iniciar sesión</button>

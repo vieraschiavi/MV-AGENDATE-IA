@@ -453,7 +453,17 @@ function headers() {
   const h = { 'Content-Type':'application/json' };
   const k = $('#adminKey').value.trim();
   if (k) h['X-Admin-Key'] = k;
+  // Cuenta SaaS con sesión iniciada en /app: su token autoriza y la config
+  // que se lee/guarda acá es la PROPIA de esa cuenta (no la global).
+  const t = localStorage.getItem('mvToken');
+  if (t) h['Authorization'] = 'Bearer ' + t;
   return h;
+}
+if (localStorage.getItem('mvToken')) {
+  try {
+    const cta = JSON.parse(localStorage.getItem('mvCuenta') || 'null');
+    if (cta) aviso(`Configurando la cuenta online de ${cta.nombre || cta.email} — los cambios solo afectan a esa cuenta.`, true);
+  } catch { /* sin datos de cuenta: nada que avisar */ }
 }
 function pintarBadges(estado) {
   const defs = [['claude','IA Claude'],['whatsapp','WhatsApp'],['voz','Teléfono'],['vozPremium','Voz clonada'],['crm','CRM']];
@@ -505,7 +515,7 @@ $('#form').addEventListener('submit', async (e) => {
 $('#btnTest').onclick = async () => {
   const out = $('#testOut'); out.style.display = 'block'; out.textContent = 'Enviando…';
   try {
-    const r = await fetch('/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ mensaje: $('#testMsg').value }) });
+    const r = await fetch('/api/chat', { method:'POST', headers: headers(), body: JSON.stringify({ mensaje: $('#testMsg').value }) });
     const d = await r.json();
     out.textContent = (d.demo ? '⚙️ [MODO DEMO — cargá tu API key para IA real]\n\n' : '🟢 [IA REAL — Claude]\n\n') + (d.respuesta || d.error || '');
   } catch { out.textContent = 'No pude conectar con el servidor.'; }

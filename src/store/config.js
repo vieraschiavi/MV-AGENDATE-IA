@@ -5,6 +5,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { overridesActivos } from './contextoCuenta.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const FILE = join(process.env.VERCEL ? '/tmp/mvdata' : join(here, '../../data'), 'config.json');
@@ -98,8 +99,19 @@ function cargar() {
   return cache;
 }
 
-/** Valor actual de una clave (''si no está configurada). */
-export function get(clave) { return cargar()[clave] || ''; }
+/**
+ * Valor actual de una clave (''si no está configurada). Si hay una cuenta
+ * SaaS activa en el contexto (ver store/contextoCuenta.js), sus overrides
+ * pisan la configuración global — así cotizador/agente/agenda/canales usan
+ * el oficio, país, precios y credenciales de ESA cuenta sin cambios de código.
+ * Los overrides no aplican a las claves del vendedor (admin, pagos, licencia).
+ */
+const NUNCA_OVERRIDE = new Set(['adminKey', 'mercadopagoToken', 'jwtSecret', 'licenciaLocal', 'demoLimite', 'demoMaxUsos', 'sitioUrl', 'preapprovalPlanFull', 'preapprovalPlanSaas']);
+export function get(clave) {
+  const ov = overridesActivos();
+  if (ov && !NUNCA_OVERRIDE.has(clave) && ov[clave] !== undefined && ov[clave] !== '') return ov[clave];
+  return cargar()[clave] || '';
+}
 
 /** Copia de toda la configuración (con secretos en claro; uso interno). */
 export function getConfig() { return { ...cargar() }; }
@@ -126,27 +138,26 @@ export function setConfig(patch = {}) {
  * las cuentas de un solo profesional no necesitan migrar nada.
  */
 export function listarProfesionales() {
-  const c = cargar();
   try {
-    const lista = JSON.parse(c.profesionales || '[]');
+    const lista = JSON.parse(get('profesionales') || '[]');
     if (Array.isArray(lista) && lista.length) return lista;
   } catch { /* config guardada inválida: cae al default de abajo */ }
   return [{
     id: 'default',
-    nombre: c.nombreProfesional || 'Profesional',
-    oficio: c.oficioProfesional || 'electricista',
-    horarioInicio: c.horarioInicio || '08:00',
-    horarioFin: c.horarioFin || '19:00',
-    almuerzoInicio: c.almuerzoInicio || '12:30',
-    almuerzoFin: c.almuerzoFin || '13:30',
-    diasLibres: c.diasLibres || '0'
+    nombre: get('nombreProfesional') || 'Profesional',
+    oficio: get('oficioProfesional') || 'electricista',
+    horarioInicio: get('horarioInicio') || '08:00',
+    horarioFin: get('horarioFin') || '19:00',
+    almuerzoInicio: get('almuerzoInicio') || '12:30',
+    almuerzoFin: get('almuerzoFin') || '13:30',
+    diasLibres: get('diasLibres') || '0'
   }];
 }
 
 /** Lista cruda guardada (sin sintetizar el default) — para el editor de equipo de /config.html: vacía si no se cargó ningún profesional todavía. */
 export function profesionalesGuardados() {
   try {
-    const lista = JSON.parse(cargar().profesionales || '[]');
+    const lista = JSON.parse(get('profesionales') || '[]');
     return Array.isArray(lista) ? lista : [];
   } catch { return []; }
 }
@@ -163,8 +174,9 @@ function slug(texto) {
     .trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
-export function guardarProfesionales(lista) {
-  const limpia = (Array.isArray(lista) ? lista : [])
+/** Sanitiza una lista de profesionales (ids slugificados, defaults de jornada) sin persistirla — la persistencia depende de si es la config global o la de una cuenta SaaS. */
+export function normalizarProfesionales(lista) {
+  return (Array.isArray(lista) ? lista : [])
     .map((p, i) => ({
       id: slug(p.id || p.nombre) || `prof-${i + 1}`,
       nombre: String(p.nombre || '').trim(),
@@ -176,6 +188,10 @@ export function guardarProfesionales(lista) {
       diasLibres: String(p.diasLibres ?? '0').trim()
     }))
     .filter((p) => p.nombre);
+}
+
+export function guardarProfesionales(lista) {
+  const limpia = normalizarProfesionales(lista);
   setConfig({ profesionales: JSON.stringify(limpia) });
   return limpia;
 }

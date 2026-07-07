@@ -8,6 +8,9 @@ import { Router } from 'express';
 import { conversar } from '../ai/agente.js';
 import { geocodificarInverso } from '../ai/geocoding.js';
 import { get as cfg } from '../store/config.js';
+import { runConCuenta } from '../store/contextoCuenta.js';
+import { cuentaPorPhoneId, obtenerOverrides } from '../store/configCuentas.js';
+import { listarCuentaIds } from '../store/cuentas.js';
 
 const router = Router();
 
@@ -15,10 +18,19 @@ const TOKEN = () => cfg('whatsappToken');
 const PHONE_ID = () => cfg('whatsappPhoneId');
 const VERIFY = () => cfg('whatsappVerifyToken') || 'mv-agendate-verify';
 
-// Verificación del webhook (la hace Meta una sola vez)
-router.get('/webhook/whatsapp', (req, res) => {
+// Verificación del webhook (la hace Meta una sola vez). Además del verify token
+// global de la instancia, vale el de cualquier cuenta SaaS que haya conectado
+// su propia app de WhatsApp Business (fase 2).
+router.get('/webhook/whatsapp', async (req, res) => {
   const { 'hub.mode': mode, 'hub.verify_token': token, 'hub.challenge': challenge } = req.query;
-  if (mode === 'subscribe' && token === VERIFY()) return res.status(200).send(challenge);
+  if (mode !== 'subscribe' || !token) return res.sendStatus(403);
+  if (token === VERIFY()) return res.status(200).send(challenge);
+  try {
+    for (const id of await listarCuentaIds()) {
+      const ov = await obtenerOverrides(id);
+      if (ov.whatsappVerifyToken && token === ov.whatsappVerifyToken) return res.status(200).send(challenge);
+    }
+  } catch { /* sin cuentas: cae al 403 */ }
   return res.sendStatus(403);
 });
 
@@ -31,6 +43,17 @@ router.post('/webhook/whatsapp', async (req, res) => {
     for (const c of cambios) {
       const msg = c.value?.messages?.[0];
       if (!msg) continue;
+      // Ruteo multi-cuenta (fase 2): si el Phone Number ID que recibió el
+      // mensaje pertenece a una cuenta SaaS, TODO el manejo (agente, catálogo,
+      // datos, respuesta) corre con la configuración y los datos de ESA cuenta.
+      // Si no matchea ninguna, es el número global de la instancia (modo clásico).
+      const phoneId = c.value?.metadata?.phone_number_id;
+      const duenio = phoneId && phoneId !== PHONE_ID()
+        ? await cuentaPorPhoneId(phoneId, await listarCuentaIds()).catch(() => null)
+        : null;
+      const procesar = duenio
+        ? (fn) => runConCuenta(duenio.cuentaId, duenio.overrides, fn)
+        : (fn) => fn();
       const de = msg.from; // ej: 59899123456
       let texto;
       if (msg.type === 'text') {
@@ -50,8 +73,10 @@ router.post('/webhook/whatsapp', async (req, res) => {
       } else {
         continue; // otros tipos (imagen, audio, etc.) no se procesan por ahora
       }
-      const respuesta = await conversar(`wa:${de}`, texto, 'whatsapp');
-      await enviarWhatsApp(de, respuesta);
+      await procesar(async () => {
+        const respuesta = await conversar(`wa:${de}`, texto, 'whatsapp');
+        await enviarWhatsApp(de, respuesta); // con cuenta activa usa SUS credenciales
+      });
     }
   } catch (err) {
     console.error('[whatsapp] Error procesando webhook:', err);

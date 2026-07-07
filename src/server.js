@@ -15,11 +15,13 @@ import { listarPaises } from './data/paises.js';
 import { geocodificar, geocodificarInverso } from './ai/geocoding.js';
 import { proponerHorarios } from './store/agenda.js';
 import { revisarYAvisarAgendaDelDia } from './channels/aviso-retraso.js';
-import { getConfigPublico, setConfig, get as cfg, listarProfesionales, guardarProfesionales, profesionalesGuardados } from './store/config.js';
+import { getConfigPublico, setConfig, get as cfg, listarProfesionales, guardarProfesionales, normalizarProfesionales, profesionalesGuardados } from './store/config.js';
 import { demoLimitada, consumirUso, usosRestantes, mensajeLimite } from './store/demo.js';
 import * as trabajos from './store/trabajos.js';
 import * as cuentas from './store/cuentas.js';
 import * as cotizaciones from './store/cotizaciones.js';
+import { runConCuenta } from './store/contextoCuenta.js';
+import { obtenerOverrides, guardarOverrides, configPublicaCuenta } from './store/configCuentas.js';
 import { fichaCitaHTML, agendaCSV, agendaExcelHTML, clientesCSV, clientesExcelHTML } from './exports/documentos.js';
 import { resumenUso, catalogoConEstado } from './store/uso.js';
 import * as lic from './store/licencias.js';
@@ -77,12 +79,17 @@ app.use('/movil', express.static(join(here, '../movil'))); // app Android (PWA i
 // todo cae en la cuenta 'default' — el modo single-tenant descargable sigue
 // funcionando exactamente igual que siempre. Nota: el Bearer del cron de
 // Vercel (CRON_SECRET) no es un JWT válido, así que no interfiere.
-app.use((req, _res, next) => {
+app.use(async (req, _res, next) => {
   const auth = String(req.headers.authorization || '');
   const sesion = auth.startsWith('Bearer ') ? cuentas.verificarToken(auth.slice(7)) : null;
   req.cuentaId = sesion?.cuentaId || 'default';
   req.cuentaEmail = sesion?.email || '';
-  next();
+  if (req.cuentaId === 'default') return next();
+  // Fase 2: el resto del request corre con la configuración PROPIA de la
+  // cuenta (oficio, país/moneda, precios, horarios, credenciales) superpuesta
+  // a la global — cotizador, agente y agenda la resuelven solos vía contexto.
+  const overrides = await obtenerOverrides(req.cuentaId).catch(() => ({}));
+  runConCuenta(req.cuentaId, overrides, next);
 });
 
 // El aviso de "cotización para aprobar" al profesional sale por WhatsApp.
@@ -99,7 +106,9 @@ app.post('/api/chat', async (req, res) => {
     return res.status(400).json({ error: 'Falta el campo "mensaje".' });
   }
   const sid = sessionId || `web:${randomUUID()}`;
-  if (demoLimitada() && !enModoDemo()) {
+  // El cupo de la demo pública no aplica a una cuenta SaaS autenticada
+  // probando SU propio asistente.
+  if (req.cuentaId === 'default' && demoLimitada() && !enModoDemo()) {
     const c = consumirUso(visitante(req));
     if (!c.permitido) return res.json({ respuesta: mensajeLimite(), sessionId: sid, demo: false, limiteAlcanzado: true, restantes: 0 });
     res.locals.restantes = c.restantes;
@@ -148,9 +157,16 @@ app.get('/api/oficios/:clave', (req, res) => {
   res.json({ clave: req.params.clave, ...o });
 });
 
+// Escritura de configuración según quién es: la cuenta SaaS guarda en SUS
+// overrides; el modo clásico, en la config global de la instancia.
+async function guardarConfigSegunCuenta(req, patch) {
+  if (req.cuentaId !== 'default') await guardarOverrides(req.cuentaId, patch);
+  else setConfig(patch);
+}
+
 // --- Profesiones/oficios propios: cualquier profesional puede crear el suyo
 //     (médico, abogado, taller, etc.) o pisar los precios de uno base. ---
-app.post('/api/oficios', soloAdmin, (req, res) => {
+app.post('/api/oficios', adminOCuenta, async (req, res) => {
   const b = req.body ?? {};
   const nombre = String(b.nombre || '').trim();
   if (!nombre) return res.status(400).json({ ok: false, error: 'Falta el nombre de la profesión/oficio.' });
@@ -179,20 +195,20 @@ app.post('/api/oficios', soloAdmin, (req, res) => {
     traslado_minimo: Math.max(0, Number(b.traslado_minimo) || 0),
     trabajos,
   };
-  setConfig({ oficiosCustom: JSON.stringify(custom) });
+  await guardarConfigSegunCuenta(req, { oficiosCustom: JSON.stringify(custom) });
   res.json({ ok: true, clave, oficio: custom[clave] });
 });
-app.delete('/api/oficios/:clave', soloAdmin, (req, res) => {
+app.delete('/api/oficios/:clave', adminOCuenta, async (req, res) => {
   let custom = {};
   try { custom = JSON.parse(cfg('oficiosCustom') || '{}'); } catch { /* vacío */ }
   if (!(req.params.clave in custom)) return res.status(404).json({ ok: false, error: 'Ese oficio no es editable (solo se borran los creados por vos).' });
   delete custom[req.params.clave];
-  setConfig({ oficiosCustom: JSON.stringify(custom) });
+  await guardarConfigSegunCuenta(req, { oficiosCustom: JSON.stringify(custom) });
   res.json({ ok: true });
 });
 
-// --- IA: investigación de precios de mercado del país (admin) ---
-app.post('/api/precios/sugerir', soloAdmin, async (req, res) => {
+// --- IA: investigación de precios de mercado del país (admin o cuenta SaaS) ---
+app.post('/api/precios/sugerir', adminOCuenta, async (req, res) => {
   const r = await sugerirPrecios(String(req.body?.oficio || ''));
   res.status(r.ok ? 200 : 400).json(r);
 });
@@ -305,9 +321,19 @@ app.get('/api/auth/yo', async (req, res) => {
 });
 
 // --- Configuración del profesional (oficio, nombre, jornada, canales, API key) ---
-app.get('/api/config', soloAdmin, (_req, res) => res.json(getConfigPublico()));
-app.post('/api/config', soloAdmin, (req, res) => {
+// Con una cuenta SaaS autenticada, lee/escribe la configuración PROPIA de esa
+// cuenta (overrides sobre la global); sin token, la configuración global de
+// la instancia como siempre.
+app.get('/api/config', adminOCuenta, async (req, res) => {
+  if (req.cuentaId !== 'default') return res.json(await configPublicaCuenta(req.cuentaId));
+  res.json(getConfigPublico());
+});
+app.post('/api/config', adminOCuenta, async (req, res) => {
   try {
+    if (req.cuentaId !== 'default') {
+      await guardarOverrides(req.cuentaId, req.body ?? {});
+      return res.json({ ok: true, config: await configPublicaCuenta(req.cuentaId), demo: enModoDemo() });
+    }
     res.json({ ok: true, config: setConfig(req.body ?? {}), demo: enModoDemo() });
   } catch (err) {
     console.error('[api/config]', err);
@@ -452,8 +478,13 @@ app.get('/api/dashboard/filtros', async (req, res) => res.json({ ...(await traba
 // electricistas): lectura pública (para poblar selectores en agenda/clientes/
 // dashboards) y escritura admin.
 app.get('/api/profesionales', (req, res) => res.json(req.query.raw ? profesionalesGuardados() : listarProfesionales()));
-app.post('/api/profesionales', soloAdmin, (req, res) => {
+app.post('/api/profesionales', adminOCuenta, async (req, res) => {
   const lista = Array.isArray(req.body?.profesionales) ? req.body.profesionales : [];
+  if (req.cuentaId !== 'default') {
+    const limpia = normalizarProfesionales(lista);
+    await guardarOverrides(req.cuentaId, { profesionales: JSON.stringify(limpia) });
+    return res.json({ ok: true, profesionales: limpia });
+  }
   res.json({ ok: true, profesionales: guardarProfesionales(lista) });
 });
 
