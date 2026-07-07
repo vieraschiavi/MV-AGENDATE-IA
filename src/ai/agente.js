@@ -11,6 +11,7 @@ import { geocodificar, geocodificarToolDef } from './geocoding.js';
 import { proponerHorarios, proponerHorariosToolDef, configuracionDescansoPorDefecto } from '../store/agenda.js';
 import { crearCita, confirmarDireccionCliente, buscarClientePorTelefono, agendaDelDiaConUbicacion } from '../store/trabajos.js';
 import { aprobacionRequerida, crearCotizacion, cotizacionDeSesion } from '../store/cotizaciones.js';
+import { cuentaActiva } from '../store/contextoCuenta.js';
 import { get as cfg, listarProfesionales } from '../store/config.js';
 import { registrarUso } from '../store/uso.js';
 
@@ -42,14 +43,16 @@ function configuracionDeProfesional(prof) {
   };
 }
 
-// Cliente de Claude creado en caliente a partir de la API key configurada en el
-// panel. Se recrea automáticamente si la clave cambia; null → modo demo.
-let _client = null, _clientKey = null;
+// Cliente de Claude creado en caliente a partir de la API key configurada en
+// el panel (o la propia de la cuenta SaaS activa). Cacheado por clave, así
+// convivir cuentas con claves distintas no recrea el cliente en cada mensaje;
+// null → modo demo.
+const _clientes = new Map();
 function getClient() {
   const key = cfg('anthropicApiKey');
-  if (!key) { _client = null; _clientKey = null; return null; }
-  if (key !== _clientKey) { _client = new Anthropic({ apiKey: key }); _clientKey = key; }
-  return _client;
+  if (!key) return null;
+  if (!_clientes.has(key)) _clientes.set(key, new Anthropic({ apiKey: key }));
+  return _clientes.get(key);
 }
 /** true si no hay API key configurada (respuestas simuladas). */
 export function enModoDemo() { return !getClient(); }
@@ -134,6 +137,7 @@ function construirTools() {
 
 async function ejecutarHerramienta(nombre, input, canal, sessionId) {
   const prof = profesionalActual(sessionId);
+  const cuenta = cuentaActiva(); // los datos van a la cuenta SaaS activa ('default' en el modo clásico)
   switch (nombre) {
     case 'elegir_profesional': {
       const existe = listarProfesionales().some((p) => p.id === input.profesionalId);
@@ -145,7 +149,7 @@ async function ejecutarHerramienta(nombre, input, canal, sessionId) {
       if (r.error || !aprobacionRequerida()) return JSON.stringify(r);
       // El precio calculado es un SUGERIDO interno: el cliente no lo ve hasta
       // que el profesional lo apruebe (o ajuste) desde el Panel.
-      const previa = await cotizacionDeSesion(sessionId, input.trabajo);
+      const previa = await cotizacionDeSesion(sessionId, input.trabajo, cuenta);
       if (previa?.estado === 'aprobada') {
         return JSON.stringify({
           ...r,
@@ -167,8 +171,10 @@ async function ejecutarHerramienta(nombre, input, canal, sessionId) {
           instruccion: 'Todavía sin confirmar: NO des montos. Decile al cliente que el profesional está confirmando el precio y seguí juntando los demás datos (dirección, teléfono, horarios tentativos).'
         });
       }
-      // Teléfono del cliente: en WhatsApp/voz viene en el sessionId.
-      const telefono = /^(wa|tel):/.test(sessionId) ? sessionId.replace(/^(wa|tel):/, '') : (input.telefono || '');
+      // Teléfono del cliente: en WhatsApp/voz viene en el sessionId (que en el
+      // modo SaaS puede llegar prefijado con la cuenta: "cta-xxx/wa:598...").
+      const mTel = sessionId.match(/(?:^|\/)(?:wa|tel):(.+)$/);
+      const telefono = mTel ? mTel[1] : (input.telefono || '');
       const oficios = listarOficios();
       const datosOficio = oficios.find((o) => o.clave === prof.oficio);
       const cot = await crearCotizacion({
@@ -177,7 +183,7 @@ async function ejecutarHerramienta(nombre, input, canal, sessionId) {
         trabajo: input.trabajo,
         trabajoNombre: datosOficio?.trabajos.find((t) => t.clave === input.trabajo)?.nombre || input.trabajo,
         detalle: r
-      });
+      }, cuenta);
       return JSON.stringify({
         requiere_aprobacion: true, estado: 'pendiente', cotizacion_id: cot.id,
         instruccion: 'La cotización quedó en manos del profesional: NO le digas ningún monto al cliente (ni aproximado). Explicale que el profesional confirma el precio enseguida y aprovechá para juntar teléfono y dirección. Cuando pregunte por el precio, volvé a llamar cotizar_trabajo para ver si ya está aprobado.'
@@ -189,17 +195,17 @@ async function ejecutarHerramienta(nombre, input, canal, sessionId) {
       // Agenda real del día (con ubicación) de ESTE profesional, para calcular
       // el traslado hacia y desde sus citas vecinas — no solo la duración del
       // trabajo nuevo, y sin mezclar la agenda de otros profesionales del equipo.
-      const citasDelDia = input.fecha ? await agendaDelDiaConUbicacion(input.fecha, undefined, prof.id) : [];
+      const citasDelDia = input.fecha ? await agendaDelDiaConUbicacion(input.fecha, undefined, prof.id, cuenta) : [];
       return JSON.stringify(proponerHorarios({ configuracion: configuracionDeProfesional(prof), ...input, citasDelDia }));
     }
     case 'confirmar_direccion_cliente': {
       let clienteId = input.clienteId;
       if (!clienteId && input.telefono) {
-        const cli = await buscarClientePorTelefono(input.telefono);
+        const cli = await buscarClientePorTelefono(input.telefono, cuenta);
         clienteId = cli?.id;
       }
       if (!clienteId) return JSON.stringify({ ok: true, coincide: null, error: 'Cliente nuevo, no hay dirección previa registrada.' });
-      return JSON.stringify(await confirmarDireccionCliente(clienteId, input.direccionInformada, input.lat, input.lng));
+      return JSON.stringify(await confirmarDireccionCliente(clienteId, input.direccionInformada, input.lat, input.lng, cuenta));
     }
     case 'registrar_persona_receptora':
       return JSON.stringify({ registrado: true, ...input });
@@ -225,7 +231,7 @@ async function ejecutarHerramienta(nombre, input, canal, sessionId) {
         receptor: input.receptor,
         cotizacion: input.totalCotizado != null ? { ...input.desgloseCotizacion, total: input.totalCotizado } : null,
         canal
-      });
+      }, cuenta);
       return JSON.stringify({ ok: true, cita, mensaje: `Cita confirmada para el ${cita.fecha} a las ${cita.inicio}.` });
     }
     default:
@@ -315,6 +321,11 @@ export async function conversar(sessionId, texto, canal = 'webchat') {
   const client = getClient();
   if (!client) return responderDemo(texto, canal);
 
+  // En el modo SaaS las sesiones se aíslan por cuenta: el mismo cliente
+  // (wa:598...) hablando con dos profesionales distintos son DOS charlas.
+  if (cuentaActiva() !== 'default' && !sessionId.startsWith(`${cuentaActiva()}/`)) {
+    sessionId = `${cuentaActiva()}/${sessionId}`;
+  }
   const mensajes = historial(sessionId);
   const marcaTurno = mensajes.length;
   mensajes.push({ role: 'user', content: texto });

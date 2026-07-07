@@ -106,6 +106,12 @@ export async function login({ email, password }) {
   return { ok: true, cuenta: publica(cuenta), token: firmarToken(cuenta.id, mail) };
 }
 
+/** Ids de todas las cuentas (para rutear webhooks de canales por cuenta). */
+export async function listarCuentaIds() {
+  await cargar();
+  return db.cuentas.map((c) => c.id);
+}
+
 /** Cuenta por email (para vincular la suscripción de MercadoPago del webhook). */
 export async function buscarCuentaPorEmail(email) {
   await cargar();

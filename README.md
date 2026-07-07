@@ -56,13 +56,19 @@ según su mercado.
    Panel. Cada pendiente le llega por WhatsApp; al aprobar, el cliente recibe
    el precio confirmado al instante. Se puede pasar a "precio directo" desde
    `/config.html` (y la demo pública fluye sola).
-10. **Modo SaaS multi-cliente (fase 1)**: además de la versión descargable,
-    cuentas online con email/contraseña (`/app` → Cuenta online): 14 días de
-    prueba gratis y suscripción de USD 15/mes por MercadoPago. Cada cuenta
-    tiene sus clientes/citas/dashboards aislados (namespacing por cuenta en
-    Redis); sin token, todo sigue operando sobre la cuenta `default` — el modo
-    single-tenant no cambia. Los canales IA (WhatsApp/voz) por cuenta llegan
-    en fase 2.
+10. **Modo SaaS multi-cliente**: además de la versión descargable, cuentas
+    online con email/contraseña (`/app` → Cuenta online): 14 días de prueba
+    gratis y suscripción de USD 15/mes por MercadoPago. Cada cuenta tiene sus
+    clientes/citas/dashboards aislados (namespacing por cuenta en Redis) **y
+    su configuración propia** (profesión, país/moneda, catálogo, horarios,
+    equipo, aprobación de cotizaciones, credenciales de canales): un contexto
+    por request (AsyncLocalStorage) superpone los overrides de la cuenta a la
+    config global, así cotizador/agente/agenda la resuelven sin cambios. El
+    webhook de WhatsApp rutea cada mensaje entrante a la cuenta dueña del
+    Phone Number ID (cada cuenta puede conectar su propio WhatsApp Business y
+    su API key de Claude). Sin token, todo sigue operando sobre la cuenta
+    `default` — el modo single-tenant no cambia. Voz (Twilio) por cuenta:
+    pendiente (hoy el ChatVoice corre sobre la config global).
 
 ## 2. Stack
 
@@ -142,7 +148,7 @@ test/                   Suite de tests (cotizador, agenda, aviso de retraso, age
 - `GET /api/agenda.csv` · `/api/agenda.xls` · `/api/clientes.csv` · `/api/clientes.xls` — exportación con filtros
 - `GET /api/agenda/chequear-retrasos` (cron) / `POST` (manual, admin) — dispara los avisos de demora
 - `GET /api/cotizaciones?estado=pendiente` · `POST /api/cotizaciones/:id/resolver` — aprobación de cotizaciones (el chatbot no da precio sin OK del profesional)
-- `POST /api/auth/registro` · `POST /api/auth/login` · `GET /api/auth/yo` — cuentas del modo SaaS (con `Authorization: Bearer <token>`, todas las rutas del workspace operan sobre los datos aislados de esa cuenta)
+- `POST /api/auth/registro` · `POST /api/auth/login` · `GET /api/auth/yo` — cuentas del modo SaaS (con `Authorization: Bearer <token>`, todas las rutas del workspace operan sobre los datos aislados de esa cuenta, y `/api/config`, `/api/oficios`, `/api/profesionales`, `/api/cotizar` leen/escriben la configuración PROPIA de la cuenta)
 - `GET /api/planes` · `POST /api/comprar` · `POST /api/pago/mercadopago` (webhook) · `GET /descargar/:token`
 - `GET/POST /webhook/whatsapp`, `POST /webhook/voz`, `POST /webhook/voz-premium` — canales externos
 
