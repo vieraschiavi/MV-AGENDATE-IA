@@ -1,0 +1,14 @@
+{
+  "name": "mv-agendate-ia-nucleo",
+  "version": "0.1.0",
+  "description": "Cotizador multi-oficio + motor de agenda con traslados + aviso de retraso, para integrar al proyecto MV Asistente Inmobiliario y convertirlo en MV Agendate IA.",
+  "type": "module",
+  "main": "demo-server.js",
+  "scripts": {
+    "demo": "node demo-server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.0",
+    "express": "^4.19.2"
+  }
+}
