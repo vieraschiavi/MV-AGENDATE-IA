@@ -7,10 +7,12 @@ import { networkInterfaces } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { conversar, enModoDemo, listarOficios } from './ai/agente.js';
+import { responderAyuda } from './ai/ayuda.js';
 import { cotizar } from './ai/cotizador.js';
+import { geocodificar, geocodificarInverso } from './ai/geocoding.js';
 import { proponerHorarios } from './store/agenda.js';
 import { revisarYAvisarAgendaDelDia } from './channels/aviso-retraso.js';
-import { getConfigPublico, setConfig, get as cfg } from './store/config.js';
+import { getConfigPublico, setConfig, get as cfg, listarProfesionales, guardarProfesionales, profesionalesGuardados } from './store/config.js';
 import { demoLimitada, consumirUso, usosRestantes, mensajeLimite } from './store/demo.js';
 import * as trabajos from './store/trabajos.js';
 import { fichaCitaHTML, agendaCSV, agendaExcelHTML, clientesCSV, clientesExcelHTML } from './exports/documentos.js';
@@ -90,11 +92,36 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
+// --- Asistente de ayuda (dudas sobre el programa — distinto del agente de negocio) ---
+app.post('/api/ayuda', async (req, res) => {
+  if (await esBot(req)) return res.status(403).json({ error: 'Acceso denegado.' });
+  const { mensaje, sessionId } = req.body ?? {};
+  if (!mensaje || typeof mensaje !== 'string') return res.status(400).json({ error: 'Falta el campo "mensaje".' });
+  const sid = sessionId || `ayuda:${randomUUID()}`;
+  try {
+    const respuesta = await responderAyuda(sid, mensaje);
+    res.json({ respuesta, sessionId: sid, ia: !enModoDemo() });
+  } catch (err) {
+    console.error('[api/ayuda]', err);
+    res.status(500).json({ error: 'Error interno del asistente de ayuda.' });
+  }
+});
+
 // --- Cotizador (formulario directo, sin pasar por el chat) ---
 app.get('/api/oficios', (_req, res) => res.json(listarOficios()));
 app.post('/api/cotizar', (req, res) => {
   const r = cotizar({ oficio: cfg('oficioProfesional') || undefined, ...req.body });
   res.status(r.error ? 400 : 200).json(r);
+});
+
+// --- Geocoding gratuito (Nominatim/OSM): dirección de texto ↔ coordenadas ---
+app.get('/api/geocoding', async (req, res) => {
+  const r = await geocodificar(req.query.direccion);
+  res.status(r.ok ? 200 : 400).json(r);
+});
+app.get('/api/geocoding/inverso', async (req, res) => {
+  const r = await geocodificarInverso(Number(req.query.lat), Number(req.query.lng));
+  res.status(r.ok ? 200 : 400).json(r);
 });
 
 // --- Motor de agenda: horarios propuestos considerando traslados y descansos ---
@@ -240,7 +267,14 @@ const profesionalOpts = () => ({ agencia: cfg('agenciaNombre') || cfg('nombrePro
 app.get('/api/citas', async (req, res) => res.json(await trabajos.listarCitas(req.query ?? {})));
 app.get('/api/citas/dia/:fecha', async (req, res) => res.json(await trabajos.citasDelDia(req.params.fecha)));
 app.get('/api/citas/:id', async (req, res) => { const c = await trabajos.obtenerCita(req.params.id); res.status(c ? 200 : 404).json(c || { error: 'No encontrada' }); });
-app.post('/api/citas', soloAdmin, async (req, res) => res.json({ ok: true, cita: await trabajos.crearCita(req.body ?? {}) }));
+app.post('/api/citas', soloAdmin, async (req, res) => {
+  const datos = { ...req.body };
+  if (datos.direccion && !Number.isFinite(datos.lat)) {
+    const geo = await geocodificar(datos.direccion);
+    if (geo.ok) { datos.lat = geo.lat; datos.lng = geo.lng; }
+  }
+  res.json({ ok: true, cita: await trabajos.crearCita(datos) });
+});
 app.post('/api/citas/:id/estado', soloAdmin, async (req, res) => { const r = await trabajos.cambiarEstadoCita(req.params.id, req.body?.estado); res.status(r.ok ? 200 : 400).json(r); });
 app.post('/api/citas/:id/receptor', soloAdmin, async (req, res) => { const r = await trabajos.registrarReceptor(req.params.id, req.body?.nombreReceptor); res.status(r.ok ? 200 : 400).json(r); });
 app.get('/api/citas/:id/ficha', async (req, res) => {
@@ -252,13 +286,33 @@ app.get('/api/citas/:id/ficha', async (req, res) => {
 app.get('/api/clientes', async (_req, res) => res.json(await trabajos.listarClientes()));
 app.get('/api/cliente/:id', async (req, res) => { const c = await trabajos.obtenerCliente(req.params.id); res.status(c ? 200 : 404).json(c || { error: 'No encontrado' }); });
 app.post('/api/cliente', soloAdmin, async (req, res) => res.json({ ok: true, cliente: await trabajos.guardarCliente(req.body ?? {}) }));
-app.post('/api/cliente/:id/confirmar-direccion', async (req, res) => res.json(await trabajos.confirmarDireccionCliente(req.params.id, req.body?.direccionInformada)));
+app.post('/api/cliente/:id/confirmar-direccion', async (req, res) => {
+  const direccionInformada = req.body?.direccionInformada;
+  let lat, lng;
+  if (direccionInformada) {
+    const geo = await geocodificar(direccionInformada);
+    if (geo.ok) { lat = geo.lat; lng = geo.lng; }
+  }
+  res.json(await trabajos.confirmarDireccionCliente(req.params.id, direccionInformada, lat, lng));
+});
+app.post('/api/cliente/:id/profesional', soloAdmin, async (req, res) => {
+  res.json(await trabajos.asignarProfesionalCliente(req.params.id, req.body?.profesionalId));
+});
 
 // Dashboard (con filtros: oficio, estado, año, mes, fecha)
 app.get('/api/dashboard', async (req, res) => res.json(await trabajos.resumenDashboard(req.query ?? {})));
 app.get('/api/dashboard/serie', async (req, res) => res.json(await trabajos.serieMensual(req.query ?? {})));
-app.get('/api/dashboard/serie-anual', async (_req, res) => res.json(await trabajos.serieAnual()));
-app.get('/api/dashboard/filtros', async (_req, res) => res.json(await trabajos.opcionesFiltros()));
+app.get('/api/dashboard/serie-anual', async (req, res) => res.json(await trabajos.serieAnual(req.query ?? {})));
+app.get('/api/dashboard/filtros', async (_req, res) => res.json({ ...(await trabajos.opcionesFiltros()), profesionales: listarProfesionales() }));
+
+// Equipo de profesionales de la cuenta (estudios con varios trabajadores, ej. 3
+// electricistas): lectura pública (para poblar selectores en agenda/clientes/
+// dashboards) y escritura admin.
+app.get('/api/profesionales', (req, res) => res.json(req.query.raw ? profesionalesGuardados() : listarProfesionales()));
+app.post('/api/profesionales', soloAdmin, (req, res) => {
+  const lista = Array.isArray(req.body?.profesionales) ? req.body.profesionales : [];
+  res.json({ ok: true, profesionales: guardarProfesionales(lista) });
+});
 
 // Exportación de la agenda y de la base de clientes (Excel/CSV), con los mismos filtros del dashboard.
 app.get('/api/agenda.csv', async (req, res) => res.type('text/csv').attachment('agenda.csv').send(agendaCSV(await trabajos.listarCitas(req.query ?? {}))));

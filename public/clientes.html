@@ -2,100 +2,11 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Clientes — MV Agendate IA</title>
-<link rel="icon" href="/logo-mv.svg" type="image/svg+xml">
-<style>
-  :root{ --navy:#0f2a43; --navy2:#16466e; --cel:#1f7ae0; --line:#e6ebf1; }
-  *{ box-sizing:border-box; }
-  body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:#eef2f7; color:#1e2b38; }
-  header{ background:linear-gradient(135deg,var(--navy),var(--navy2)); color:#fff; padding:14px 22px; display:flex; align-items:center; gap:12px; }
-  header img{ width:36px; height:36px; border-radius:9px; } header strong{ font-size:1.05rem; }
-  nav.top{ margin-left:auto; display:flex; gap:16px; } nav.top a{ color:#cfe0f0; text-decoration:none; font-size:.9rem; } nav.top a.on{ color:#e0b25c; font-weight:700; }
-  .wrap{ max-width:1150px; margin:18px auto; padding:0 16px; display:grid; grid-template-columns:1fr 1.3fr; gap:18px; }
-  @media(max-width:820px){ .wrap{ grid-template-columns:1fr; } }
-  .card{ background:#fff; border:1px solid var(--line); border-radius:16px; padding:16px; box-shadow:0 4px 16px #0f2a430c; }
-  h2{ margin:0 0 12px; font-size:1.02rem; color:var(--navy); }
-  label{ font-size:.78rem; color:#5a6b7c; display:block; margin:8px 0 3px; }
-  input,select,textarea{ width:100%; padding:9px 11px; border:1px solid #cfd9e4; border-radius:9px; font-size:.9rem; background:#fff; }
-  .form2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  .btn{ background:var(--cel); color:#fff; border:0; border-radius:10px; padding:11px 16px; font-weight:600; cursor:pointer; margin-top:12px; }
-  .btn.sec{ background:#e8edf2; color:#22303e; }
-  .cli{ border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px; cursor:pointer; }
-  .cli:hover{ background:#f4f8fc; } .cli .n{ font-weight:700; } .cli .m{ font-size:.82rem; color:#5a6b7c; }
-  .cita{ border-top:1px solid var(--line); padding:8px 0; font-size:.86rem; }
-  .precio{ color:var(--cel); font-weight:700; }
-  .admKey{ width:160px; padding:8px; }
-  .aviso{ font-size:.82rem; padding:8px 10px; border-radius:8px; margin-top:8px; }
-  .aviso.ok{ background:#e6f6ec; color:#1a7f37; } .aviso.warn{ background:#fff6e6; color:#8a5a00; }
-</style>
+<title>MV Agendate IA</title>
+<!-- El workspace ahora es una SPA React (webapp/ → build en /app/).
+     La versión clásica quedó en respaldo/web-clasica/. -->
+<meta http-equiv="refresh" content="0; url=/app/#/clientes">
+<script>location.replace('/app/#/clientes');</script>
 </head>
-<body>
-<header>
-  <img src="/logo-mv.svg" alt="MV"><strong>Clientes</strong>
-  <nav class="top"><a href="/dashboards.html">Dashboards</a><a href="/agenda.html">Agenda</a><a href="/clientes.html" class="on">Clientes</a><a href="/panel.html">Panel del día</a><a href="/">Inicio</a></nav>
-</header>
-<div class="wrap">
-  <div>
-    <div class="card">
-      <h2>➕ Nueva ficha de cliente</h2>
-      <input id="admKey" class="admKey" type="password" placeholder="Clave admin (si aplica)" style="width:100%;margin-bottom:6px;">
-      <div class="form2">
-        <div><label>Nombre</label><input id="cNombre"></div>
-        <div><label>Teléfono</label><input id="cTel"></div>
-        <div><label>Email</label><input id="cEmail"></div>
-        <div><label>Quién suele atender (si no es el titular)</label><input id="cReceptor"></div>
-      </div>
-      <label>Dirección de la base</label><input id="cDireccion">
-      <label>Notas</label><textarea id="cNotas" style="min-height:52px;"></textarea>
-      <button class="btn" id="btnCli">Guardar ficha</button>
-    </div>
-    <div class="card" style="margin-top:14px;">
-      <h2>👥 Fichas</h2>
-      <div id="listaCli"></div>
-    </div>
-  </div>
-  <div class="card">
-    <h2>🗓️ Historial y próximas citas</h2>
-    <div id="detalle" style="color:#8a8a8a;">Elegí un cliente de la lista para ver su historial de trabajos.</div>
-  </div>
-</div>
-<script>
-const $ = (s) => document.querySelector(s);
-let clientes = [];
-const hdr = () => { const h = {'Content-Type':'application/json'}; const k=$('#admKey').value.trim(); if(k) h['X-Admin-Key']=k; return h; };
-async function cargar() {
-  clientes = await (await fetch('/api/clientes')).json();
-  $('#listaCli').innerHTML = clientes.map(c=>`<div class="cli" onclick="ver('${c.id}')"><div class="n">${c.nombre||c.id}</div>
-    <div class="m">${c.telefono||c.email||''} · ${c.direccion||'sin dirección cargada'}${c.receptorHabitual?' · suele atender: '+c.receptorHabitual:''}</div></div>`).join('') || '<span style="color:#999">Sin fichas aún.</span>';
-}
-$('#btnCli').onclick = async () => {
-  const body={ nombre:$('#cNombre').value, telefono:$('#cTel').value, email:$('#cEmail').value,
-    direccion:$('#cDireccion').value, receptorHabitual:$('#cReceptor').value, notas:$('#cNotas').value };
-  if(!body.nombre) return alert('Poné al menos el nombre.');
-  const r=await (await fetch('/api/cliente',{method:'POST',headers:hdr(),body:JSON.stringify(body)})).json();
-  if(r.ok){ document.querySelectorAll('.card input, #cNotas').forEach(e=>e.value=''); cargar(); ver(r.cliente.id); } else alert(r.error||'Error');
-};
-async function ver(id) {
-  const c = clientes.find(x=>x.id===id) || await (await fetch('/api/clientes')).json().then(a=>a.find(x=>x.id===id));
-  const citas = await (await fetch(`/api/citas?clienteId=${id}`)).json();
-  $('#detalle').innerHTML = `<div style="margin-bottom:10px;"><strong>${c.nombre}</strong><br><span style="color:#5a6b7c;font-size:.85rem;">${c.telefono||''} ${c.email||''}</span></div>` +
-    `<div style="font-size:.85rem;color:#5a6b7c;margin-bottom:10px;">📍 ${c.direccion||'Sin dirección cargada'}${c.receptorHabitual?' · suele atender: '+c.receptorHabitual:''}</div>` +
-    `<div class="aviso ok" style="display:flex;gap:8px;align-items:center;">
-       <input id="nuevaDir" placeholder="Confirmar/actualizar dirección" style="flex:1;" value="${c.direccion||''}">
-       <button class="btn sec" style="margin:0;" onclick="confirmarDireccion('${id}')">Confirmar</button>
-     </div><div id="avisoDir"></div>` +
-    (citas.length ? '<strong style="display:block;margin-top:12px;">Trabajos:</strong>' + citas.map(ci=>`<div class="cita"><strong>${ci.trabajoNombre}</strong> — <span class="precio">${ci.cotizacion?.total?'$ '+ci.cotizacion.total.toLocaleString('es-UY'):'—'}</span><br><span style="color:#5a6b7c;">📅 ${ci.fecha} ${ci.inicio} · ${ci.estado}</span> · <a href="/api/citas/${ci.id}/ficha" target="_blank">Ver ficha</a></div>`).join('')
-      : '<div style="color:#999;margin-top:10px;">Sin trabajos registrados todavía.</div>');
-}
-async function confirmarDireccion(id) {
-  const direccionInformada = $('#nuevaDir').value.trim();
-  const r = await (await fetch(`/api/cliente/${id}/confirmar-direccion`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({direccionInformada})})).json();
-  $('#avisoDir').innerHTML = r.coincide === false ? '<div class="aviso warn">Dirección actualizada (no coincidía con la base).</div>' : '<div class="aviso ok">✅ Dirección confirmada.</div>';
-  cargar();
-}
-cargar();
-</script>
-<script src="/js/contacto.js" defer></script>
-</body>
+<body></body>
 </html>

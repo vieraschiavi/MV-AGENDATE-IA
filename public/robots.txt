@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+# Panel interno del profesional: sin valor para buscadores
+Disallow: /config.html
+Disallow: /panel.html
+Disallow: /agenda.html
+Disallow: /clientes.html
+Disallow: /dashboards.html
+Disallow: /api/
+
+Sitemap: https://mv-agendate-ia.vercel.app/sitemap.xml

@@ -25,7 +25,9 @@ catálogo de precios.
    configuró el profesional.
 3. **Confirma dirección y receptor**: pregunta si el domicilio es el mismo
    que figura en la base del cliente, y quién va a atender si no es el
-   titular.
+   titular. Si el cliente comparte su ubicación nativa de WhatsApp usa esas
+   coordenadas directo; si escribe la dirección a mano, la geocodifica sola
+   (Nominatim/OSM, gratis) para poder calcular el traslado real.
 4. **Avisa retrasos solo**: si un trabajo se extiende, le escribe por
    WhatsApp al próximo cliente 30 minutos antes, disculpando la demora — sin
    que el profesional escriba nada.
@@ -34,6 +36,12 @@ catálogo de precios.
    Excel/CSV/PDF con filtros.
 6. **App PC y Android**: el mismo servidor sirve la web, la demo, el panel y
    una PWA instalable como app (sin Play Store).
+7. **Multi-profesional**: un mismo estudio (ej. 3 electricistas) puede cargar
+   varios profesionales, cada uno con su propio oficio, jornada y descansos —
+   el chatbot identifica cuál corresponde antes de cotizar, y cada uno agenda
+   sobre su propia agenda (traslados calculados sin mezclar citas entre
+   profesionales). Con uno solo configurado (el caso por defecto) no cambia
+   nada del flujo de siempre.
 
 ## 2. Stack
 
@@ -41,6 +49,7 @@ catálogo de precios.
 |---|---|
 | Runtime | Node.js ≥ 20 (ES modules) |
 | Servidor | Express |
+| Workspace (panel de gestión) | React 18 + Vite (SPA en `/app/`, build commiteado — el deploy no necesita build step) |
 | IA | `@anthropic-ai/sdk` (Claude) — chatbot, ChatVoice |
 | Voz (TTS) | **Piper** (neuronal, offline, gratis) — voz `es_AR-daniela` rioplatense; opcional ElevenLabs (voz clonada) |
 | Voz (ASR) | Deepgram (opcional, ChatVoice premium en tiempo real) |
@@ -61,7 +70,9 @@ src/
   programa.js             Lanzador para la versión PC (setup de clave + server)
   ai/
     agente.js             Cerebro del chatbot (Claude + herramientas: cotizar/agendar/confirmar)
+    ayuda.js               Asistente de ayuda del programa (Claude + guía local sin API key)
     cotizador.js           Motor de cotización por oficio y tipo de trabajo
+    geocoding.js           Dirección de texto ↔ coordenadas (Nominatim/OSM, gratis)
   channels/
     voz.js                ChatVoice vía rápida (Twilio <Gather> + voz neural)
     voz-premium.js         ChatVoice en tiempo real (Deepgram ASR + Piper/ElevenLabs TTS)
@@ -69,7 +80,7 @@ src/
     whatsapp.js            Webhook WhatsApp (Meta Cloud API)
     aviso-retraso.js       Detecta demoras y dispara el aviso automático por WhatsApp
   store/
-    config.js              Config en caliente + prioridad config.json > env > clave embebida
+    config.js              Config en caliente + prioridad config.json > env > clave embebida; equipo de profesionales (multi-profesional)
     agenda.js              Motor de agenda: distancias, traslados y huecos disponibles
     trabajos.js            Clientes, citas/trabajos y dashboard (Redis)
     licencias.js           Pedidos, planes, confirmación de pago, token de descarga (HMAC)
@@ -81,20 +92,25 @@ src/
   data/oficios.json        Catálogo de oficios, trabajos, precios y tiempos de referencia
   setup/                   Setup de API key por consola + embeber clave (base64)
 
-public/                 Web estática (landing, demo, dashboards, agenda, clientes, panel, comprar)
+public/                 Web estática (landing, demo, comprar, config) + build de la SPA en public/app/
+webapp/                 Workspace en React 18 + Vite (panel/agenda/clientes/dashboards/ayuda) → npm run build
+respaldo/web-clasica/   Versión anterior del workspace (HTML + JS vanilla), por si hay que restaurarla
 movil/                  App Android (PWA instalable / APK)
 api/index.js            Entrypoint serverless de Vercel
 vercel.json             Config de deploy + Cron Job del aviso de retrasos
-test/                   Suite de tests (cotizador, agenda, aviso de retraso, agente)
+test/                   Suite de tests (cotizador, agenda, aviso de retraso, agente, geocoding, multi-profesional)
 ```
 
 ## 4. Endpoints principales
 
 - `POST /api/chat` — chat del agente (webchat/demo)
+- `POST /api/ayuda` — asistente de ayuda del programa (dudas de uso/configuración)
 - `GET /api/oficios` · `POST /api/cotizar` — catálogo y cotización directa
 - `POST /api/agenda/proponer` — horarios propuestos considerando traslados
+- `GET /api/geocoding?direccion=` · `GET /api/geocoding/inverso?lat=&lng=` — dirección ↔ coordenadas
 - `GET/POST /api/citas`, `/api/citas/:id/estado`, `/api/citas/:id/receptor`, `/api/citas/:id/ficha`
-- `GET/POST /api/clientes`, `/api/cliente/:id/confirmar-direccion`
+- `GET/POST /api/clientes`, `/api/cliente/:id/confirmar-direccion`, `/api/cliente/:id/profesional`
+- `GET/POST /api/profesionales` — equipo de profesionales de la cuenta (multi-profesional)
 - `GET /api/dashboard`, `/api/dashboard/serie`, `/api/dashboard/serie-anual`, `/api/dashboard/filtros`
 - `GET /api/agenda.csv` · `/api/agenda.xls` · `/api/clientes.csv` · `/api/clientes.xls` — exportación con filtros
 - `GET /api/agenda/chequear-retrasos` (cron) / `POST` (manual, admin) — dispara los avisos de demora
@@ -112,8 +128,11 @@ npm start          # pide la API key la primera vez (o Enter para modo demo)
 ```
 
 Páginas: `/` (landing), `/demo.html` (demo chat + cotizador + agenda),
-`/config.html` (configuración), `/panel.html` (agenda de hoy), `/dashboards.html`,
-`/agenda.html` (gestión de citas), `/clientes.html`, `/comprar.html`.
+`/config.html` (configuración), `/comprar.html`, y el **workspace React** en
+`/app/` (panel del día, agenda, clientes, dashboards y ayuda con IA — las URLs
+viejas `/panel.html`, `/agenda.html`, etc. redirigen solas). Para tocar el
+workspace: `cd webapp && npm install && npm run build` (el build queda
+commiteado en `public/app/`, así el deploy sigue sin build step).
 
 ## 6. Planes y precios
 
@@ -163,14 +182,8 @@ costo de API aparte, sin markup).
   `agenda.js` usa Haversine + velocidad promedio configurable; para más
   precisión, reemplazarla por una llamada a Google Distance Matrix (o
   Mapbox/OSRM) sin tocar el resto del motor.
-- **Geocoding**: hoy `agenda.js` recibe `{lat, lng}` ya resueltos. Falta
-  convertir la dirección que escribe el cliente en coordenadas (Google
-  Geocoding API o Nominatim/OSM, gratis).
 - **Aprobación de Meta para WhatsApp Business** y alta de número en Twilio:
   son trámites del lado de Meta/Twilio, no de código — ver `docs/CANALES.md`.
-- **Multi-profesional** (varios electricistas en un mismo estudio): el motor
-  de agenda asume un solo profesional/agenda por cuenta; para varios, hay que
-  sumar un `profesionalId` a cada cita.
 - **Precios de `oficios.json`** son valores de referencia en UYU — hay que
   ajustarlos con el precio real de cada profesional y su competencia local
   antes de vender.

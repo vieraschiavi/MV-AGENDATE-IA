@@ -17,3 +17,4 @@ voces/*.onnx
 .env*
 !.env.example
 descargas/*.zip
+webapp/node_modules/

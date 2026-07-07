@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ayuda — MV Agendate IA</title>
+<link rel="icon" href="/logo-mv.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/workspace.css">
+<style>
+  .pasos{ counter-reset: paso; display:grid; gap:10px; }
+  .paso{ display:flex; gap:12px; align-items:flex-start; background:#fff; border:1px solid var(--line);
+    border-radius:12px; padding:12px 14px; }
+  .paso::before{ counter-increment: paso; content: counter(paso); flex:0 0 auto; width:28px; height:28px;
+    border-radius:50%; background:var(--cel); color:#fff; font-weight:800; display:grid; place-items:center; font-size:.85rem; }
+  .paso strong{ display:block; color:var(--navy); margin-bottom:2px; }
+  .paso p{ margin:0; font-size:.87rem; color:#44535f; }
+  details.tema{ background:#fff; border:1px solid var(--line); border-radius:12px; padding:0; margin-bottom:8px; overflow:hidden; }
+  details.tema summary{ cursor:pointer; padding:12px 14px; font-weight:700; color:var(--navy); font-size:.92rem;
+    list-style:none; display:flex; align-items:center; gap:9px; }
+  details.tema summary::before{ content:'▸'; color:var(--muted); transition:transform .15s; }
+  details.tema[open] summary::before{ transform:rotate(90deg); }
+  details.tema .cuerpo{ padding:0 14px 13px 37px; font-size:.87rem; color:#44535f; line-height:1.55; }
+  code{ background:#eef2f7; border-radius:5px; padding:1px 6px; font-size:.83em; color:var(--navy); }
+  /* Chat de ayuda */
+  .chat{ display:flex; flex-direction:column; height:520px; }
+  .chat .msgs{ flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:9px; padding:4px 2px 10px; }
+  .burb{ max-width:85%; padding:9px 12px; border-radius:13px; font-size:.88rem; line-height:1.5; white-space:pre-wrap; }
+  .burb.yo{ align-self:flex-end; background:var(--cel); color:#fff; border-bottom-right-radius:4px; }
+  .burb.ia{ align-self:flex-start; background:#eef2f7; color:var(--text); border-bottom-left-radius:4px; }
+  .chat .entrada{ display:flex; gap:8px; padding-top:10px; border-top:1px solid var(--line); }
+  .chat .entrada input{ flex:1; }
+  .sugerencias{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .sugerencias button{ background:#eef2f7; border:1px solid var(--line); color:var(--navy); font-size:.76rem;
+    padding:5px 10px; border-radius:20px; cursor:pointer; font-family:inherit; }
+  .sugerencias button:hover{ background:#dceafb; }
+  .ia-badge{ font-size:.72rem; color:var(--muted); margin-top:6px; }
+</style>
+</head>
+<body>
+<div class="mv-pagehead">
+  <div><div class="mv-crumb">Espacio de trabajo</div><h1>❓ Ayuda</h1></div>
+</div>
+<div class="mv-content">
+  <div class="grid2" style="align-items:start;">
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <h2 class="mv-h">🚀 Tutorial — primeros pasos</h2>
+        <div class="pasos">
+          <div class="paso"><div><strong>Cargá tu API key de Claude</strong><p>En <code>/config.html</code> pegá tu clave de <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. Sin ella el programa corre en modo demo (todo se puede probar igual).</p></div></div>
+          <div class="paso"><div><strong>Elegí tu oficio y tus datos</strong><p>Nombre, oficio (18 incluidos: electricista, plomero, abogado, psicólogo…), teléfono y logo. El chatbot atiende en tu nombre.</p></div></div>
+          <div class="paso"><div><strong>Ajustá jornada y descansos</strong><p>Horario laboral, almuerzo y días libres. La agenda nunca ofrece horarios fuera de eso, y suma el tiempo de traslado real entre citas.</p></div></div>
+          <div class="paso"><div><strong>Revisá tus precios</strong><p>El agente cotiza solo con tu catálogo (<code>src/data/oficios.json</code>) — nunca inventa un número. Ajustá los valores de referencia a tus precios reales.</p></div></div>
+          <div class="paso"><div><strong>Conectá tus canales</strong><p>WhatsApp (Meta Cloud API) y/o teléfono (Twilio) desde la misma pantalla de configuración, con botón de prueba. El webchat ya funciona sin configurar nada.</p></div></div>
+          <div class="paso"><div><strong>Probalo</strong><p>Mandá un mensaje de prueba desde <code>/config.html</code> o simulá un cliente completo en <code>/demo.html</code>. Después gestioná todo desde el Panel del día, Agenda, Clientes y Dashboards (menú de la izquierda).</p></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="mv-h">📖 Guía por tema</h2>
+        <div id="temas"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="mv-h">🤖 Preguntale a la IA sobre el programa</h2>
+      <p style="font-size:.83rem;color:var(--muted);margin:0 0 8px;">Respuestas al instante sobre configuración, canales, agenda, planes y todo lo demás. Sin API key cargada responde desde la guía local.</p>
+      <div class="chat">
+        <div class="msgs" id="msgs">
+          <div class="burb ia">Hola 👋 Soy el asistente de ayuda de MV Agendate IA. Preguntame lo que quieras sobre el programa: cómo configurarlo, conectar WhatsApp, los planes, la agenda…</div>
+        </div>
+        <div class="entrada">
+          <input id="pregunta" placeholder="Ej: ¿cómo conecto WhatsApp?" maxlength="500">
+          <button class="btn cel" id="btnPreguntar">Enviar</button>
+        </div>
+        <div class="sugerencias" id="sugerencias"></div>
+        <div class="ia-badge" id="iaBadge"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/workspace.js"></script>
+<script>
+mvShell('ayuda');
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+// Guía por tema (mismo contenido que conoce la IA — fuente: src/ai/ayuda.js)
+const TEMAS = [
+  ['🔑 Primeros pasos', 'Abrí <code>/config.html</code>, pegá tu API key de Claude, elegí oficio y nombre, ajustá jornada/almuerzo/días libres y probá el chatbot desde la misma página. Todo se aplica al instante, sin reiniciar.'],
+  ['💰 Cotizador y precios', 'El agente cotiza solo con tu catálogo (mano de obra + materiales + traslado) y nunca inventa números. 18 oficios incluidos con valores de referencia en UYU — ajustalos a tus precios reales en <code>src/data/oficios.json</code>.'],
+  ['🗓️ Agenda con traslados', 'Propone horarios sumando el viaje real hacia y desde las citas vecinas, y respeta jornada, almuerzo y días libres. Vista Tabla o Tablero (kanban por estado) en <code>/agenda.html</code>, con exportación CSV/Excel. Las direcciones se geocodifican solas (gratis) y las ubicaciones compartidas por WhatsApp se usan directo.'],
+  ['📲 Conectar WhatsApp', 'Creá una app de WhatsApp Business en Meta for Developers, cargá Token / Phone Number ID / Verify Token en <code>/config.html</code> y apuntá el webhook a <code>https://tu-dominio/webhook/whatsapp</code>. Hay botón de prueba de conexión. Meta solo permite texto libre dentro de las 24 h del último mensaje del cliente.'],
+  ['📞 ChatVoice (teléfono)', 'Vía rápida: Twilio + voz neural — comprás el número desde <code>/config.html</code> sin entrar a Twilio. Premium: Deepgram (tiempo real) + voz Piper es_AR-daniela (rioplatense, gratis, offline — <code>promo/instalar-voz.sh</code>) o ElevenLabs (voz clonada). La premium requiere PC/VPS; en Vercel funciona la vía rápida.'],
+  ['⏰ Aviso de retraso', 'Si un trabajo "en curso" te va a hacer llegar 30+ min tarde a la próxima cita, el sistema le avisa solo por WhatsApp al próximo cliente. En PC corre cada 5 min; en Vercel lo dispara el Cron Job de <code>vercel.json</code>. Forzalo cuando quieras desde <code>/panel.html</code>.'],
+  ['📊 Dashboards y export', 'Trabajos por día/semana/mes/año, comparativas mes a mes y año contra año, facturación y ticket promedio, con filtros (incluido por profesional). Exportación CSV/Excel de agenda y clientes respetando filtros; ficha imprimible/PDF por cita.'],
+  ['👥 CRM de clientes', 'Página por cliente con contacto, dirección (confirmación + geocoding automático), receptor habitual, notas e historial de trabajos. El agente confirma dirección y receptor en cada conversación y actualiza la ficha solo.'],
+  ['👷 Equipo (varios profesionales)', 'En <code>/config.html</code> → Equipo cargá varios profesionales (ej. 3 electricistas), cada uno con su oficio y jornada. El chatbot identifica cuál corresponde antes de cotizar y cada uno agenda sobre su propia agenda. Con uno solo, nada cambia.'],
+  ['💳 Planes y compra', 'Básico USD 129 (agenda + cotizador + CRM + dashboards + app) y Full USD 299 (+ chatbot/ChatVoice con IA + aviso de retraso), ambos pago único en <code>/comprar.html</code> vía MercadoPago o transferencia. El plan Full usa tus propias cuentas de Claude/WhatsApp/Twilio (costo de uso aparte, sin markup).'],
+  ['📱 App Android / PC', 'PWA instalable sin Play Store ("Agregar a pantalla de inicio") y scripts para generar el APK en <code>movil/</code>. En PC: <code>npm start</code>.'],
+  ['☁️ Deploy en Vercel', 'El repo trae <code>vercel.json</code> listo (estático + serverless + Cron del aviso de retraso). Sumá Redis de Upstash para persistencia. El ChatVoice premium requiere servidor persistente; todo lo demás funciona completo en Vercel.'],
+  ['🔒 Seguridad', 'Definí la clave de administración en <code>/config.html</code> → Seguridad (protege panel y escrituras). Los secretos nunca se muestran de vuelta. Para vender copias con tu clave embebida: <code>npm run embeber-clave</code>.']
+];
+$('#temas').innerHTML = TEMAS.map(([t, c]) => `<details class="tema"><summary>${t}</summary><div class="cuerpo">${c}</div></details>`).join('');
+
+// ---------- Chat de ayuda ----------
+let sessionId = null, enviando = false;
+const SUGERENCIAS = ['¿Cómo conecto WhatsApp?', '¿Qué incluye cada plan?', '¿Cómo cargo mis precios?', '¿Funciona sin internet la voz?', '¿Cómo agrego otro profesional?'];
+$('#sugerencias').innerHTML = SUGERENCIAS.map(s => `<button type="button" data-s="${esc(s)}">${esc(s)}</button>`).join('');
+$('#sugerencias').querySelectorAll('button').forEach(b => b.onclick = () => { $('#pregunta').value = b.dataset.s; enviar(); });
+
+function agregarBurbuja(texto, quien) {
+  const div = document.createElement('div');
+  div.className = 'burb ' + quien;
+  div.textContent = texto;
+  $('#msgs').appendChild(div);
+  $('#msgs').scrollTop = $('#msgs').scrollHeight;
+  return div;
+}
+
+async function enviar() {
+  const texto = $('#pregunta').value.trim();
+  if (!texto || enviando) return;
+  enviando = true;
+  $('#pregunta').value = '';
+  agregarBurbuja(texto, 'yo');
+  const pensando = agregarBurbuja('Pensando…', 'ia');
+  try {
+    const r = await fetch('/api/ayuda', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ mensaje: texto, sessionId }) });
+    const d = await r.json();
+    sessionId = d.sessionId || sessionId;
+    pensando.textContent = d.respuesta || d.error || 'No pude responder, probá de nuevo.';
+    $('#iaBadge').textContent = d.ia ? '✓ Respondiendo con IA (Claude)' : 'Respondiendo desde la guía local — cargá tu API key en /config.html para IA.';
+  } catch {
+    pensando.textContent = 'Error de conexión — revisá que el servidor esté corriendo y probá de nuevo.';
+  }
+  enviando = false;
+  $('#pregunta').focus();
+}
+$('#btnPreguntar').onclick = enviar;
+$('#pregunta').addEventListener('keydown', (e) => { if (e.key === 'Enter') enviar(); });
+</script>
+<script src="/js/contacto.js" defer></script>
+</body>
+</html>

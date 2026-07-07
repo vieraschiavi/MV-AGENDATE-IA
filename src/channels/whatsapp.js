@@ -6,6 +6,7 @@
 //   GET/POST https://tu-dominio/webhook/whatsapp  con el mismo verify token.
 import { Router } from 'express';
 import { conversar } from '../ai/agente.js';
+import { geocodificarInverso } from '../ai/geocoding.js';
 import { get as cfg } from '../store/config.js';
 
 const router = Router();
@@ -29,9 +30,27 @@ router.post('/webhook/whatsapp', async (req, res) => {
     const cambios = req.body?.entry?.flatMap((e) => e.changes ?? []) ?? [];
     for (const c of cambios) {
       const msg = c.value?.messages?.[0];
-      if (!msg || msg.type !== 'text') continue;
+      if (!msg) continue;
       const de = msg.from; // ej: 59899123456
-      const respuesta = await conversar(`wa:${de}`, msg.text.body, 'whatsapp');
+      let texto;
+      if (msg.type === 'text') {
+        texto = msg.text.body;
+      } else if (msg.type === 'location') {
+        // El cliente compartió su ubicación nativa: llegan lat/lng exactos,
+        // sin necesidad de geocoding. Se lo describimos al agente como texto
+        // (mismo canal de "conversación") para que use esas coordenadas
+        // directo en vez de pedirle la dirección o geocodificarla.
+        const { latitude, longitude, name, address } = msg.location;
+        let direccionAprox = [name, address].filter(Boolean).join(', ');
+        if (!direccionAprox) {
+          const inv = await geocodificarInverso(latitude, longitude).catch(() => null);
+          direccionAprox = inv?.ok ? inv.direccion : '';
+        }
+        texto = `[Ubicación compartida: lat ${latitude}, lng ${longitude}${direccionAprox ? ` — dirección aproximada: ${direccionAprox}` : ''}]`;
+      } else {
+        continue; // otros tipos (imagen, audio, etc.) no se procesan por ahora
+      }
+      const respuesta = await conversar(`wa:${de}`, texto, 'whatsapp');
       await enviarWhatsApp(de, respuesta);
     }
   } catch (err) {
