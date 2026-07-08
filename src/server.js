@@ -304,6 +304,34 @@ async function adminOCuenta(req, res, next) {
   return next();
 }
 
+// ==================== Panel del VENDEDOR: cuentas SaaS registradas ====================
+// Solo con la clave admin global de la instancia (nunca con token de cuenta):
+// lista todas las cuentas con sus métricas de uso y permite activar/suspender
+// a mano (además de lo que hace solo el webhook de MercadoPago).
+app.get('/api/admin/cuentas', soloAdmin, async (_req, res) => {
+  const lista = await cuentas.listarCuentas();
+  const conStats = await Promise.all(lista.map(async (c) => {
+    const [clientes, citas, pendientes] = await Promise.all([
+      trabajos.listarClientes(c.id),
+      trabajos.listarCitas({}, c.id),
+      cotizaciones.listarCotizaciones('pendiente', c.id)
+    ]);
+    const facturado = citas.filter((x) => x.estado === 'completada')
+      .reduce((a, x) => a + (x.cotizacion?.total || 0), 0);
+    const trialVencido = c.estado === 'trial' && new Date(c.trialHasta) < new Date();
+    return { ...c, trialVencido, clientes: clientes.length, citas: citas.length, cotizacionesPendientes: pendientes.length, facturado };
+  }));
+  res.json(conStats);
+});
+app.post('/api/admin/cuentas/:id/estado', soloAdmin, async (req, res) => {
+  const estado = String(req.body?.estado || '');
+  if (!['trial', 'activa', 'suspendida'].includes(estado)) {
+    return res.status(400).json({ ok: false, error: 'Estado inválido (trial | activa | suspendida).' });
+  }
+  const r = await cuentas.actualizarEstado(req.params.id, estado);
+  res.status(r.ok ? 200 : 404).json(r);
+});
+
 // ==================== Cuentas SaaS (registro / login / sesión) ====================
 app.post('/api/auth/registro', async (req, res) => {
   if (await esBot(req)) return res.status(403).json({ error: 'Acceso denegado.' });

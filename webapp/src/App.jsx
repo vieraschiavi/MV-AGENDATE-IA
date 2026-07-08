@@ -6,6 +6,7 @@ import Clientes from './pages/Clientes.jsx';
 import Dashboards from './pages/Dashboards.jsx';
 import Ayuda from './pages/Ayuda.jsx';
 import Cuenta from './pages/Cuenta.jsx';
+import CuentasAdmin from './pages/CuentasAdmin.jsx';
 import { claveAdmin, cuentaSesion } from './api.js';
 
 const PAGINAS = [
@@ -50,6 +51,11 @@ export default function App() {
             <NavLink to="/cuenta" onClick={cerrar} className={({ isActive }) => (isActive ? 'on' : '')}>
               <span className="ico">👤</span><span>{cuenta ? 'Mi cuenta' : 'Cuenta online'}</span>
             </NavLink>
+            {!cuenta && (
+              <NavLink to="/cuentas-saas" onClick={cerrar} className={({ isActive }) => (isActive ? 'on' : '')}>
+                <span className="ico">🏢</span><span>Cuentas SaaS</span>
+              </NavLink>
+            )}
             <a href="/"><span className="ico">🏠</span><span>Inicio</span></a>
             <a href="/config.html"><span className="ico">⚙️</span><span>Configuración</span></a>
             {!cuenta && <button type="button" onClick={pedirClave}><span className="ico">🔑</span><span>Clave admin</span></button>}
@@ -65,6 +71,7 @@ export default function App() {
             <Route path="/dashboards" element={<Dashboards />} />
             <Route path="/ayuda" element={<Ayuda />} />
             <Route path="/cuenta" element={<Cuenta />} />
+            <Route path="/cuentas-saas" element={<CuentasAdmin />} />
             <Route path="*" element={<Navigate to="/panel" replace />} />
           </Routes>
         </main>
