@@ -2,7 +2,7 @@
 // aislamiento de datos por cuenta y aprobación de cotizaciones — node --test
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { registrar, login, verificarToken, firmarToken, obtenerCuenta, actualizarEstado } from '../src/store/cuentas.js';
+import { registrar, login, verificarToken, firmarToken, obtenerCuenta, actualizarEstado, listarCuentas } from '../src/store/cuentas.js';
 import { crearCita, listarCitas, listarClientes, guardarCliente, resumenDashboard } from '../src/store/trabajos.js';
 import { crearCotizacion, cotizacionDeSesion, listarCotizaciones, resolverCotizacion, aprobacionRequerida } from '../src/store/cotizaciones.js';
 import { setConfig } from '../src/store/config.js';
@@ -46,6 +46,15 @@ test('actualizarEstado marca la suscripción de la cuenta', async () => {
   const upd = await actualizarEstado(r.cuenta.id, 'activa', 'pre-123');
   assert.equal(upd.ok, true);
   assert.equal(upd.cuenta.estado, 'activa');
+});
+
+test('listarCuentas (panel del vendedor) expone la versión pública, sin password', async () => {
+  const lista = await listarCuentas();
+  assert.ok(lista.length >= 1);
+  for (const c of lista) {
+    assert.ok(c.id && c.email && c.estado);
+    assert.equal(c.password, undefined, 'el hash de password nunca sale del store');
+  }
 });
 
 test('los datos de cada cuenta quedan aislados entre sí y de la cuenta default', async () => {

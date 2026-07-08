@@ -150,6 +150,7 @@ test/                   Suite de tests (cotizador, agenda, aviso de retraso, age
 - `GET /api/agenda/chequear-retrasos` (cron) / `POST` (manual, admin) — dispara los avisos de demora
 - `GET /api/cotizaciones?estado=pendiente` · `POST /api/cotizaciones/:id/resolver` — aprobación de cotizaciones (el chatbot no da precio sin OK del profesional)
 - `POST /api/auth/registro` · `POST /api/auth/login` · `GET /api/auth/yo` — cuentas del modo SaaS (con `Authorization: Bearer <token>`, todas las rutas del workspace operan sobre los datos aislados de esa cuenta, y `/api/config`, `/api/oficios`, `/api/profesionales`, `/api/cotizar` leen/escriben la configuración PROPIA de la cuenta)
+- `GET /api/admin/cuentas` · `POST /api/admin/cuentas/:id/estado` — panel del VENDEDOR (clave admin global): todas las cuentas SaaS con métricas (clientes/citas/facturado/pendientes) y activación/suspensión manual
 - `GET /api/planes` · `POST /api/comprar` · `POST /api/pago/mercadopago` (webhook) · `GET /descargar/:token`
 - `GET/POST /webhook/whatsapp`, `POST /webhook/voz`, `POST /webhook/voz-premium` — canales externos
 
@@ -163,7 +164,8 @@ npm start          # pide la API key la primera vez (o Enter para modo demo)
 # abrir http://localhost:3000
 ```
 
-Páginas: `/` (landing), `/demo.html` (demo chat + cotizador + agenda),
+Páginas: `/` (landing), `/online.html` (página de venta del plan SaaS),
+`/demo.html` (demo chat + cotizador + agenda),
 `/config.html` (configuración), `/comprar.html`, y el **workspace React** en
 `/app/` (panel del día, agenda, clientes, dashboards y ayuda con IA — las URLs
 viejas `/panel.html`, `/agenda.html`, etc. redirigen solas). Para tocar el

@@ -72,7 +72,7 @@ export function verificarToken(token) {
 // ---------- Cuentas ----------
 const publica = (c) => ({
   id: c.id, email: c.email, nombre: c.nombre, estado: c.estado,
-  trialHasta: c.trialHasta, creado: c.creado,
+  trialHasta: c.trialHasta, creado: c.creado, preapprovalId: c.preapprovalId || null,
 });
 
 export async function registrar({ email, password, nombre }) {
@@ -110,6 +110,12 @@ export async function login({ email, password }) {
 export async function listarCuentaIds() {
   await cargar();
   return db.cuentas.map((c) => c.id);
+}
+
+/** Todas las cuentas en versión pública (sin password) — panel del vendedor. */
+export async function listarCuentas() {
+  await cargar();
+  return db.cuentas.map(publica);
 }
 
 /** Cuenta por email (para vincular la suscripción de MercadoPago del webhook). */

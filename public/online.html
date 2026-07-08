@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MV Agendate IA Online — Tu agenda con IA, sin instalar nada · 14 días gratis</title>
+<link rel="icon" href="/logo-mv.svg" type="image/svg+xml">
+<meta name="description" content="Tu negocio agendado por IA desde el navegador: cotizador con tu lista de precios, agenda optimizada por traslados, CRM y dashboards. Creá tu cuenta en 1 minuto — 14 días gratis, después USD 15/mes. Para cualquier profesión u oficio de LATAM.">
+<meta name="theme-color" content="#0f2a43">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MV Agendate IA">
+<meta property="og:title" content="MV Agendate IA Online — 14 días gratis, sin instalar nada">
+<meta property="og:description" content="Cuenta online con cotizador IA, agenda optimizada, CRM y dashboards. USD 15/mes por MercadoPago, cancelás cuando quieras.">
+<meta property="og:url" content="https://mv-agendate-ia.vercel.app/online.html">
+<meta property="og:image" content="https://mv-agendate-ia.vercel.app/logo-mv.png">
+<meta property="og:locale" content="es_UY">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MV Agendate IA Online — 14 días gratis">
+<meta name="twitter:description" content="Tu agenda con IA desde el navegador. USD 15/mes, cancelás cuando quieras.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "MV Agendate IA Online",
+  "operatingSystem": "Web",
+  "applicationCategory": "BusinessApplication",
+  "description": "Cuenta online con cotizador IA, agenda optimizada por traslados, CRM y dashboards para profesionales y oficios de LATAM. 14 días de prueba gratis.",
+  "inLanguage": "es",
+  "offers": [{ "@type": "Offer", "name": "SaaS online (mensual)", "price": "15", "priceCurrency": "USD" }]
+}
+</script>
+<style>
+  :root{
+    --azul:#0f2a43; --azul2:#16405f; --cel:#1f7ae0; --oro:#e3a72f;
+    --verde:#2ea043; --gris:#f4f6f9; --tinta:#22303e; --line:#e6ebf1; --sub:#5a6b7c;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  body{ font-family:'Segoe UI',system-ui,-apple-system,sans-serif; color:var(--tinta); background:#fff; line-height:1.6; }
+  a{ color:var(--cel); }
+  .nav{ display:flex; justify-content:space-between; align-items:center; padding:14px 5%; border-bottom:1px solid var(--line); position:sticky; top:0; background:#fff; z-index:10; }
+  .nav .marca{ display:flex; align-items:center; gap:10px; font-weight:800; font-size:1.05rem; color:var(--azul); }
+  .nav .marca img{ width:34px; height:34px; }
+  .nav .marca span{ color:var(--oro); }
+  .nav .links{ display:flex; gap:18px; align-items:center; }
+  .nav a{ text-decoration:none; color:var(--tinta); font-size:.92rem; font-weight:600; }
+  .nav a.cta{ background:var(--verde); color:#fff; padding:9px 18px; border-radius:8px; font-weight:700; }
+  .hero{ background:linear-gradient(160deg,var(--azul) 0%,var(--azul2) 100%); color:#fff; padding:64px 5% 56px; text-align:center; }
+  .hero .kicker{ display:inline-block; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:6px 16px; font-size:.82rem; font-weight:700; letter-spacing:.04em; margin-bottom:18px; }
+  .hero h1{ font-size:clamp(1.7rem,4.5vw,2.7rem); line-height:1.2; max-width:760px; margin:0 auto 16px; }
+  .hero h1 em{ color:#8fd3ff; font-style:normal; }
+  .hero .lead{ max-width:640px; margin:0 auto 26px; color:#cfe0ee; font-size:1.02rem; }
+  .botones{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  .b1{ background:var(--verde); color:#fff; text-decoration:none; font-weight:800; padding:14px 28px; border-radius:10px; font-size:1rem; }
+  .b2{ background:transparent; color:#fff; text-decoration:none; font-weight:700; padding:14px 22px; border-radius:10px; border:2px solid rgba(255,255,255,.4); font-size:.95rem; }
+  .hero .mini{ margin-top:14px; font-size:.82rem; color:#9fb8cc; }
+  section{ padding:56px 5%; }
+  .cabecera{ text-align:center; max-width:680px; margin:0 auto 36px; }
+  .cabecera .kicker{ color:var(--cel); font-weight:800; letter-spacing:.06em; font-size:.8rem; text-transform:uppercase; }
+  .cabecera h2{ font-size:clamp(1.4rem,3vw,1.9rem); color:var(--azul); margin:6px 0 10px; }
+  .cabecera .lead{ color:var(--sub); }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px; max-width:1080px; margin:0 auto; }
+  .card{ border:1px solid var(--line); border-radius:14px; padding:22px; background:#fff; }
+  .card .ico{ font-size:1.6rem; }
+  .card h3{ color:var(--azul); margin:8px 0 6px; font-size:1.02rem; }
+  .card p{ color:var(--sub); font-size:.9rem; }
+  .pasos{ counter-reset:paso; max-width:760px; margin:0 auto; display:grid; gap:14px; }
+  .paso{ display:flex; gap:16px; align-items:flex-start; border:1px solid var(--line); border-radius:14px; padding:18px 20px; }
+  .paso::before{ counter-increment:paso; content:counter(paso); flex:none; width:34px; height:34px; border-radius:50%; background:var(--cel); color:#fff; font-weight:800; display:flex; align-items:center; justify-content:center; }
+  .paso strong{ color:var(--azul); }
+  .paso p{ color:var(--sub); font-size:.9rem; }
+  .gris{ background:var(--gris); }
+  table.comp{ width:100%; max-width:860px; margin:0 auto; border-collapse:collapse; background:#fff; border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+  .comp th,.comp td{ padding:12px 16px; text-align:left; font-size:.9rem; border-bottom:1px solid var(--line); }
+  .comp th{ background:var(--azul); color:#fff; font-size:.86rem; }
+  .comp td:first-child{ color:var(--sub); }
+  .comp .si{ color:var(--verde); font-weight:700; }
+  .tablewrap{ overflow-x:auto; }
+  .precio-box{ max-width:420px; margin:0 auto; border:2px solid var(--verde); border-radius:16px; padding:28px; text-align:center; background:#fff; }
+  .precio-box .monto{ font-size:2.4rem; font-weight:800; color:var(--azul); }
+  .precio-box .monto small{ font-size:1rem; color:var(--sub); font-weight:600; }
+  .precio-box ul{ list-style:none; text-align:left; margin:16px 0 20px; }
+  .precio-box li{ padding:5px 0 5px 24px; position:relative; color:#44535f; font-size:.9rem; }
+  .precio-box li::before{ content:'✓'; position:absolute; left:0; color:var(--verde); font-weight:800; }
+  details{ max-width:720px; margin:0 auto 10px; border:1px solid var(--line); border-radius:12px; padding:14px 18px; }
+  details summary{ font-weight:700; color:var(--azul); cursor:pointer; }
+  details p{ color:var(--sub); font-size:.9rem; margin-top:8px; }
+  .cierre{ background:linear-gradient(160deg,var(--azul) 0%,var(--azul2) 100%); color:#fff; text-align:center; }
+  .cierre h2{ font-size:clamp(1.4rem,3vw,1.9rem); margin-bottom:10px; }
+  .cierre .lead{ color:#cfe0ee; }
+  footer{ padding:22px 5%; text-align:center; color:var(--sub); font-size:.82rem; border-top:1px solid var(--line); }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="marca"><img src="/logo-mv.svg" alt="MV">MV <span>Agendate IA</span></div>
+  <div class="links">
+    <a href="#beneficios">Beneficios</a><a href="#precio">Precio</a><a href="#faq">Preguntas</a><a href="/">Versión instalable</a>
+    <a class="cta" href="/app/#/cuenta">Probar gratis</a>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="kicker">☁️ NUEVO · MV AGENDATE IA ONLINE</div>
+  <h1>Tu negocio agendado por IA, <em>sin instalar nada</em> — listo en 1 minuto</h1>
+  <p class="lead">Creá tu cuenta y empezá a cotizar y agendar hoy mismo: cotizador con tu lista de precios (la IA te sugiere los del mercado de tu país), agenda optimizada por traslados, CRM de clientes y dashboards de facturación. Desde cualquier computadora o celular.</p>
+  <div class="botones">
+    <a class="b1" href="/app/#/cuenta">Probar 14 días gratis →</a>
+    <a class="b2" href="/demo.html">Ver la demo primero</a>
+  </div>
+  <div class="mini">Sin tarjeta para probar · USD 15/mes después · Cancelás cuando quieras</div>
+</div>
+
+<section id="beneficios">
+  <div class="cabecera">
+    <div class="kicker">Por qué online</div>
+    <h2>Todo lo que hace MV Agendate IA, en la nube y a tu nombre</h2>
+    <p class="lead">Para médicos, abogados, escribanos, psicólogos, electricistas, talleres… cualquier profesión u oficio de LATAM que viva de su agenda.</p>
+  </div>
+  <div class="grid">
+    <div class="card"><div class="ico">⚡</div><h3>Listo en 1 minuto</h3><p>Email y contraseña, nada más. Sin instalación, sin servidor, sin técnico. Entrás desde el navegador de tu PC o celular.</p></div>
+    <div class="card"><div class="ico">🔒</div><h3>Tus datos, solo tuyos</h3><p>Clientes, citas, precios y configuración viven aislados en tu cuenta — ninguna otra cuenta puede verlos.</p></div>
+    <div class="card"><div class="ico">💰</div><h3>Cotizás con precios de TU país</h3><p>Elegís tu país y la moneda se ajusta sola. La IA investiga qué se cobra en tu mercado y te sugiere el catálogo.</p></div>
+    <div class="card"><div class="ico">✅</div><h3>El precio siempre lo aprobás vos</h3><p>El asistente sugiere la cotización y espera tu OK antes de decirle un monto al cliente. La ajustás desde el Panel con un clic.</p></div>
+    <div class="card"><div class="ico">📲</div><h3>Tu WhatsApp y tu teléfono</h3><p>Conectá tu propio WhatsApp Business y tu número: los mensajes y llamadas los atiende TU asistente, con tu catálogo.</p></div>
+    <div class="card"><div class="ico">📊</div><h3>Números claros</h3><p>Trabajos por día/semana/mes, facturación, ticket promedio y hasta un estimador de impuestos según la ley de tu país.</p></div>
+  </div>
+</section>
+
+<section class="gris">
+  <div class="cabecera">
+    <div class="kicker">Cómo empezar</div>
+    <h2>Tres pasos y estás trabajando</h2>
+  </div>
+  <div class="pasos">
+    <div class="paso"><div><strong>Creá tu cuenta gratis.</strong><p>En <a href="/app/#/cuenta">/app → Cuenta online</a>, con tu email. Tenés 14 días completos para probar todo, sin tarjeta.</p></div></div>
+    <div class="paso"><div><strong>Configurá tu negocio.</strong><p>Elegí tu país y tu profesión (o creá la tuya), cargá tus precios — o dejá que la IA te sugiera los del mercado — y tus horarios.</p></div></div>
+    <div class="paso"><div><strong>Empezá a agendar.</strong><p>Cargá citas desde el Panel o conectá tu WhatsApp para que el asistente cotice y agende solo. Todo queda en tu CRM y tus dashboards.</p></div></div>
+  </div>
+</section>
+
+<section>
+  <div class="cabecera">
+    <div class="kicker">Online vs. instalable</div>
+    <h2>¿Cuenta online o pago único?</h2>
+    <p class="lead">Las dos corren el mismo motor. Elegí según cómo te guste trabajar.</p>
+  </div>
+  <div class="tablewrap">
+  <table class="comp">
+    <thead><tr><th></th><th>☁️ Online — USD 15/mes</th><th>💻 Instalable — desde USD 129 único</th></tr></thead>
+    <tbody>
+      <tr><td>Instalación</td><td class="si">Ninguna — navegador</td><td>PC propia o servidor (+ APK Android)</td></tr>
+      <tr><td>Agenda optimizada + cotizador + CRM + dashboards</td><td class="si">✓</td><td class="si">✓</td></tr>
+      <tr><td>Aprobación de cotizaciones</td><td class="si">✓</td><td class="si">✓</td></tr>
+      <tr><td>Chatbot WhatsApp / ChatVoice con IA</td><td class="si">✓ con tus propias cuentas</td><td class="si">✓ (plan Full) con tus propias cuentas</td></tr>
+      <tr><td>Actualizaciones</td><td class="si">Automáticas</td><td>Descargás la nueva versión</td></tr>
+      <tr><td>Tus datos</td><td class="si">Aislados en tu cuenta</td><td class="si">100% en tu máquina</td></tr>
+      <tr><td>Prueba gratis</td><td class="si">14 días</td><td>Demo online</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section class="gris" id="precio">
+  <div class="cabecera">
+    <div class="kicker">Precio</div>
+    <h2>Un precio simple, sin sorpresas</h2>
+  </div>
+  <div class="precio-box">
+    <div class="monto">USD 15<small>/mes</small></div>
+    <ul>
+      <li>14 días de prueba gratis, sin tarjeta</li>
+      <li>Cuenta privada con datos aislados</li>
+      <li>Cotizador + agenda + CRM + dashboards + exportación</li>
+      <li>Configuración propia: país, precios, horarios, equipo</li>
+      <li>Conectá tu WhatsApp Business y tu teléfono</li>
+      <li>Pago por MercadoPago · cancelás cuando quieras</li>
+    </ul>
+    <a class="b1" style="display:block;" href="/app/#/cuenta">Crear mi cuenta gratis →</a>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="cabecera">
+    <div class="kicker">Preguntas frecuentes</div>
+    <h2>Lo que siempre nos preguntan</h2>
+  </div>
+  <details><summary>¿Necesito tarjeta para probar?</summary><p>No. Te registrás con email y contraseña y tenés 14 días completos. Recién después, si querés seguir, activás la suscripción por MercadoPago.</p></details>
+  <details><summary>¿Sirve para mi profesión?</summary><p>Sí: hay 18 oficios precargados y podés crear el tuyo en un minuto — médicos, abogados, escribanos, psicólogos, talleres, estética, clases particulares… cualquier actividad con agenda. Los servicios profesionales cotizan como honorarios.</p></details>
+  <details><summary>¿El chatbot puede dar un precio equivocado?</summary><p>No: la cotización que calcula es un sugerido interno. El cliente no ve ningún monto hasta que vos lo apruebes (o lo ajustes) desde el Panel. Si preferís precio directo, lo activás en la configuración.</p></details>
+  <details><summary>¿Puedo usar mi propio número de WhatsApp?</summary><p>Sí. Conectás tu WhatsApp Business API (y tu número de teléfono si querés atención por voz) desde la configuración: los mensajes que lleguen a TU número los responde TU asistente, con tus precios, y agenda en tus datos.</p></details>
+  <details><summary>¿Qué pasa si cancelo?</summary><p>Cancelás la suscripción desde MercadoPago cuando quieras. Antes de irte podés exportar tus clientes y tu agenda a Excel/CSV con un clic.</p></details>
+  <details><summary>¿Y si prefiero tenerlo instalado en mi PC?</summary><p>También existe la <a href="/#precios">versión instalable de pago único</a> (desde USD 129): mismos motores, corre en tu máquina y tus datos quedan 100% en ella.</p></details>
+</section>
+
+<section class="cierre">
+  <h2>Probalo gratis ahora — en 1 minuto estás adentro</h2>
+  <p class="lead" style="margin:0 auto 22px;max-width:520px;">14 días con todo habilitado. Si no te sirve, no pagás nada.</p>
+  <div class="botones">
+    <a class="b1" href="/app/#/cuenta">Crear mi cuenta gratis →</a>
+    <a class="b2" href="/demo.html">▶ Ver la demo</a>
+  </div>
+</section>
+
+<footer>MV Agendate IA · Turnos y presupuestos con IA para cualquier profesión u oficio de LATAM · <a href="/">Inicio</a> · <a href="/comprar.html">Comprar</a> · <a href="/app/">Entrar a mi cuenta</a></footer>
+
+</body>
+</html>
