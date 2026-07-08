@@ -73,3 +73,18 @@ test('cuentaPorPhoneId encuentra a la cuenta dueña del número de WhatsApp', as
   assert.equal(await cuentaPorPhoneId('999999', ['cta-wa-1', 'cta-wa-2']), null);
   assert.equal(await cuentaPorPhoneId('', ['cta-wa-1']), null);
 });
+
+test('cuentaPorNumeroVoz matchea el número llamado en E.164 sin importar el formato', async () => {
+  const { cuentaPorNumeroVoz } = await import('../src/store/configCuentas.js');
+  await guardarOverrides('cta-voz-1', { twilioNumero: '+598 99 123 456' });
+  await guardarOverrides('cta-voz-2', { twilioNumero: '+5491155550000' });
+  const ids = ['cta-voz-1', 'cta-voz-2'];
+  assert.equal((await cuentaPorNumeroVoz('+59899123456', ids)).cuentaId, 'cta-voz-1');
+  assert.equal((await cuentaPorNumeroVoz('549-11-5555-0000', ids)).cuentaId, 'cta-voz-2');
+  assert.equal(await cuentaPorNumeroVoz('+59800000000', ids), null);
+  assert.equal(await cuentaPorNumeroVoz('', ids), null);
+});
+
+test('twilioNumero es una clave de cuenta permitida (para el ruteo de voz)', () => {
+  assert.ok(CLAVES_CUENTA.includes('twilioNumero'));
+});

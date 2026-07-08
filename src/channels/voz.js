@@ -16,8 +16,22 @@ import { conversar } from '../ai/agente.js';
 import { sintetizar, elevenlabsDisponible } from './tts-elevenlabs.js';
 import { kvGet, kvSet } from '../store/redis.js';
 import { get as cfg } from '../store/config.js';
+import { runConCuenta } from '../store/contextoCuenta.js';
+import { cuentaPorNumeroVoz } from '../store/configCuentas.js';
+import { listarCuentaIds } from '../store/cuentas.js';
 
 const router = Router();
+
+// Ruteo multi-cuenta (SaaS): si el número que RECIBIÓ la llamada (campo "To"
+// de Twilio) pertenece a una cuenta, todo el turno (saludo, agente, catálogo,
+// datos, voz) corre con la configuración de ESA cuenta; si no, con la global.
+async function conCuentaDeLaLlamada(req, fn) {
+  try {
+    const duenio = await cuentaPorNumeroVoz(req.body?.To, await listarCuentaIds());
+    if (duenio) return await runConCuenta(duenio.cuentaId, duenio.overrides, fn);
+  } catch { /* sin cuentas o Redis caído: atiende la config global */ }
+  return fn();
+}
 const NOMBRE_PROFESIONAL = () => cfg('nombreProfesional') || cfg('agenciaNombre') || 'tu profesional de confianza';
 const TTL_AUDIO = 300; // 5 min — de sobra para que Twilio lo pida apenas generado
 
@@ -45,7 +59,7 @@ function gather(req, action, saySay) {
 }
 
 // Llamada entrante: saludo + escucha
-router.post('/webhook/voz', async (req, res) => {
+router.post('/webhook/voz', (req, res) => conCuentaDeLaLlamada(req, async () => {
   const saludo = `Hola, te comunicaste con ${NOMBRE_PROFESIONAL()}. Soy tu asistente virtual. Contame qué trabajo necesitás y te paso presupuesto y horarios disponibles.`;
   res.type('text/xml').send(
     xml(
@@ -53,10 +67,10 @@ router.post('/webhook/voz', async (req, res) => {
         (await decir(req, 'No te escuché. Llamanos de nuevo cuando quieras. ¡Hasta luego!'))
     )
   );
-});
+}));
 
 // Cada turno de conversación
-router.post('/webhook/voz/turno', async (req, res) => {
+router.post('/webhook/voz/turno', (req, res) => conCuentaDeLaLlamada(req, async () => {
   const dicho = req.body?.SpeechResult;
   const llamante = req.body?.From || 'desconocido';
 
@@ -81,7 +95,7 @@ router.post('/webhook/voz/turno', async (req, res) => {
     console.error('[voz] Error:', err);
     res.type('text/xml').send(xml(await decir(req, 'Tuvimos un inconveniente técnico. Un agente te va a devolver la llamada.')));
   }
-});
+}));
 
 // "Devolver la llamada" con un clic (ver src/store/twilio.js#clickToCall):
 // Twilio llama primero al agente humano y, apenas atiende, pide este TwiML

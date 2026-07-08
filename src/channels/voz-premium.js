@@ -13,13 +13,19 @@ import { Router } from 'express';
 import { WebSocketServer, WebSocket } from 'ws';
 import { conversar } from '../ai/agente.js';
 import { piperDisponible, sintetizarUlaw as piperUlaw } from './tts-piper.js';
+import { get as cfg } from '../store/config.js';
+import { runConCuenta } from '../store/contextoCuenta.js';
+import { cuentaPorNumeroVoz, obtenerOverrides } from '../store/configCuentas.js';
+import { listarCuentaIds } from '../store/cuentas.js';
 
 const router = Router();
 
-const DG = () => process.env.DEEPGRAM_API_KEY;
-const EL = () => process.env.ELEVENLABS_API_KEY;
-const VOZ_ID = () => process.env.ELEVENLABS_VOICE_ID;
-const AGENCIA = () => process.env.NOMBRE_PROFESIONAL || process.env.AGENCIA_NOMBRE || 'tu profesional de confianza';
+// Credenciales vía config (panel /config.html — con fallback a las env de
+// siempre) y sensibles a la cuenta SaaS activa del contexto.
+const DG = () => cfg('deepgramApiKey');
+const EL = () => cfg('elevenlabsApiKey');
+const VOZ_ID = () => cfg('elevenlabsVoiceId');
+const AGENCIA = () => cfg('nombreProfesional') || cfg('agenciaNombre') || 'tu profesional de confianza';
 
 const ttsElevenLabs = () => Boolean(EL() && VOZ_ID());
 // El pipeline vive con Deepgram (ASR) + alguna voz (Piper gratis, o ElevenLabs).
@@ -27,20 +33,29 @@ const disponible = () => Boolean(DG() && (piperDisponible() || ttsElevenLabs()))
 const motorVoz = () => (piperDisponible() ? 'Piper (es_AR-daniela, gratis)' : ttsElevenLabs() ? 'ElevenLabs' : 'ninguno');
 
 // --- TwiML: conecta la llamada al stream de audio bidireccional ---
-router.post('/webhook/voz-premium', (req, res) => {
-  if (!disponible()) {
-    // Fallback a la vía rápida (Twilio <Gather> + voz Polly)
-    return res.type('text/xml').send(
-      `<?xml version="1.0" encoding="UTF-8"?><Response><Redirect method="POST">/webhook/voz</Redirect></Response>`
+// Multi-cuenta (SaaS): si el número llamado ("To") es de una cuenta, la
+// disponibilidad se evalúa con SU config y el stream lleva su cuentaId para
+// que el WebSocket atienda con su asistente.
+router.post('/webhook/voz-premium', async (req, res) => {
+  const duenio = await cuentaPorNumeroVoz(req.body?.To, await listarCuentaIds().catch(() => [])).catch(() => null);
+  const responder = () => {
+    if (!disponible()) {
+      // Fallback a la vía rápida (Twilio <Gather> + voz Polly)
+      return res.type('text/xml').send(
+        `<?xml version="1.0" encoding="UTF-8"?><Response><Redirect method="POST">/webhook/voz</Redirect></Response>`
+      );
+    }
+    const host = req.headers['x-forwarded-host'] || req.headers.host;
+    const from = String(req.body?.From || 'desconocido').replace(/[^+\d]/g, '');
+    res.type('text/xml').send(
+      `<?xml version="1.0" encoding="UTF-8"?><Response><Connect>` +
+        `<Stream url="wss://${host}/voz-stream"><Parameter name="from" value="${from}"/>` +
+        `<Parameter name="cuenta" value="${duenio?.cuentaId || ''}"/></Stream>` +
+        `</Connect></Response>`
     );
-  }
-  const host = req.headers['x-forwarded-host'] || req.headers.host;
-  const from = String(req.body?.From || 'desconocido').replace(/[^+\d]/g, '');
-  res.type('text/xml').send(
-    `<?xml version="1.0" encoding="UTF-8"?><Response><Connect>` +
-      `<Stream url="wss://${host}/voz-stream"><Parameter name="from" value="${from}"/></Stream>` +
-      `</Connect></Response>`
-  );
+  };
+  if (duenio) return runConCuenta(duenio.cuentaId, duenio.overrides, responder);
+  responder();
 });
 
 // --- Texto → audio ulaw_8000. Preferimos Piper (voz Daniela, gratis); si no hay
@@ -88,6 +103,10 @@ export function montarVozPremium(httpServer) {
     let dgWs = null;
     let respondiendo = false; // evita pisarse: no procesar ASR mientras habla el agente
     let cerrado = false;
+    // Cuenta SaaS dueña del número llamado (viene como Parameter del Stream):
+    // cada turno corre con SU config (asistente, catálogo, voz, datos).
+    let ctxCuenta = null;
+    const enCuenta = (fn) => (ctxCuenta ? runConCuenta(ctxCuenta.cuentaId, ctxCuenta.overrides, fn) : fn());
 
     const log = (...a) => console.log('[voz-premium]', ...a);
 
@@ -107,10 +126,12 @@ export function montarVozPremium(httpServer) {
         respondiendo = true;
         log(`🎤 ${llamante}: ${texto}`);
         try {
-          const respuesta = await conversar(`tel:${llamante}`, texto, 'voz');
-          log(`🗣️ MV: ${respuesta.slice(0, 120)}`);
-          const audio = await sintetizar(respuesta);
-          if (!cerrado && streamSid) enviarAudio(twilioWs, streamSid, audio);
+          await enCuenta(async () => {
+            const respuesta = await conversar(`tel:${llamante}`, texto, 'voz');
+            log(`🗣️ MV: ${respuesta.slice(0, 120)}`);
+            const audio = await sintetizar(respuesta);
+            if (!cerrado && streamSid) enviarAudio(twilioWs, streamSid, audio);
+          });
         } catch (err) {
           console.error('[voz-premium] Error en turno:', err.message);
         } finally {
@@ -120,8 +141,9 @@ export function montarVozPremium(httpServer) {
 
       dgWs.on('error', (e) => console.error('[voz-premium] Deepgram:', e.message));
       dgWs.on('close', () => {
-        // Reconexión automática mientras la llamada siga viva
-        if (!cerrado) setTimeout(abrirDeepgram, 500);
+        // Reconexión automática mientras la llamada siga viva (con la config
+        // de la cuenta de la llamada, si corresponde)
+        if (!cerrado) setTimeout(() => enCuenta(abrirDeepgram), 500);
       });
     }
 
@@ -133,16 +155,23 @@ export function montarVozPremium(httpServer) {
         case 'start': {
           streamSid = msg.start.streamSid;
           llamante = msg.start.customParameters?.from || 'desconocido';
-          log(`📞 Llamada iniciada de ${llamante}`);
-          abrirDeepgram();
-          try {
-            const saludo = await sintetizar(
-              `Hola, te comunicaste con ${AGENCIA()}. Soy tu asistente virtual. Contame qué trabajo necesitás.`
-            );
-            enviarAudio(twilioWs, streamSid, saludo);
-          } catch (err) {
-            console.error('[voz-premium] Error en saludo:', err.message);
+          const cuentaId = msg.start.customParameters?.cuenta;
+          if (cuentaId) {
+            const overrides = await obtenerOverrides(cuentaId).catch(() => ({}));
+            ctxCuenta = { cuentaId, overrides };
           }
+          log(`📞 Llamada iniciada de ${llamante}${ctxCuenta ? ` (cuenta ${ctxCuenta.cuentaId})` : ''}`);
+          await enCuenta(async () => {
+            abrirDeepgram(); // toma la API key de Deepgram de la config activa
+            try {
+              const saludo = await sintetizar(
+                `Hola, te comunicaste con ${AGENCIA()}. Soy tu asistente virtual. Contame qué trabajo necesitás.`
+              );
+              enviarAudio(twilioWs, streamSid, saludo);
+            } catch (err) {
+              console.error('[voz-premium] Error en saludo:', err.message);
+            }
+          });
           break;
         }
         case 'media':
