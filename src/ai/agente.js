@@ -297,23 +297,98 @@ function historial(sessionId) {
 // /config.html). El badge solo aparece si pedís DEMO_CON_BADGE=1 (uso interno).
 const BADGE = process.env.DEMO_CON_BADGE ? '⚙️ [demo] ' : '';
 
-function responderDemo(texto, canal) {
-  const t = String(texto ?? '').toLowerCase();
-  const oficios = listarOficios();
+// Estado mínimo por sesión para que la demo (sin IA) avance como una charla real.
+const demoSesiones = new Map();
+const norm = (s) => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+// Sinónimos coloquiales → clave de trabajo (por oficio, solo si esa clave existe).
+const SINONIMOS = {
+  instalacion_toma: ['toma', 'tomacorriente', 'tomacorrientes', 'enchufe', 'enchufes', 'zocalo'],
+  instalacion_luminaria: ['luz', 'luces', 'lampara', 'foco', 'luminaria', 'artefacto', 'plafon', 'spot', 'aplique', 'dicroica'],
+  cambio_tablero: ['tablero', 'termica', 'llave termica', 'disyuntor', 'breaker', 'diferencial'],
+  cortocircuito: ['corto', 'cortocircuito', 'chispa', 'se corta la luz', 'salta la llave', 'no hay luz', 'huele a quemado'],
+  diagnostico: ['diagnostico', 'revisar', 'revision', 'ver que pasa', 'presupuesto general'],
+  destape: ['destap', 'tapado', 'tapada', 'canaleta'],
+  perdida: ['perdida', 'gotea', 'gotera', 'fuga', 'pierde agua'],
+};
+
+/** Detecta el trabajo pedido dentro del catálogo del oficio (sinónimos + tokens del nombre). */
+function detectarTrabajo(oficio, texto) {
+  const t = norm(texto);
+  for (const [clave, palabras] of Object.entries(SINONIMOS)) {
+    if (oficio.trabajos.some((tr) => tr.clave === clave) && palabras.some((p) => t.includes(p))) return clave;
+  }
+  for (const tr of oficio.trabajos) {
+    const toks = norm(tr.nombre).split(/[^a-z0-9]+/).filter((w) => w.length >= 5);
+    if (toks.some((w) => t.includes(w))) return tr.clave;
+  }
+  return null;
+}
+
+const tieneDireccion = (t) => /\d{2,}/.test(t) && /[a-záéíóú]{3,}/i.test(t) && !/(cuanto|precio|cuesta|sale)/i.test(t);
+const quiereHorario = (t) => /(turno|horario|agend|cita|cuando|dispon|manana|mañana|semana|lunes|martes|miercoles|jueves|viernes|sabado|hoy|tarde)/.test(norm(t));
+const confirma = (t) => /(^| )(si|dale|listo|confirm|de una|perfecto|va|ok|okey)( |$|\.|,|!)/.test(norm(t));
+const saluda = (t) => /(hola|buenas|buen dia|buenos dias|buenas tardes|buenas noches|que tal)/.test(norm(t));
+
+function responderDemo(sessionId, texto, canal) {
   const prof = listarProfesionales()[0];
+  const oficios = listarOficios();
   const propio = oficios.find((o) => o.clave === prof.oficio) || oficios[0];
-  if (/(cuanto|precio|presupuesto|cotiz|cuesta|sale)/.test(t) && propio) {
-    const trabajo = propio.trabajos[0];
-    const r = cotizar({ oficio: propio.clave, trabajo: trabajo.clave, distanciaKm: 5 });
-    return `${BADGE}Con gusto. Un(a) "${r.trabajo}" ronda los ${r.simbolo || '$'}${r.total} (${r.moneda}), con una duración estimada de ${r.duracion_estimada_min} minutos. El precio final siempre lo confirma el profesional. Contame bien qué necesitás y te lo cotizo.`;
+  const st = demoSesiones.get(sessionId) || {};
+  const t = norm(texto);
+  const nombreServicio = (clave) => propio.trabajos.find((x) => x.clave === clave)?.nombre || 'el trabajo';
+  const cotizarDe = (clave) => cotizar({ oficio: propio.clave, trabajo: clave, distanciaKm: 5 });
+  const guardar = () => demoSesiones.set(sessionId, st);
+
+  // 1) ¿Menciona un trabajo? Cotizamos ESE (no siempre el primero).
+  const trabajo = detectarTrabajo(propio, texto);
+  if (trabajo) st.trabajo = trabajo;
+
+  // 2) ¿Dio una dirección?
+  if (tieneDireccion(texto)) st.direccion = texto.trim();
+
+  // Helper: proponer horarios (cuando ya sabemos el trabajo).
+  const proponerSlots = () => {
+    st.propuso = true; guardar();
+    const dir = st.direccion ? ` en ${st.direccion}` : '';
+    return `${BADGE}Genial. Para "${nombreServicio(st.trabajo)}"${dir} tengo estos horarios: mañana 9:30–10:30, mañana 15:00–16:00 o pasado 11:00–12:00. ¿Cuál te queda mejor? (Los calculamos considerando el traslado hasta tu zona.)`;
+  };
+
+  // Confirmó un horario ya propuesto → cerramos (demo).
+  if (st.propuso && confirma(texto)) {
+    demoSesiones.delete(sessionId);
+    return `${BADGE}¡Listo! Quedó agendado ✅ Te llega la confirmación por WhatsApp y, si el profesional se demora, te avisamos antes. ¡Gracias! (Demo — en la versión real esto queda cargado en la agenda y el CRM.)`;
   }
-  if (/(turno|horario|agend|cita|cuando|dispon)/.test(t)) {
-    return `${BADGE}Perfecto. Para coordinar el horario necesito: qué trabajo necesitás, tu dirección y qué día te queda bien. Con eso te propongo 2-3 horarios ya considerando el traslado.`;
+
+  // Pidió/mencionó un trabajo → cotizamos y encaminamos hacia el horario.
+  if (trabajo || (st.trabajo && /(cuanto|precio|presupuesto|cotiz|cuesta|sale)/.test(t))) {
+    const r = cotizarDe(st.trabajo);
+    st.cotizado = true; guardar();
+    const sig = st.direccion ? ' ¿Te propongo horarios?' : ' Pasame tu dirección y qué día te viene bien, y te doy 2-3 horarios.';
+    return `${BADGE}"${r.trabajo}" ronda los ${r.simbolo || '$'}${r.total} (${r.moneda}), con una duración estimada de ${r.duracion_estimada_min} min. El precio final lo confirma ${prof.nombre}.${sig}`;
   }
-  if (/(hola|buenas|buen día|buenos días|buenas tardes|qué tal|que tal)/.test(t)) {
-    return `${BADGE}¡Hola! Soy el asistente de ${prof.nombre} (${propio?.nombre || prof.oficio}). Contame qué trabajo necesitás y te paso presupuesto y horarios disponibles. 😊`;
+
+  // Pidió horario: si ya sabemos el trabajo, proponemos; si no, lo pedimos.
+  if (quiereHorario(texto)) {
+    if (st.trabajo) return proponerSlots();
+    guardar();
+    return `${BADGE}Con gusto coordino. ¿Qué trabajo necesitás? (por ejemplo: instalar un tomacorriente, colocar una luminaria, revisar el tablero). Con eso y tu dirección te propongo horarios.`;
   }
-  return `${BADGE}Soy el asistente de ${prof.nombre} (${propio?.nombre || prof.oficio}). Decime qué trabajo necesitás (por ejemplo "cuánto sale ${propio?.trabajos?.[0]?.nombre || 'una visita'}") y te paso presupuesto y horarios.`;
+
+  // Dio dirección sin trabajo aún.
+  if (st.direccion && !st.trabajo) {
+    guardar();
+    return `${BADGE}¡Anotada la dirección! ¿Qué necesitás que haga ${prof.nombre}? Contame el trabajo y te paso presupuesto y horarios.`;
+  }
+
+  if (saluda(texto) || !texto.trim()) {
+    return `${BADGE}¡Hola! Soy el asistente de ${prof.nombre} (${propio?.nombre || prof.oficio}). Contame qué necesitás —por ejemplo "instalar un tomacorriente"— y te paso presupuesto y horarios. 😊`;
+  }
+
+  // No entendimos el trabajo: ofrecemos ejemplos reales del catálogo.
+  const ejemplos = propio.trabajos.slice(0, 3).map((x) => `“${x.nombre}”`).join(', ');
+  guardar();
+  return `${BADGE}Puedo ayudarte con trabajos como ${ejemplos}. Decime cuál necesitás (o contame el problema) y te paso presupuesto y horarios.`;
 }
 
 // ---------- Conversación con Claude ----------
@@ -326,7 +401,7 @@ function responderDemo(texto, canal) {
  */
 export async function conversar(sessionId, texto, canal = 'webchat') {
   const client = getClient();
-  if (!client) return responderDemo(texto, canal);
+  if (!client) return responderDemo(sessionId, texto, canal);
 
   // En el modo SaaS las sesiones se aíslan por cuenta: el mismo cliente
   // (wa:598...) hablando con dos profesionales distintos son DOS charlas.
