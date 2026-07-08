@@ -290,23 +290,30 @@ function historial(sessionId) {
 }
 
 // ---------- Modo demo (sin API key) ----------
-
-const BADGE = process.env.DEMO_SIN_BADGE ? '' : '⚙️ [Modo demo] ';
+// Respuestas locales sin costo, para mostrar el flujo cuando no hay clave de
+// Claude configurada. IMPORTANTE: nunca filtra detalles internos del servidor
+// (ni "modo demo", ni "cargá tu clave") — el visitante ve un asistente normal.
+// Para respuestas con IA real, configurá ANTHROPIC_API_KEY (env de Vercel o
+// /config.html). El badge solo aparece si pedís DEMO_CON_BADGE=1 (uso interno).
+const BADGE = process.env.DEMO_CON_BADGE ? '⚙️ [demo] ' : '';
 
 function responderDemo(texto, canal) {
   const t = String(texto ?? '').toLowerCase();
   const oficios = listarOficios();
   const prof = listarProfesionales()[0];
   const propio = oficios.find((o) => o.clave === prof.oficio) || oficios[0];
-  if (/(cuanto|precio|presupuesto|cotiz|cuesta)/.test(t) && propio) {
+  if (/(cuanto|precio|presupuesto|cotiz|cuesta|sale)/.test(t) && propio) {
     const trabajo = propio.trabajos[0];
     const r = cotizar({ oficio: propio.clave, trabajo: trabajo.clave, distanciaKm: 5 });
-    return `${BADGE}Con gusto te paso un presupuesto de ejemplo. Un(a) "${r.trabajo}" ronda los $${r.total} (${r.moneda}), con una duración estimada de ${r.duracion_estimada_min} minutos. El precio final siempre lo confirma el profesional. Contame qué necesitás y te cotizo el trabajo real.`;
+    return `${BADGE}Con gusto. Un(a) "${r.trabajo}" ronda los ${r.simbolo || '$'}${r.total} (${r.moneda}), con una duración estimada de ${r.duracion_estimada_min} minutos. El precio final siempre lo confirma el profesional. Contame bien qué necesitás y te lo cotizo.`;
   }
-  if (/(turno|horario|agend|cita|cuando)/.test(t)) {
-    return `${BADGE}Perfecto, para coordinar el horario necesito: qué trabajo necesitás, tu dirección y cuándo te queda bien. Con eso te propongo 2-3 horarios ya considerando el traslado.`;
+  if (/(turno|horario|agend|cita|cuando|dispon)/.test(t)) {
+    return `${BADGE}Perfecto. Para coordinar el horario necesito: qué trabajo necesitás, tu dirección y qué día te queda bien. Con eso te propongo 2-3 horarios ya considerando el traslado.`;
   }
-  return `${BADGE}Hola, soy el asistente de ${prof.nombre} (${propio?.nombre || prof.oficio}). Contame qué necesitás y te paso presupuesto y horarios disponibles. (Servidor en modo demo: cargá tu clave de IA en el panel para respuestas con IA real.)`;
+  if (/(hola|buenas|buen día|buenos días|buenas tardes|qué tal|que tal)/.test(t)) {
+    return `${BADGE}¡Hola! Soy el asistente de ${prof.nombre} (${propio?.nombre || prof.oficio}). Contame qué trabajo necesitás y te paso presupuesto y horarios disponibles. 😊`;
+  }
+  return `${BADGE}Soy el asistente de ${prof.nombre} (${propio?.nombre || prof.oficio}). Decime qué trabajo necesitás (por ejemplo "cuánto sale ${propio?.trabajos?.[0]?.nombre || 'una visita'}") y te paso presupuesto y horarios.`;
 }
 
 // ---------- Conversación con Claude ----------

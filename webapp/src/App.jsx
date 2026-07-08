@@ -7,6 +7,8 @@ import Dashboards from './pages/Dashboards.jsx';
 import Ayuda from './pages/Ayuda.jsx';
 import Cuenta from './pages/Cuenta.jsx';
 import CuentasAdmin from './pages/CuentasAdmin.jsx';
+import CandadoPrueba from './pages/CandadoPrueba.jsx';
+import ErrorBoundary from './pages/ErrorBoundary.jsx';
 import { claveAdmin, cuentaSesion } from './api.js';
 
 const PAGINAS = [
@@ -29,6 +31,7 @@ export default function App() {
 
   return (
     <>
+      <CandadoPrueba />
       <div className="mv-topbar-mobile">
         <button onClick={() => setAbierto(!abierto)} aria-label="Abrir menú">☰</button>
         <strong>MV Agendate IA</strong>
@@ -62,6 +65,7 @@ export default function App() {
           </div>
         </aside>
         <main className="mv-main">
+          <ErrorBoundary>
           <Routes>
             <Route path="/" element={<Navigate to="/panel" replace />} />
             <Route path="/panel" element={<Panel />} />
@@ -74,6 +78,7 @@ export default function App() {
             <Route path="/cuentas-saas" element={<CuentasAdmin />} />
             <Route path="*" element={<Navigate to="/panel" replace />} />
           </Routes>
+          </ErrorBoundary>
         </main>
       </div>
     </>

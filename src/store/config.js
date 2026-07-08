@@ -73,7 +73,12 @@ const ENV = {
   // Licencia de ESTA copia descargada (si se vendió con suscripción Pro IA):
   // se usa para chequear periódicamente contra el servidor central si sigue
   // activa. Se completa en /config.html con el código que llegó al comprar.
-  licenciaLocal: 'MV_LICENCIA'
+  // También levanta el candado de la prueba gratis de la copia descargada.
+  licenciaLocal: 'MV_LICENCIA',
+  // Fecha (ISO) del primer arranque de la copia descargada: arranca la prueba
+  // gratis de N días (DIAS_PRUEBA, default 3). Se estampa solo. Al vencer, el
+  // programa se bloquea hasta ingresar la licencia que llega al pagar.
+  pruebaInicio: 'PRUEBA_INICIO'
 };
 const CLAVES = Object.keys(ENV);
 const SECRETAS = new Set([

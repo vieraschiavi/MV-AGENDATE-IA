@@ -20,6 +20,7 @@ import { demoLimitada, consumirUso, usosRestantes, mensajeLimite } from './store
 import * as trabajos from './store/trabajos.js';
 import * as cuentas from './store/cuentas.js';
 import * as cotizaciones from './store/cotizaciones.js';
+import { estadoPrueba, pruebaBloqueada, activarLicencia } from './store/prueba.js';
 import { runConCuenta } from './store/contextoCuenta.js';
 import { obtenerOverrides, guardarOverrides, configPublicaCuenta } from './store/configCuentas.js';
 import { fichaCitaHTML, agendaCSV, agendaExcelHTML, clientesCSV, clientesExcelHTML } from './exports/documentos.js';
@@ -90,6 +91,24 @@ app.use(async (req, _res, next) => {
   // a la global — cotizador, agente y agenda la resuelven solos vía contexto.
   const overrides = await obtenerOverrides(req.cuentaId).catch(() => ({}));
   runConCuenta(req.cuentaId, overrides, next);
+});
+
+// --- Candado de la prueba gratis (solo copia DESCARGADA) ---
+// Cuando la prueba de 3 días venció y no se cargó licencia, se corta el
+// workspace: las rutas de datos devuelven 402 y la SPA muestra el candado.
+// No aplica en Vercel (host de marketing + SaaS) ni a cuentas SaaS (que tienen
+// su propio trial por cuenta). Quedan vivas las rutas para licenciar/comprar.
+const RUTAS_PRUEBA_LIBRES = new Set(['/api/prueba', '/api/planes', '/api/comprar', '/api/paises', '/api/parametros']);
+app.use((req, res, next) => {
+  if (req.cuentaId !== 'default') return next();
+  if (!req.path.startsWith('/api/')) return next();       // las páginas estáticas cargan (para mostrar el candado)
+  if (!pruebaBloqueada()) return next();
+  if (RUTAS_PRUEBA_LIBRES.has(req.path) || req.path.startsWith('/api/licencia')) return next();
+  if (req.method === 'GET' && req.path === '/api/config') return next(); // config para activar la licencia
+  return res.status(402).json({
+    error: 'PRUEBA_VENCIDA',
+    mensaje: 'Tu prueba gratis de MV Agendate IA terminó. Comprá tu licencia y activala en Configuración para seguir usando el programa.'
+  });
 });
 
 // El aviso de "cotización para aprobar" al profesional sale por WhatsApp.
@@ -629,6 +648,13 @@ app.get('/api/licencia/estado', async (req, res) => {
   const s = await suscripciones.obtenerSuscripcion(licencia);
   if (!s) return res.json({ ok: true, gestionada: false, activo: true });
   res.json({ ok: true, gestionada: true, activo: s.estado === 'activo', estado: s.estado, plan: s.plan });
+});
+
+// --- Prueba gratis de la copia descargada (banner + activación de licencia) ---
+app.get('/api/prueba', (_req, res) => res.json(estadoPrueba()));
+app.post('/api/licencia/activar', soloAdmin, (req, res) => {
+  const r = activarLicencia(req.body?.codigo);
+  res.status(r.ok ? 200 : 400).json(r);
 });
 app.get('/api/pedido/:id', (req, res) => {
   const p = lic.obtenerPedido(req.params.id);

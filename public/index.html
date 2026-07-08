@@ -14,6 +14,8 @@
 <meta property="og:description" content="El asistente con IA que cotiza y agenda por vos: presupuesto al instante con tu lista de precios, turnos con traslados reales y aviso automático de demoras. Pago único, para cualquier profesión u oficio.">
 <meta property="og:url" content="https://mv-agendate-ia.vercel.app/">
 <meta property="og:image" content="https://mv-agendate-ia.vercel.app/logo-mv.png">
+<meta property="og:video" content="https://mv-agendate-ia.vercel.app/video/mv-agendate-ia.mp4">
+<meta property="og:video:type" content="video/mp4">
 <meta property="og:locale" content="es_UY">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="MV Agendate IA — Turnos y presupuestos automáticos por WhatsApp">
@@ -103,6 +105,12 @@
   /* Cómo funciona — stepper interactivo */
   .como { background:var(--gris); max-width:none; }
   .como .inner { max-width:1160px; margin:0 auto; }
+  .video-sec { max-width:none; background:var(--azul); color:#fff; }
+  .video-sec .inner { max-width:900px; margin:0 auto; }
+  .video-sec .cabecera h2 { color:#fff; }
+  .video-sec .cabecera .lead { color:#cfe0ee; }
+  .video-wrap { border-radius:16px; overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,.35); background:#000; max-width:420px; margin:22px auto 0; }
+  .video-wrap video { display:block; width:100%; height:auto; }
   .pasos { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:26px; }
   .paso-btn { background:#fff; border:2px solid var(--line); color:var(--tinta); border-radius:12px; padding:12px 18px;
     font-size:.9rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:9px; flex:1 1 220px; text-align:left; }
@@ -189,7 +197,7 @@
 <div class="nav">
   <div class="marca"><img src="/logo-mv.svg" alt="MV">MV <span>Agendate IA</span></div>
   <div class="links">
-    <a href="#como-funciona">Cómo funciona</a><a href="#oficios">Oficios</a><a href="#precios">Planes</a><a href="/online.html">Online</a><a href="/demo.html">Demo</a>
+    <a href="#video">Video</a><a href="#como-funciona">Cómo funciona</a><a href="#precios">Planes</a><a href="/online.html">Online</a><a href="/demo.html">Demo</a>
     <a class="cta" href="/comprar.html">Comprar</a>
   </div>
 </div>
@@ -217,6 +225,22 @@
     <div class="m mb"><b>MV:</b> Quedaste agendado para mañana 14:30 ✅ Si Marcelo se atrasa 30 min o más, te aviso yo mismo por acá.</div>
   </div>
 </div>
+
+<section id="video" class="video-sec">
+  <div class="inner">
+    <div class="cabecera">
+      <div class="kicker">Miralo en 1 minuto</div>
+      <h2>Así trabaja MV Agendate IA</h2>
+      <p class="lead">Cotización con IA, agenda optimizada por traslados, fichas de trabajo, CRM y dashboards — todo con voz rioplatense.</p>
+    </div>
+    <div class="video-wrap">
+      <video controls preload="metadata" poster="/video/poster.jpg" playsinline>
+        <source src="/video/mv-agendate-ia.mp4" type="video/mp4">
+        Tu navegador no puede reproducir el video. <a href="/video/mv-agendate-ia.mp4">Descargalo acá.</a>
+      </video>
+    </div>
+  </div>
+</section>
 
 <section id="como-funciona" class="como">
   <div class="inner">

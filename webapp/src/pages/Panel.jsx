@@ -13,8 +13,10 @@ export default function Panel() {
       fetchAdmin('/api/panel'),
       fetch('/api/profesionales').then((r) => r.json()).catch(() => []),
     ]);
-    setProfesionales(profs);
-    if (resp.status !== 401) setDatos(await resp.json());
+    setProfesionales(Array.isArray(profs) ? profs : []);
+    // Solo poblamos con datos reales; ante 401 (falta clave) o 402 (prueba
+    // vencida) dejamos datos en null y deja que el candado/otra UI se muestre.
+    if (resp.ok) setDatos(await resp.json());
   }, []);
 
   useEffect(() => {
@@ -67,7 +69,7 @@ export default function Panel() {
         <div className="kpis">
           <div className="kpi"><div className="n">{datos ? hoy.length : '–'}</div><div className="l">Citas de hoy</div></div>
           <div className="kpi"><div className="n">{datos ? hoy.filter((c) => c.estado === 'en_curso').length : '–'}</div><div className="l">En curso</div></div>
-          <div className="kpi"><div className="n">{datos ? datos.demo.total : '–'}</div><div className="l">Visitas a la demo</div></div>
+          <div className="kpi"><div className="n">{datos?.demo ? datos.demo.total : '–'}</div><div className="l">Visitas a la demo</div></div>
         </div>
         <div className="card" style={{ marginBottom: 16, borderLeft: pendientes.length ? '4px solid var(--verde, #5cb531)' : undefined }}>
           <h2 className="mv-h">💬 Cotizaciones por aprobar {pendientes.length > 0 && <span style={{ color: '#5cb531' }}>({pendientes.length})</span>}</h2>

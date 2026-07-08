@@ -68,6 +68,15 @@
     <button class="btn gold" id="btnCargar">Cargar configuración actual</button>
   </div>
 
+  <div class="card" id="cardLicencia" style="display:none;">
+    <h2>🎁 Prueba y licencia</h2>
+    <div class="sub" id="pruebaEstado">Cargando estado de la prueba…</div>
+    <label>Código de licencia (el que te llegó al comprar)</label>
+    <input id="codigoLicencia" placeholder="Ej: MV-FULL-A1B2C3D4" autocomplete="off">
+    <button class="btn gold" id="btnActivarLicencia" type="button">Activar licencia</button>
+    <div class="hint">La app descargable funciona completa 3 días; después se bloquea hasta activar la licencia. Comprala en <a href="/comprar.html">/comprar.html</a>.</div>
+  </div>
+
   <form id="form" class="card">
     <h2>🔑 Inteligencia artificial (Claude)</h2>
     <div class="sub">Tu API key de Anthropic (Claude). Es lo que hace funcionar el chatbot, el chatvoice y el análisis de fotos con IA real. Conseguila en <a class="link" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.</div>
@@ -523,6 +532,30 @@ $('#btnTest').onclick = async () => {
 };
 
 cargar();
+
+// ---------- Prueba gratis / licencia (copia descargada) ----------
+async function cargarPrueba() {
+  try {
+    const e = await (await fetch('/api/prueba')).json();
+    if (!e.aplica) return; // en el host (Vercel) no aplica
+    $('#cardLicencia').style.display = '';
+    if (e.licenciada) $('#pruebaEstado').innerHTML = '✅ <strong>Licencia activa.</strong> El programa está habilitado por completo.';
+    else if (e.vencida) $('#pruebaEstado').innerHTML = '⛔ <strong>Tu prueba gratis terminó.</strong> Activá tu licencia para volver a usar el programa.';
+    else $('#pruebaEstado').innerHTML = `🎁 <strong>Prueba gratis:</strong> te ${e.diasRestantes === 1 ? 'queda 1 día' : 'quedan ' + e.diasRestantes + ' días'}.`;
+  } catch { /* sin conexión: no mostramos la tarjeta */ }
+}
+cargarPrueba();
+$('#btnActivarLicencia').onclick = async () => {
+  const codigo = $('#codigoLicencia').value.trim();
+  if (!codigo) return aviso('Pegá el código de licencia que te llegó al comprar.', false);
+  try {
+    const r = await fetch('/api/licencia/activar', { method: 'POST', headers: headers(), body: JSON.stringify({ codigo }) });
+    const d = await r.json();
+    if (!r.ok || !d.ok) return aviso(d.error || 'No se pudo activar la licencia.', false);
+    aviso('✅ Licencia activada. ¡Gracias por tu compra!', true);
+    cargarPrueba();
+  } catch { aviso('Error de red al activar la licencia.', false); }
+};
 
 // ---------- WhatsApp: probar conexión ----------
 $('#btnProbarWa').onclick = async () => {

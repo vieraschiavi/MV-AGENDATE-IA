@@ -191,6 +191,25 @@ UYU), registro en `/app` → Cuenta online; el webhook de MercadoPago
 activa/suspende la cuenta sola según el estado de la suscripción (matcheando
 el email del pagador).
 
+**Prueba gratis de la copia descargable (3 días):** al primer arranque, la
+copia PC/APK funciona completa durante `DIAS_PRUEBA` días (default 3, `0` =
+sin límite). Al vencer sin licencia, el workspace se corta (las rutas de datos
+devuelven 402 y la SPA muestra un candado con "Comprar" + activar licencia);
+la landing/demo, `/api/planes`, `/api/comprar` y la activación siguen vivas.
+Se levanta ingresando el código de licencia que llega al pagar
+(`POST /api/licencia/activar` → guarda `licenciaLocal`). NO aplica en el host
+Vercel (marketing + SaaS) ni a cuentas SaaS (que tienen su propio trial de 14
+días por cuenta). Store: `src/store/prueba.js`.
+
+**Demo del sitio hosteado:** para que el chatbot de la web responda con IA
+real (y no con la lógica local de respaldo), configurá `ANTHROPIC_API_KEY`
+como variable de entorno del proyecto en Vercel (o embebida con
+`npm run embeber-clave`). Sin clave, la demo igual muestra el flujo con
+respuestas locales — nunca le pide credenciales al visitante.
+
+**Video promocional:** `public/video/mv-agendate-ia.mp4` (voz rioplatense
+Piper), embebido en la landing (`#video`) y en `/online.html`.
+
 ### Competencia y precios (relevamiento LATAM/Uruguay)
 
 No se encontró en Uruguay/LATAM un competidor que venda **exactamente este
