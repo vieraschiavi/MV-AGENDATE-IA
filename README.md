@@ -201,11 +201,29 @@ Se levanta ingresando el código de licencia que llega al pagar
 Vercel (marketing + SaaS) ni a cuentas SaaS (que tienen su propio trial de 14
 días por cuenta). Store: `src/store/prueba.js`.
 
+**Proveedor de IA elegible (Claude / ChatGPT / Gemini):** cada profesional
+elige su proveedor en `/config.html` (campo `proveedorIA`) y pega SU propia API
+key (`anthropicApiKey` / `openaiApiKey` / `geminiApiKey`). El agente funciona
+igual con cualquiera — `src/ai/llm.js` traduce el historial (bloques Anthropic)
+al formato de cada proveedor y de vuelta; Claude usa el SDK, OpenAI y Gemini
+por REST (sin dependencias nuevas). Configurable por cuenta SaaS también.
+Copilot no expone una API general para este uso; para modelos Microsoft/Azure
+se usa la opción OpenAI con endpoint propio. Modelos por defecto (override por
+env): `MODELO_CLAUDE`, `MODELO_OPENAI` (gpt-4o), `MODELO_GEMINI` (gemini-1.5-flash).
+
 **Demo del sitio hosteado:** para que el chatbot de la web responda con IA
-real (y no con la lógica local de respaldo), configurá `ANTHROPIC_API_KEY`
-como variable de entorno del proyecto en Vercel (o embebida con
-`npm run embeber-clave`). Sin clave, la demo igual muestra el flujo con
-respuestas locales — nunca le pide credenciales al visitante.
+real (y no con la lógica local de respaldo), configurá la API key del proveedor
+elegido como variable de entorno del proyecto en Vercel (`ANTHROPIC_API_KEY` /
+`OPENAI_API_KEY` / `GEMINI_API_KEY`) — o embebida con `npm run embeber-clave`.
+Sin clave, la demo igual conversa con una lógica local (detecta el trabajo,
+cotiza y agenda) y nunca le pide credenciales al visitante.
+
+**PWA / Android:** el workspace (`/app`) es una PWA instalable
+(`public/manifest.webmanifest`, `display: standalone`, `start_url: /app/`) —
+"Agregar a pantalla de inicio" la abre a pantalla completa como app nativa, en
+PC y Android. Inputs a 16px en móvil (sin zoom automático de iOS), targets
+táctiles grandes y `safe-area` para el notch — pensado para el profesional
+usándolo en la calle desde el celular.
 
 **Video promocional:** `public/video/mv-agendate-ia.mp4` (voz rioplatense
 Piper), embebido en la landing (`#video`) y en `/online.html`.

@@ -1,0 +1,18 @@
+{
+  "name": "MV Agendate IA",
+  "short_name": "MV Agendate",
+  "description": "Tu agenda con IA: cotiza, agenda por traslados, CRM y dashboards. Para cualquier profesión u oficio.",
+  "start_url": "/app/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f2a43",
+  "theme_color": "#0f2a43",
+  "lang": "es",
+  "icons": [
+    { "src": "/logo-mv.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/logo-mv.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/movil/icon-512.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" },
+    { "src": "/movil/icon-foreground.png", "sizes": "432x432", "type": "image/png", "purpose": "maskable" }
+  ]
+}

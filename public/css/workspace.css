@@ -41,8 +41,14 @@ body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; 
   .mv-sidebar-backdrop.open{ display:block; }
   .mv-topbar-mobile{ display:flex; align-items:center; gap:10px; background:#fff; border-bottom:1px solid var(--line);
     padding:10px 14px; position:sticky; top:0; z-index:10; }
-  .mv-topbar-mobile button{ background:none; border:0; font-size:1.2rem; cursor:pointer; padding:2px 6px; }
+  .mv-topbar-mobile button{ background:none; border:0; font-size:1.5rem; cursor:pointer; padding:4px 10px; line-height:1; }
   .mv-topbar-mobile strong{ color:var(--navy); }
+  /* Uso en la calle desde el celular: inputs a 16px (evita el zoom automático
+     de iOS al enfocar), targets táctiles más grandes y respeto del notch. */
+  input,select,textarea{ font-size:16px; padding:11px 12px; }
+  .btn{ padding:12px 16px; font-size:.95rem; }
+  .mv-topbar-mobile{ padding-top:calc(10px + env(safe-area-inset-top)); }
+  .mv-main{ padding-bottom:env(safe-area-inset-bottom); }
 }
 
 /* ---------- Página principal ---------- */

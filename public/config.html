@@ -2,9 +2,14 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>MV Agendate IA — Configuración</title>
 <link rel="icon" href="/logo-mv.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0f2a43">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="/logo-mv.png">
 <style>
   :root{ --navy:#0f2a43; --navy2:#16466e; --gold:#e0b25c; --line:#e3e9f0; --ok:#1a7f37; --off:#b23; }
   *{ box-sizing:border-box; }
@@ -39,6 +44,8 @@
   .test button{ width:auto; margin:0; padding:11px 14px; }
   #testOut{ margin-top:10px; font-size:.88rem; white-space:pre-wrap; background:#f6f9fc; border:1px solid var(--line); border-radius:10px; padding:12px; display:none; }
   a.link{ color:var(--navy2); }
+  /* En el celular, inputs a 16px para que iOS no haga zoom al enfocar. */
+  @media (max-width:640px){ input,select,textarea{ font-size:16px; } .btn{ padding:13px 16px; } }
 </style>
 </head>
 <body>
@@ -47,7 +54,7 @@
     <img src="/logo-mv.svg" alt="MV" style="width:44px;height:44px;border-radius:10px;flex:0 0 auto;">
     <div>
       <h1>Configuración — MV Agendate IA</h1>
-      <p>Cargá tu API key de Claude (Anthropic), tu oficio y tu jornada laboral. Se aplican al instante, sin reiniciar.</p>
+      <p>Elegí tu IA (Claude, ChatGPT o Gemini) y pegá tu API key, tu oficio y tu jornada laboral. Se aplican al instante, sin reiniciar.</p>
     </div>
   </div>
 </header>
@@ -78,11 +85,30 @@
   </div>
 
   <form id="form" class="card">
-    <h2>🔑 Inteligencia artificial (Claude)</h2>
-    <div class="sub">Tu API key de Anthropic (Claude). Es lo que hace funcionar el chatbot, el chatvoice y el análisis de fotos con IA real. Conseguila en <a class="link" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.</div>
-    <label>ANTHROPIC API KEY</label>
-    <input id="anthropicApiKey" type="password" placeholder="sk-ant-... (dejá vacío para no cambiarla)" autocomplete="off">
-    <div class="hint">Se guarda en tu servidor, nunca se expone al cliente. Al guardar, el chatbot pasa de "modo demo" a IA real automáticamente.</div>
+    <h2>🔑 Inteligencia artificial</h2>
+    <div class="sub">Elegí tu proveedor de IA y pegá TU propia API key. Es lo que hace funcionar el chatbot, el ChatVoice y las cotizaciones con IA. Podés usar el que ya tengas.</div>
+    <label>Proveedor de IA</label>
+    <select id="proveedorIA">
+      <option value="claude">Claude (Anthropic) — recomendado</option>
+      <option value="openai">ChatGPT (OpenAI)</option>
+      <option value="gemini">Gemini (Google)</option>
+    </select>
+    <div id="iaClaude" class="ia-campo">
+      <label>Claude — API key</label>
+      <input id="anthropicApiKey" type="password" placeholder="sk-ant-... (dejá vacío para no cambiarla)" autocomplete="off">
+      <div class="hint">Conseguila en <a class="link" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.</div>
+    </div>
+    <div id="iaOpenai" class="ia-campo" style="display:none;">
+      <label>ChatGPT (OpenAI) — API key</label>
+      <input id="openaiApiKey" type="password" placeholder="sk-... (dejá vacío para no cambiarla)" autocomplete="off">
+      <div class="hint">Conseguila en <a class="link" href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a>.</div>
+    </div>
+    <div id="iaGemini" class="ia-campo" style="display:none;">
+      <label>Gemini (Google) — API key</label>
+      <input id="geminiApiKey" type="password" placeholder="AIza... (dejá vacío para no cambiarla)" autocomplete="off">
+      <div class="hint">Conseguila en <a class="link" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">aistudio.google.com/app/apikey</a>.</div>
+    </div>
+    <div class="hint">Se guarda en tu servidor, nunca se expone al cliente. Al guardar con una key válida, el chatbot pasa de "modo demo" a IA real automáticamente. <strong>Copilot</strong> no ofrece una API general para este uso; si trabajás con modelos de Microsoft/Azure, usá la opción OpenAI con tu endpoint.</div>
 
     <h2 style="margin-top:22px;">🌎 País y moneda</h2>
     <div class="sub">Elegí tu país: la moneda de cotización y facturación se ajusta sola (o facturá en USD si preferís). El estimador de impuestos y el sugeridor de precios de mercado también usan esto.</div>
@@ -275,7 +301,7 @@
 
 <script>
 const $ = (s) => document.querySelector(s);
-const CAMPOS = ['anthropicApiKey','nombreProfesional','oficioProfesional','pais','moneda','aprobarCotizaciones','agenciaNombre','agenciaTelefono','logoUrl','horarioInicio','horarioFin','almuerzoInicio','almuerzoFin','diasLibres','whatsappToken','whatsappPhoneId','whatsappVerifyToken','twilioAccountSid','twilioAuthToken','twilioNumero','deepgramApiKey','elevenlabsApiKey','elevenlabsVoiceId','crmWebhookUrl','mercadopagoToken','demoLimite','demoMaxUsos','licenciaLocal'];
+const CAMPOS = ['proveedorIA','anthropicApiKey','openaiApiKey','geminiApiKey','nombreProfesional','oficioProfesional','pais','moneda','aprobarCotizaciones','agenciaNombre','agenciaTelefono','logoUrl','horarioInicio','horarioFin','almuerzoInicio','almuerzoFin','diasLibres','whatsappToken','whatsappPhoneId','whatsappVerifyToken','twilioAccountSid','twilioAuthToken','twilioNumero','deepgramApiKey','elevenlabsApiKey','elevenlabsVoiceId','crmWebhookUrl','mercadopagoToken','demoLimite','demoMaxUsos','licenciaLocal'];
 
 // Combo de oficios (cargado desde el catálogo del cotizador) + chips de días libres.
 const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -457,7 +483,16 @@ document.addEventListener('change', (e) => {
   fr.onload = () => { document.querySelector('#logoUrl').value = fr.result; const pv = document.querySelector('#logoPrev'); pv.src = fr.result; pv.style.display = 'block'; };
   fr.readAsDataURL(f);
 });
-const SECRETOS = ['anthropicApiKey','whatsappToken','whatsappVerifyToken','twilioAuthToken','deepgramApiKey','elevenlabsApiKey'];
+const SECRETOS = ['anthropicApiKey','openaiApiKey','geminiApiKey','whatsappToken','whatsappVerifyToken','twilioAuthToken','deepgramApiKey','elevenlabsApiKey'];
+
+// Muestra solo el campo de key del proveedor de IA elegido.
+function toggleProveedorIA() {
+  const p = document.querySelector('#proveedorIA').value || 'claude';
+  document.querySelector('#iaClaude').style.display = p === 'claude' ? '' : 'none';
+  document.querySelector('#iaOpenai').style.display = p === 'openai' ? '' : 'none';
+  document.querySelector('#iaGemini').style.display = p === 'gemini' ? '' : 'none';
+}
+document.querySelector('#proveedorIA').addEventListener('change', toggleProveedorIA);
 
 function headers() {
   const h = { 'Content-Type':'application/json' };
@@ -476,7 +511,7 @@ if (localStorage.getItem('mvToken')) {
   } catch { /* sin datos de cuenta: nada que avisar */ }
 }
 function pintarBadges(estado) {
-  const defs = [['claude','IA Claude'],['whatsapp','WhatsApp'],['voz','Teléfono'],['vozPremium','Voz clonada'],['crm','CRM']];
+  const defs = [['ia','IA'],['whatsapp','WhatsApp'],['voz','Teléfono'],['vozPremium','Voz clonada'],['crm','CRM']];
   $('#badges').innerHTML = defs.map(([k,label]) =>
     `<span class="badge ${estado?.[k]?'on':'off'}">${estado?.[k]?'✓':'○'} ${label}</span>`).join('');
 }
@@ -492,6 +527,7 @@ async function cargar() {
       else el.value = c[campo] || '';
     }
     if (c.diasLibres) { diasLibresSet = new Set(c.diasLibres.split(',').map(Number)); pintarDiasLibres(); }
+    toggleProveedorIA();
     pintarBadges(c.estado);
   } catch { aviso('No pude conectar con el servidor.', false); }
 }

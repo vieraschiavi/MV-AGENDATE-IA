@@ -12,7 +12,13 @@ const FILE = join(process.env.VERCEL ? '/tmp/mvdata' : join(here, '../../data'),
 
 // Claves de configuración y su variable de entorno equivalente (para defaults).
 const ENV = {
+  // Proveedor de IA elegido por el profesional: 'claude' | 'openai' | 'gemini'
+  // (default claude). Cada uno con SU propia API key acá abajo — el agente
+  // funciona igual con cualquiera (ver src/ai/llm.js).
+  proveedorIA: 'PROVEEDOR_IA',
   anthropicApiKey: 'ANTHROPIC_API_KEY',
+  openaiApiKey: 'OPENAI_API_KEY',   // ChatGPT (OpenAI)
+  geminiApiKey: 'GEMINI_API_KEY',   // Gemini (Google)
   nombreProfesional: 'NOMBRE_PROFESIONAL', // a quién representa el agente (ej: "Juan Pérez")
   oficioProfesional: 'OFICIO_PROFESIONAL', // clave de src/data/oficios.json (ej: "electricista")
   pais: 'PAIS',                            // clave de src/data/paises.js (ej: "uy", "ar", "mx")
@@ -82,7 +88,7 @@ const ENV = {
 };
 const CLAVES = Object.keys(ENV);
 const SECRETAS = new Set([
-  'anthropicApiKey', 'whatsappToken', 'whatsappVerifyToken',
+  'anthropicApiKey', 'openaiApiKey', 'geminiApiKey', 'whatsappToken', 'whatsappVerifyToken',
   'twilioAuthToken', 'deepgramApiKey', 'elevenlabsApiKey', 'adminKey', 'mercadopagoToken',
   'jwtSecret'
 ]);
@@ -217,8 +223,12 @@ export function getConfigPublico() {
   const c = cargar();
   const out = {};
   for (const k of CLAVES) out[k] = SECRETAS.has(k) ? mask(c[k]) : c[k];
+  // La IA queda activa con la key del proveedor elegido (Claude/OpenAI/Gemini).
+  const prov = (c.proveedorIA || 'claude').toLowerCase();
+  const claveProv = prov === 'openai' ? c.openaiApiKey : prov === 'gemini' ? c.geminiApiKey : c.anthropicApiKey;
   out.estado = {
-    claude: !!c.anthropicApiKey,
+    ia: !!claveProv,
+    claude: !!claveProv, // compat: la UI vieja usa 'claude' para el badge de IA
     whatsapp: !!(c.whatsappToken && c.whatsappPhoneId),
     voz: !!(c.twilioAccountSid && c.twilioAuthToken),
     vozPremium: !!(c.deepgramApiKey && c.elevenlabsApiKey && c.twilioAccountSid),

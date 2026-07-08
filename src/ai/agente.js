@@ -6,6 +6,7 @@
 // configuración (panel /config.html), así el mismo motor sirve para
 // cualquier rubro: electricista, plomero, abogado, psicólogo, etc.
 import Anthropic from '@anthropic-ai/sdk';
+import { chatearLLM, iaConfigurada, LLMError } from './llm.js';
 import { cotizar, cotizarToolDef, listarOficios } from './cotizador.js';
 import { geocodificar, geocodificarToolDef } from './geocoding.js';
 import { proponerHorarios, proponerHorariosToolDef, configuracionDescansoPorDefecto } from '../store/agenda.js';
@@ -15,7 +16,6 @@ import { cuentaActiva } from '../store/contextoCuenta.js';
 import { get as cfg, listarProfesionales } from '../store/config.js';
 import { registrarUso } from '../store/uso.js';
 
-const MODEL = 'claude-opus-4-8';
 const telefonoProfesional = () => cfg('agenciaTelefono') || '+598 99 000 000';
 
 // ---------- Profesional seleccionado por sesión (cuentas con varios trabajadores) ----------
@@ -43,19 +43,9 @@ function configuracionDeProfesional(prof) {
   };
 }
 
-// Cliente de Claude creado en caliente a partir de la API key configurada en
-// el panel (o la propia de la cuenta SaaS activa). Cacheado por clave, así
-// convivir cuentas con claves distintas no recrea el cliente en cada mensaje;
-// null → modo demo.
-const _clientes = new Map();
-function getClient() {
-  const key = cfg('anthropicApiKey');
-  if (!key) return null;
-  if (!_clientes.has(key)) _clientes.set(key, new Anthropic({ apiKey: key }));
-  return _clientes.get(key);
-}
-/** true si no hay API key configurada (respuestas simuladas). */
-export function enModoDemo() { return !getClient(); }
+/** true si no hay ninguna API key de IA configurada (respuestas simuladas).
+ *  La IA puede ser Claude, ChatGPT (OpenAI) o Gemini — ver src/ai/llm.js. */
+export function enModoDemo() { return !iaConfigurada(); }
 
 // ---------- Herramientas de negocio ----------
 
@@ -400,8 +390,7 @@ function responderDemo(sessionId, texto, canal) {
  * @param {string} canal — 'webchat' | 'whatsapp' | 'telefono' | 'voz'
  */
 export async function conversar(sessionId, texto, canal = 'webchat') {
-  const client = getClient();
-  if (!client) return responderDemo(sessionId, texto, canal);
+  if (!iaConfigurada()) return responderDemo(sessionId, texto, canal);
 
   // En el modo SaaS las sesiones se aíslan por cuenta: el mismo cliente
   // (wa:598...) hablando con dos profesionales distintos son DOS charlas.
@@ -415,12 +404,10 @@ export async function conversar(sessionId, texto, canal = 'webchat') {
   try {
     let respuesta;
     for (let i = 0; i < 8; i++) {
-      respuesta = await client.messages.create({
-        model: MODEL,
-        max_tokens: 16000,
-        system: [{ type: 'text', text: buildSystem(sessionId), cache_control: { type: 'ephemeral' } }],
+      respuesta = await chatearLLM({
+        system: buildSystem(sessionId),
         tools: construirTools(),
-        messages: mensajes
+        mensajes
       });
       registrarUso(respuesta.usage, canal);
 
@@ -454,11 +441,13 @@ export async function conversar(sessionId, texto, canal = 'webchat') {
     if (err instanceof Anthropic.APIConnectionError) {
       return `Tuve un problema de conexión. Si es urgente, llamanos al ${telefonoProfesional()}.`;
     }
-    if (err instanceof Anthropic.APIError) {
-      console.error('[agente] Error de API:', err.status, err.message);
+    // Cualquier error de la IA (Claude/OpenAI/Gemini): no romper la conversación.
+    if (err instanceof Anthropic.APIError || err instanceof LLMError) {
+      console.error('[agente] Error de IA:', err.status || '', err.message);
       return `Tuve un inconveniente técnico. Un agente humano puede ayudarte al ${telefonoProfesional()}.`;
     }
-    throw err;
+    console.error('[agente] Error inesperado:', err?.message || err);
+    return `Tuve un inconveniente técnico. Un agente humano puede ayudarte al ${telefonoProfesional()}.`;
   }
 }
 

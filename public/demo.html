@@ -36,6 +36,8 @@
   #resultado small { color:#5a6b7c; display:block; margin-top:6px; }
   #horarios { padding:0 18px 18px; }
   .horario { background:#e8f0fb; border-radius:10px; padding:10px 12px; margin-top:8px; font-size:.88rem; }
+  /* En el celular, inputs a 16px (evita el zoom automático de iOS al enfocar). */
+  @media (max-width:640px){ .cot input, .cot select, form.chat input { font-size:16px; } }
 </style>
 </head>
 <body>

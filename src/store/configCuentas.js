@@ -9,7 +9,7 @@ import { kvGet, kvSet } from './redis.js';
 
 // Subset de claves de store/config.js que una cuenta puede definir para sí.
 export const CLAVES_CUENTA = [
-  'anthropicApiKey',
+  'proveedorIA', 'anthropicApiKey', 'openaiApiKey', 'geminiApiKey',
   'nombreProfesional', 'oficioProfesional',
   'pais', 'moneda', 'oficiosCustom', 'aprobarCotizaciones',
   'agenciaNombre', 'agenciaTelefono', 'logoUrl',
@@ -21,7 +21,7 @@ export const CLAVES_CUENTA = [
   'crmWebhookUrl'
 ];
 const SECRETAS = new Set([
-  'anthropicApiKey', 'whatsappToken', 'whatsappVerifyToken',
+  'anthropicApiKey', 'openaiApiKey', 'geminiApiKey', 'whatsappToken', 'whatsappVerifyToken',
   'twilioAuthToken', 'deepgramApiKey', 'elevenlabsApiKey'
 ]);
 
@@ -57,8 +57,11 @@ export async function configPublicaCuenta(cuentaId) {
   const cfg = await obtenerOverrides(cuentaId);
   const out = {};
   for (const k of CLAVES_CUENTA) out[k] = SECRETAS.has(k) ? (cfg[k] ? '(configurada)' : '') : (cfg[k] || '');
+  const prov = (cfg.proveedorIA || 'claude').toLowerCase();
+  const claveProv = prov === 'openai' ? cfg.openaiApiKey : prov === 'gemini' ? cfg.geminiApiKey : cfg.anthropicApiKey;
   out.estado = {
-    claude: !!cfg.anthropicApiKey,
+    ia: !!claveProv,
+    claude: !!claveProv,
     whatsapp: !!(cfg.whatsappToken && cfg.whatsappPhoneId),
     voz: !!(cfg.twilioAccountSid && cfg.twilioAuthToken),
     vozPremium: !!(cfg.deepgramApiKey && cfg.elevenlabsApiKey && cfg.twilioAccountSid),
