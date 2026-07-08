@@ -412,15 +412,19 @@ app.get('/api/whatsapp/probar', adminOCuenta, async (_req, res) => {
 // Chequeo de retrasos: compara el fin estimado del trabajo en curso contra la
 // próxima cita del día y, si hay 30+ minutos de demora, avisa por WhatsApp al
 // próximo cliente. En local corre solo (setInterval más abajo); en Vercel
-// (serverless, sin procesos de fondo) hace falta un Cron Job que llame a este
-// endpoint cada 5-10 min (ver vercel.json → "crons").
+// (serverless, sin procesos de fondo) hace falta que algo externo llame a este
+// endpoint cada 5-10 min. Los Cron Jobs nativos de Vercel (vercel.json →
+// "crons") están limitados a 1 vez por día en el plan Hobby/gratis, así que
+// NO se declaran acá — usá un cron externo gratuito (cron-job.org, GitHub
+// Actions) apuntando a la variante GET de abajo. Ver docs/CANALES.md.
 app.post('/api/agenda/chequear-retrasos', soloAdmin, async (_req, res) => {
   const avisos = await chequearRetrasosDeHoy();
   res.json({ ok: true, avisos });
 });
-// Variante GET para el Cron Job de Vercel (crons.json solo puede invocar GET).
-// Vercel agrega automáticamente "Authorization: Bearer $CRON_SECRET" si esa env
-// está configurada; si no está seteada, no exigimos nada (uso local/manual).
+// Variante GET, pensada para un cron externo (Vercel Hobby no admite Cron Jobs
+// nativos de alta frecuencia). Si configurás CRON_SECRET, protegé la llamada
+// pasando "Authorization: Bearer $CRON_SECRET" desde el servicio externo; sin
+// esa env no se exige nada (uso local/manual).
 app.get('/api/agenda/chequear-retrasos', async (req, res) => {
   const secreto = process.env.CRON_SECRET;
   if (secreto && req.headers.authorization !== `Bearer ${secreto}`) return res.status(401).json({ ok: false, error: 'No autorizado.' });
@@ -675,7 +679,7 @@ export default app;
 
 const PORT = process.env.PORT || 3000;
 if (process.env.VERCEL) {
-  console.log('MV Agendate IA — modo serverless (Vercel). Recordá configurar un Cron Job (vercel.json) → GET /api/agenda/chequear-retrasos cada 5-10 min.');
+  console.log('MV Agendate IA — modo serverless (Vercel). Recordá configurar un cron externo gratuito (cron-job.org / GitHub Actions, ver docs/CANALES.md) → GET /api/agenda/chequear-retrasos cada 5-10 min.');
 } else {
   iniciarChequeoLicencia();
   // Chequeo periódico de retrasos (solo tiene sentido corriendo localmente/PC; en

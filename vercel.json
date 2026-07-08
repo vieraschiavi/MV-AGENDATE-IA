@@ -8,9 +8,6 @@
       "includeFiles": "{src/data,descargas}/**"
     }
   },
-  "crons": [
-    { "path": "/api/agenda/chequear-retrasos", "schedule": "*/10 * * * *" }
-  ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index.js" },
     { "source": "/salud", "destination": "/api/index.js" },

@@ -67,5 +67,19 @@ Vercel, el ChatVoice funciona en su variante "vía rápida" (punto 3).
 curso contra la próxima cita del día; si detecta 30+ minutos de demora, avisa
 por WhatsApp al próximo cliente. En un servidor persistente corre solo cada 5
 minutos (`setInterval` en `src/server.js`); en Vercel (sin procesos de fondo)
-hace falta un [Cron Job de Vercel](https://vercel.com/docs/cron-jobs) que
-llame a `GET /api/agenda/chequear-retrasos` (ya configurado en `vercel.json`) cada 5-10 minutos.
+hace falta que algo externo llame a `GET /api/agenda/chequear-retrasos` cada
+5-10 minutos.
+
+**Los Cron Jobs nativos de Vercel (`vercel.json` → `"crons"`) están limitados a
+1 ejecución por día en el plan Hobby/gratis** — una expresión como `*/10 * * * *`
+directamente bloquea el deploy con el error "cuentas Hobby están limitadas a
+tareas programadas diarias". Por eso `vercel.json` NO declara ningún cron; en
+su lugar, apuntá un servicio externo gratuito al endpoint:
+
+- **cron-job.org** (gratis, sin cuenta de GitHub): creá un cron que haga
+  `GET https://tu-dominio.vercel.app/api/agenda/chequear-retrasos` cada 5-10 min.
+- **GitHub Actions** (gratis en repos públicos, minutos limitados en privados):
+  un workflow con `schedule: cron: '*/10 * * * *'` que haga un `curl` al mismo endpoint.
+
+Si en cambio tenés plan Pro de Vercel, podés volver a declarar el cron nativo
+en `vercel.json` (`"crons": [{ "path": "/api/agenda/chequear-retrasos", "schedule": "*/10 * * * *" }]`) sin este límite.

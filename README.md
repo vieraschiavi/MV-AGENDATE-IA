@@ -84,7 +84,7 @@ según su mercado.
 | Telefonía | Twilio (opcional) |
 | Datos | Redis (Upstash) — persiste entre invocaciones serverless |
 | Pagos | MercadoPago Checkout Pro (+ suscripción para el costo variable del plan Full) |
-| Deploy | Vercel (estático `public/` + función serverless `api/index.js`) + Cron Job para el aviso de retrasos |
+| Deploy | Vercel (estático `public/` + función serverless `api/index.js`) — aviso de retrasos vía cron externo gratuito (ver docs/CANALES.md; los Cron Jobs nativos de Vercel Hobby están limitados a 1/día) |
 | Tests | `node --test` |
 
 Sin build step. Dependencias de producción: `@anthropic-ai/sdk`, `express`,
@@ -127,7 +127,7 @@ webapp/                 Workspace en React 18 + Vite (panel/agenda/clientes/dash
 respaldo/web-clasica/   Versión anterior del workspace (HTML + JS vanilla), por si hay que restaurarla
 movil/                  App Android (PWA instalable / APK)
 api/index.js            Entrypoint serverless de Vercel
-vercel.json             Config de deploy + Cron Job del aviso de retrasos
+vercel.json             Config de deploy (sin Cron Job nativo: ver docs/CANALES.md)
 test/                   Suite de tests (cotizador, agenda, aviso de retraso, agente, geocoding, multi-profesional)
 ```
 
@@ -147,7 +147,7 @@ test/                   Suite de tests (cotizador, agenda, aviso de retraso, age
 - `GET/POST /api/profesionales` — equipo de profesionales de la cuenta (multi-profesional)
 - `GET /api/dashboard`, `/api/dashboard/serie`, `/api/dashboard/serie-anual`, `/api/dashboard/filtros`
 - `GET /api/agenda.csv` · `/api/agenda.xls` · `/api/clientes.csv` · `/api/clientes.xls` — exportación con filtros
-- `GET /api/agenda/chequear-retrasos` (cron) / `POST` (manual, admin) — dispara los avisos de demora
+- `GET /api/agenda/chequear-retrasos` (cron externo gratuito, ver docs/CANALES.md) / `POST` (manual, admin) — dispara los avisos de demora
 - `GET /api/cotizaciones?estado=pendiente` · `POST /api/cotizaciones/:id/resolver` — aprobación de cotizaciones (el chatbot no da precio sin OK del profesional)
 - `POST /api/auth/registro` · `POST /api/auth/login` · `GET /api/auth/yo` — cuentas del modo SaaS (con `Authorization: Bearer <token>`, todas las rutas del workspace operan sobre los datos aislados de esa cuenta, y `/api/config`, `/api/oficios`, `/api/profesionales`, `/api/cotizar` leen/escriben la configuración PROPIA de la cuenta)
 - `GET /api/admin/cuentas` · `POST /api/admin/cuentas/:id/estado` — panel del VENDEDOR (clave admin global): todas las cuentas SaaS con métricas (clientes/citas/facturado/pendientes) y activación/suspensión manual

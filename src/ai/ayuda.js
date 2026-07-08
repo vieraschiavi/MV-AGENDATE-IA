@@ -48,7 +48,7 @@ export const TEMAS_AYUDA = [
   {
     claves: /(retraso|demora|tarde|aviso)/,
     titulo: 'Aviso automático de retraso',
-    texto: 'Si marcás un trabajo "en curso" y el sistema estima que vas a llegar 30+ minutos tarde a la próxima cita (fin estimado + traslado real), le escribe solo por WhatsApp al próximo cliente disculpando la demora. En PC corre cada 5 minutos; en Vercel lo dispara un Cron Job ya configurado en vercel.json. También podés forzar la revisión desde /panel.html.'
+    texto: 'Si marcás un trabajo "en curso" y el sistema estima que vas a llegar 30+ minutos tarde a la próxima cita (fin estimado + traslado real), le escribe solo por WhatsApp al próximo cliente disculpando la demora. En PC corre cada 5 minutos; en Vercel hace falta un cron externo gratuito (cron-job.org o GitHub Actions, ver docs/CANALES.md) porque los Cron Jobs nativos de Vercel Hobby están limitados a 1 vez por día. También podés forzar la revisión desde /panel.html.'
   },
   {
     claves: /(dashboard|estad[ií]stica|facturaci[oó]n|reporte|anal[ií]tica|export|excel|csv|pdf)/,
@@ -78,7 +78,7 @@ export const TEMAS_AYUDA = [
   {
     claves: /(vercel|deploy|nube|dominio|hosting|servidor)/,
     titulo: 'Deploy en Vercel',
-    texto: 'El repo ya trae vercel.json (estático public/ + función serverless api/index.js + Cron Job del aviso de retraso). Conectá el repo en vercel.com, configurá las variables de entorno (o cargá todo después en /config.html) y agregá Redis de Upstash para que los datos persistan entre invocaciones serverless. El ChatVoice premium (tiempo real) requiere servidor persistente; el resto funciona completo en Vercel.'
+    texto: 'El repo ya trae vercel.json (estático public/ + función serverless api/index.js). Conectá el repo en vercel.com, configurá las variables de entorno (o cargá todo después en /config.html) y agregá Redis de Upstash para que los datos persistan entre invocaciones serverless. Para el aviso de retraso, sumá un cron externo gratuito (cron-job.org o GitHub Actions) apuntando a /api/agenda/chequear-retrasos: los Cron Jobs nativos de Vercel Hobby están limitados a 1 vez por día. El ChatVoice premium (tiempo real) requiere servidor persistente; el resto funciona completo en Vercel.'
   },
   {
     claves: /(pa[ií]s|moneda|d[oó]lar|usd|impuesto|monotributo|iva|bps|afip|sat|sunat|neto|latam|argentina|m[eé]xico|chile|colombia|per[uú]|brasil)/,
