@@ -216,7 +216,7 @@
       <summary>💳 Pagos (MercadoPago)</summary>
       <label>MercadoPago — Access Token</label>
       <input id="mercadopagoToken" type="password" placeholder="APP_USR-... (cobros → payout a tu banco)" autocomplete="off">
-      <div class="hint">Con esto, la página de compra (/comprar.html) cobra con tarjeta/saldo por MercadoPago y el dinero entra a tu cuenta MP; luego retirás a tu banco. Sin token, la compra usa transferencia bancaria.</div>
+      <div class="hint">Es OBLIGATORIO para cobrar: con tu Access Token, /comprar.html abre el checkout real de MercadoPago (tarjeta/saldo) y el dinero entra a tu cuenta MP; luego retirás a tu banco. Sin token, la compra no se puede completar (no se simula ningún pago).</div>
       <label>Tu licencia (si compraste el plan Full con suscripción mensual)</label>
       <input id="licenciaLocal" placeholder="Ej: MV-FULL-A1B2C3D4" autocomplete="off">
       <div class="hint">Sólo si elegiste la modalidad de <strong>suscripción mensual</strong> al comprar. Con esto, el programa chequea cada tanto que tu pago siga al día; si tu suscripción se cancela o falla un cobro, se desactiva el chat/voz con IA (el resto del programa sigue funcionando). Si compraste pago único, dejá esto vacío.</div>

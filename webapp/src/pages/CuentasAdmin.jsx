@@ -54,7 +54,7 @@ export default function CuentasAdmin() {
           <h2 className="mv-h">Cuentas registradas</h2>
           <p style={{ fontSize: '.88rem', color: 'var(--muted)', margin: '0 0 10px' }}>
             El estado se actualiza solo con el webhook de MercadoPago (paga → activa, cancela → suspendida).
-            Desde acá podés forzarlo a mano — por ejemplo, activar a alguien que pagó por transferencia.
+            Desde acá podés forzarlo a mano — por ejemplo, activar una cuenta a la que le confirmaste el pago manualmente.
           </p>
           <div className="mv-tablewrap">
             {!lista || lista.length === 0 ? (

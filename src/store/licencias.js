@@ -37,37 +37,29 @@ export const PLANES = {
     nota_costo_variable: 'Los canales con IA (WhatsApp/voz) en modo SaaS se habilitan por cuenta en una fase posterior; hoy el chatbot/ChatVoice corre en las versiones descargables.'
   }
 };
-export const MEDIOS = ['tarjeta', 'mercadopago', 'transferencia'];
-const DATOS_TRANSFERENCIA = {
-  banco: 'Itaú Uruguay', tipo: 'Caja de ahorro en dólares (USD)', cuenta: '3517980',
-  titular: 'Titular de la cuenta', instruccion: 'Transferí el monto y enviá el comprobante para habilitar la descarga.'
-};
+// Único medio de pago: MercadoPago (tarjeta, saldo, etc. dentro de su checkout).
+export const MEDIOS = ['mercadopago'];
 
 let db = null;
 function cargar() { if (!db) db = existsSync(FILE) ? JSON.parse(readFileSync(FILE, 'utf8')) : { pedidos: {} }; return db; }
 function guardar() { mkdirSync(DIR, { recursive: true }); writeFileSync(FILE, JSON.stringify(db, null, 2)); }
 
-/** Crea un pedido pendiente de pago. */
-export function crearPedido({ plan, version = 'pc', email, medio, nombre, recurrente }) {
+/** Crea un pedido pendiente de pago (siempre MercadoPago). */
+export function crearPedido({ plan, version = 'pc', email, nombre, recurrente }) {
   cargar();
   if (!PLANES[plan]) return { ok: false, error: 'Plan inválido.' };
-  if (!MEDIOS.includes(medio)) return { ok: false, error: 'Medio de pago inválido.' };
   if (!email) return { ok: false, error: 'Falta el email.' };
   const id = 'ORD-' + randomBytes(4).toString('hex').toUpperCase();
   const pedido = {
-    id, plan, version, email, nombre: nombre || '', medio,
+    id, plan, version, email, nombre: nombre || '', medio: 'mercadopago',
     // El plan SaaS es suscripción mensual siempre; los demás según lo pedido.
-    recurrente: (plan === 'saas' || !!recurrente) && medio === 'mercadopago',
+    recurrente: plan === 'saas' || !!recurrente,
     total_usd: PLANES[plan].precio, estado: 'pendiente',
     creado: new Date().toISOString(), licencia: null, token: null
   };
   db.pedidos[id] = pedido;
   guardar();
-  // Instrucciones según medio
-  const extra = {};
-  if (medio === 'transferencia') extra.transferencia = { ...DATOS_TRANSFERENCIA, monto: `USD ${pedido.total_usd}`, referencia: id };
-  if (medio === 'tarjeta' || medio === 'mercadopago') extra.nota_pago = 'Para cobro con tarjeta/MercadoPago se conecta el procesador (dLocal/MercadoPago/Stripe). Configuralo en el backend; mientras tanto, usá transferencia o confirmá el pago manualmente desde el panel.';
-  return { ok: true, pedido, ...extra };
+  return { ok: true, pedido };
 }
 
 /** Marca un pedido como pagado y emite licencia + token de descarga. */
@@ -147,5 +139,3 @@ export function verificarDescarga(token) {
 export function archivoDeVersion(version) {
   return { pc: 'MV-PC.zip', apk: 'MV-APK.zip', ios: 'MV-PC.zip', todas: 'MV-PC.zip' }[version] || 'MV-PC.zip';
 }
-
-export { DATOS_TRANSFERENCIA };

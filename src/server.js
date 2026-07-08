@@ -576,20 +576,21 @@ app.get('/api/tokens/catalogo', (_req, res) => res.json(catalogoConEstado()));
 app.get('/api/planes', (_req, res) => res.json({ planes: lic.PLANES, medios: lic.MEDIOS, mercadopago: mercadopagoActivo() }));
 app.post('/api/comprar', async (req, res) => {
   if (await esBot(req)) return res.status(403).json({ error: 'Acceso denegado.' });
-  const r = lic.crearPedido(req.body ?? {});
+  // Único medio de pago: MercadoPago. Nunca simulamos la compra: o redirigimos
+  // al checkout real de MercadoPago (init_point), o devolvemos un error claro.
+  const r = lic.crearPedido({ ...(req.body ?? {}), medio: 'mercadopago' });
   if (!r.ok) return res.status(400).json(r);
-  if (r.pedido.medio === 'mercadopago' && mercadopagoActivo()) {
-    if (r.pedido.recurrente) {
-      const plan = await planRecurrente(r.pedido.plan, r.pedido.total_usd);
-      if (plan.ok) return res.json({ ...r, init_point: plan.init_point, recurrente: true });
-      return res.json({ ...r, aviso_pago: plan.error });
-    }
-    const base = `${req.protocol}://${req.get('host')}`;
-    const pref = await crearPreferencia(r.pedido, base);
-    if (pref.ok) return res.json({ ...r, init_point: pref.init_point });
-    return res.json({ ...r, aviso_pago: pref.error });
+  if (!mercadopagoActivo()) {
+    return res.status(503).json({ ok: false, error: 'El cobro con MercadoPago todavía no está activo. El vendedor debe cargar su Access Token de MercadoPago en la configuración (o env MERCADOPAGO_TOKEN).' });
   }
-  res.json(r);
+  const base = `${req.protocol}://${req.get('host')}`;
+  const pago = r.pedido.recurrente
+    ? await planRecurrente(r.pedido.plan, r.pedido.total_usd)
+    : await crearPreferencia(r.pedido, base);
+  if (!pago.ok || !pago.init_point) {
+    return res.status(502).json({ ok: false, error: pago.error || 'No pude iniciar el pago con MercadoPago. Probá de nuevo en unos minutos.' });
+  }
+  return res.json({ ok: true, pedido: r.pedido, init_point: pago.init_point, recurrente: !!r.pedido.recurrente });
 });
 
 async function procesarPreapproval(pre) {

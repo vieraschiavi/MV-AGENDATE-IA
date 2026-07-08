@@ -75,14 +75,9 @@ async function poll() {
       '<div class="estado ok"><strong>✅ Pago confirmado</strong><br>Licencia: <code>' + d.licencia + '</code></div>' +
       '<a class="btn" href="/descargar/' + d.token + '">⬇ Descargar ' + (VERNOMBRE[d.version] || 'el software') + '</a>' +
       '<div class="box">Guardá tu licencia — la vas a necesitar la primera vez que abras el programa. Si perdés el link de descarga, volvé a esta página con tu N° de pedido (<code>' + id + '</code>).</div>';
-  } else if (d.medio === 'transferencia') {
-    $('#estadoBox').innerHTML =
-      '<div class="estado pend"><span class="spin"></span><strong>Esperando confirmación de tu transferencia</strong><br>' +
-      'En cuanto la acreditemos, esta misma página se actualiza sola con tu licencia y el botón de descarga. Podés cerrarla y volver cuando quieras con el link que tenés en la pantalla anterior.</div>';
-    setTimeout(poll, 6000);
   } else {
     $('#estadoBox').innerHTML =
-      '<div class="estado pend"><span class="spin"></span><strong>Verificando tu pago…</strong><br>Esto suele tardar unos segundos.</div>';
+      '<div class="estado pend"><span class="spin"></span><strong>Confirmando tu pago con MercadoPago…</strong><br>Apenas MercadoPago confirme, esta página se actualiza sola con tu licencia y la descarga. Podés cerrarla y volver con tu N° de pedido (<code>' + id + '</code>).</div>';
     setTimeout(poll, 4000);
   }
 }

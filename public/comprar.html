@@ -46,23 +46,15 @@
       <p style="font-size:.8rem;color:#5a6b7c;margin-top:8px;">Las versiones móviles son clientes livianos que se conectan al servidor PC (por eso salen más económicas).</p>
     </div>
     <div class="card">
-      <h2>3. Tus datos y medio de pago</h2>
+      <h2>3. Tus datos</h2>
       <label>Nombre / Negocio</label><input id="nombre">
       <label>Email</label><input id="email" type="email" placeholder="tu@email.com">
-      <label>Medio de pago</label>
-      <div class="medios" id="medios">
-        <div class="medio on" data-m="mercadopago">🟦 MercadoPago<br><small>tarjeta, saldo, etc.</small></div>
-        <div class="medio" data-m="transferencia">🏦 Transferencia<br><small>a Itaú (USD)</small></div>
+      <div class="medios" id="medios" style="margin-top:12px;">
+        <div class="medio on" style="cursor:default;">🟦 Pagás con <b>MercadoPago</b><br><small>tarjeta, débito o saldo — checkout seguro de MercadoPago</small></div>
       </div>
-      <div id="modalidadWrap">
-        <label>Modalidad de pago</label>
-        <div class="medios" id="modalidad">
-          <div class="medio" data-r="0">💳 Pago único<br><small>una sola vez</small></div>
-          <div class="medio on" data-r="1">🔁 Suscripción mensual<br><small>se renueva sola cada mes</small></div>
-        </div>
-        <p id="modalidadNota" style="font-size:.78rem;color:#5a6b7c;margin-top:6px;"></p>
-      </div>
-      <button class="btn" id="btnComprar">Continuar al pago →</button>
+      <div id="modalidadNota" style="font-size:.78rem;color:#5a6b7c;margin-top:8px;"></div>
+      <button class="btn" id="btnComprar">Ir a pagar con MercadoPago →</button>
+      <p id="errPago" style="display:none;color:#c0392b;font-size:.85rem;margin-top:10px;"></p>
     </div>
   </div>
   <div>
@@ -99,38 +91,29 @@ function render() {
   actualizarModalidad();
 }
 function actualizarModalidad() {
-  // La transferencia es siempre pago único (no hay forma de automatizarla), y
-  // la suscripción mensual solo aplica al plan Full (el Básico no usa APIs de IA).
-  // El plan SaaS es SIEMPRE suscripción mensual, sin elección de modalidad.
+  // El plan SaaS y el Full son suscripción mensual por MercadoPago; el Básico, pago único.
   const p = PLANES[plan]||{};
-  $('#modalidadWrap').style.display = (medio === 'mercadopago' && plan === 'full') ? 'block' : 'none';
+  recurrente = !!(p.mensual || plan === 'full');
   $('#modalidadNota').textContent = recurrente
-    ? 'Se cobra automáticamente cada mes en tu tarjeta hasta que canceles. Podés cancelar cuando quieras.'
-    : 'Pagás una sola vez ahora; sin renovación automática.';
-  if (p.mensual) $('#notaVariable').textContent = 'Suscripción mensual por MercadoPago: 14 días de prueba gratis registrándote en la app (/app → Cuenta online). Cancelás cuando quieras. ' + ($('#notaVariable').textContent || '');
+    ? 'Se cobra por MercadoPago cada mes hasta que canceles. Cancelás cuando quieras.'
+    : 'Pago único por MercadoPago; sin renovación automática.';
 }
 $('#version').onchange = render;
-document.querySelectorAll('#medios .medio').forEach(el=>el.onclick=()=>{ document.querySelectorAll('#medios .medio').forEach(x=>x.classList.toggle('on',x===el)); medio=el.dataset.m; render(); });
-document.querySelectorAll('#modalidad .medio').forEach(el=>el.onclick=()=>{ document.querySelectorAll('#modalidad .medio').forEach(x=>x.classList.toggle('on',x===el)); recurrente = el.dataset.r === '1'; render(); });
 $('#btnComprar').onclick = async () => {
-  const email=$('#email').value.trim(); if(!email) return alert('Poné tu email.');
-  const body = { plan, version:$('#version').value, email, nombre:$('#nombre').value, medio, recurrente: medio==='mercadopago' && (recurrente || !!(PLANES[plan]||{}).mensual) };
-  const r = await (await fetch('/api/comprar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
-  if(!r.ok) return alert(r.error);
-  pedidoId = r.pedido.id;
-  // MercadoPago: redirigir al checkout (único o de suscripción). El resto de
-  // los medios va directo a la página de gracias, que verifica el pago y
-  // habilita la descarga sola.
-  if(r.init_point){ window.location.href = r.init_point; return; }
-  window.location.href = '/gracias.html?pedido=' + encodeURIComponent(pedidoId);
+  const email=$('#email').value.trim();
+  $('#errPago').style.display='none';
+  if(!email) return alert('Poné tu email.');
+  const btn=$('#btnComprar'); btn.disabled=true; btn.textContent='Conectando con MercadoPago…';
+  try {
+    const body = { plan, version:$('#version').value, email, nombre:$('#nombre').value };
+    const r = await (await fetch('/api/comprar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
+    // Solo avanzamos si MercadoPago devolvió el checkout real. Nunca simulamos la compra.
+    if(r.ok && r.init_point){ window.location.href = r.init_point; return; }
+    $('#errPago').textContent = r.error || 'No se pudo iniciar el pago con MercadoPago. Probá de nuevo en unos minutos.';
+    $('#errPago').style.display='block';
+  } catch { $('#errPago').textContent='Error de conexión. Probá de nuevo.'; $('#errPago').style.display='block'; }
+  finally { btn.disabled=false; btn.textContent='Ir a pagar con MercadoPago →'; }
 };
-// Si volvemos acá con ?pedido=ID, es porque un pago con MercadoPago FALLÓ o quedó
-// pendiente de aprobación — dejamos elegir otro medio o reintentar.
-const _ret = new URLSearchParams(location.search).get('pedido');
-if(_ret){
-  $('#panel').style.display='block';
-  $('#pagoInfo').innerHTML = `<div class="box">El pago del pedido <code>${_ret}</code> no se completó. Podés reintentar eligiendo un medio de pago abajo, o <a href="/gracias.html?pedido=${_ret}">ver el estado de ese pedido</a>.</div>`;
-}
 </script>
 <script type="module" src="/js/botid-init.js"></script>
 </body>

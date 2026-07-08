@@ -68,7 +68,7 @@ export const TEMAS_AYUDA = [
   {
     claves: /(plan|comprar|pago|mercado ?pago|licencia|suscripci[oó]n|cu[aá]nto (sale|cuesta) el programa|full|b[aá]sico)/,
     titulo: 'Planes y compra',
-    texto: 'Dos planes de pago único: Básico USD 129 (agenda + cotizador + CRM + dashboards + app PC/Android) y Full USD 299 (todo lo anterior + chatbot y ChatVoice con IA + aviso de retraso), más una opción SaaS online por USD 15/mes (cuenta en la nube, sin instalar nada, 14 días de prueba gratis). Se compra en /comprar.html por MercadoPago o transferencia. El plan Full usa tus propias cuentas de Claude/WhatsApp/Twilio: ese costo de uso (típicamente USD 20-50/mes según volumen) corre aparte, directo a esos proveedores, sin markup.'
+    texto: 'Dos planes de pago único: Básico USD 129 (agenda + cotizador + CRM + dashboards + app PC/Android) y Full USD 299 (todo lo anterior + chatbot y ChatVoice con IA + aviso de retraso), más una opción SaaS online por USD 15/mes (cuenta en la nube, sin instalar nada, 14 días de prueba gratis). Se compra en /comprar.html por MercadoPago (tarjeta/saldo, checkout seguro). El plan Full usa tus propias cuentas de Claude/WhatsApp/Twilio: ese costo de uso (típicamente USD 20-50/mes según volumen) corre aparte, directo a esos proveedores, sin markup.'
   },
   {
     claves: /(android|apk|celular|m[oó]vil|pwa|app|play ?store)/,
