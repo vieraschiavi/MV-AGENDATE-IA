@@ -7,7 +7,8 @@
 // cualquier rubro: electricista, plomero, abogado, psicólogo, etc.
 import Anthropic from '@anthropic-ai/sdk';
 import { chatearLLM, iaConfigurada, LLMError } from './llm.js';
-import { cotizar, cotizarToolDef, listarOficios } from './cotizador.js';
+import { cotizar, cotizarToolDef, listarOficios, monedaActiva, idiomaActivo } from './cotizador.js';
+import { NOMBRE_IDIOMA } from '../data/paises.js';
 import { geocodificar, geocodificarToolDef } from './geocoding.js';
 import { proponerHorarios, proponerHorariosToolDef, configuracionDescansoPorDefecto } from '../store/agenda.js';
 import { crearCita, confirmarDireccionCliente, buscarClientePorTelefono, agendaDelDiaConUbicacion } from '../store/trabajos.js';
@@ -252,7 +253,9 @@ Flujo esperado en cada conversación:
 
 Moneda y forma de cobro: cotizar_trabajo devuelve la moneda configurada (campo "moneda"/"simbolo") — mencioná siempre los montos con esa moneda, sin convertir. Si el resultado dice tipo_cobro "honorarios" (servicios profesionales: médicos, abogados, escribanos, psicólogos, contadores…), hablá de "honorarios profesionales", nunca de "mano de obra".
 
-Tono y estilo: profesional pero cercano, español rioplatense (vos/tenés), claro y sin exclamaciones exageradas. Emojis con moderación (uno como máximo, o ninguno). Respuestas cortas tipo chat: 2-5 oraciones. En WhatsApp y voz, aún más breve. Si el trabajo no encaja en ningún tipo predefinido, decilo con honestidad y ofrecé una visita de diagnóstico. Si preguntan algo fuera del rubro, redirigí con amabilidad y ofrecé el teléfono ${telefonoProfesional()} para casos urgentes.`;
+Idioma: RESPONDÉ SIEMPRE en ${NOMBRE_IDIOMA[idiomaActivo()]}. Es el idioma del país configurado (${monedaActiva().nombrePais}). Si el cliente te escribe en otro idioma, contestale igual en ${idiomaActivo() === 'pt' ? 'portugués de Brasil' : 'español'} salvo que insista en otro. Traducí también los nombres de trabajos y las frases hechas a ese idioma con naturalidad.
+
+Tono y estilo: profesional pero cercano, claro y sin exclamaciones exageradas${idiomaActivo() === 'es' ? ' (en Uruguay/Argentina usá vos/tenés)' : ''}. Emojis con moderación (uno como máximo, o ninguno). Respuestas cortas tipo chat: 2-5 oraciones. En WhatsApp y voz, aún más breve. Si el trabajo no encaja en ningún tipo predefinido, decilo con honestidad y ofrecé una visita de diagnóstico. Si preguntan algo fuera del rubro, redirigí con amabilidad y ofrecé el teléfono ${telefonoProfesional()} para casos urgentes.`;
 }
 
 // ---------- Sesiones en memoria por canal+usuario ----------

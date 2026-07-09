@@ -16,7 +16,13 @@ import { conversar } from '../ai/agente.js';
 import { sintetizar, elevenlabsDisponible } from './tts-elevenlabs.js';
 import { kvGet, kvSet } from '../store/redis.js';
 import { get as cfg } from '../store/config.js';
+import { idiomaActivo } from '../ai/cotizador.js';
 import { runConCuenta } from '../store/contextoCuenta.js';
+
+// Voz de Twilio (Polly) e idioma del <Gather> según el país configurado.
+const vozTwilio = () => (idiomaActivo() === 'pt'
+  ? { lang: 'pt-BR', voz: 'Polly.Camila-Neural' }
+  : { lang: 'es-MX', voz: 'Polly.Mia-Neural' });
 import { cuentaPorNumeroVoz } from '../store/configCuentas.js';
 import { listarCuentaIds } from '../store/cuentas.js';
 
@@ -35,6 +41,29 @@ async function conCuentaDeLaLlamada(req, fn) {
 const NOMBRE_PROFESIONAL = () => cfg('nombreProfesional') || cfg('agenciaNombre') || 'tu profesional de confianza';
 const TTL_AUDIO = 300; // 5 min — de sobra para que Twilio lo pida apenas generado
 
+// Frases fijas del sistema en el idioma del país (es/pt).
+const FRASES = {
+  es: {
+    saludo: (n) => `Hola, te comunicaste con ${n}. Soy tu asistente virtual. Contame qué trabajo necesitás y te paso presupuesto y horarios disponibles.`,
+    noEscuche: 'No te escuché. Llamanos de nuevo cuando quieras. ¡Hasta luego!',
+    repetime: 'Perdón, no te escuché bien. ¿Me lo repetís?',
+    algoMas: '¿Algo más?',
+    gracias: 'Gracias por llamar. ¡Hasta luego!',
+    error: 'Tuvimos un inconveniente técnico. Un agente te va a devolver la llamada.',
+    conecto: 'Te conecto con el cliente.',
+  },
+  pt: {
+    saludo: (n) => `Olá, você ligou para ${n}. Sou o assistente virtual. Me conte qual serviço você precisa e já te passo o orçamento e os horários disponíveis.`,
+    noEscuche: 'Não consegui te ouvir. Ligue novamente quando quiser. Até logo!',
+    repetime: 'Desculpe, não entendi bem. Pode repetir?',
+    algoMas: 'Mais alguma coisa?',
+    gracias: 'Obrigado por ligar. Até logo!',
+    error: 'Tivemos um problema técnico. Um atendente vai te retornar a ligação.',
+    conecto: 'Vou te conectar com o cliente.',
+  },
+};
+const frases = () => FRASES[idiomaActivo()] || FRASES.es;
+
 const xml = (body) => `<?xml version="1.0" encoding="UTF-8"?><Response>${body}</Response>`;
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const base = (req) => `${req.protocol}://${req.headers['x-forwarded-host'] || req.headers.host}`;
@@ -51,20 +80,21 @@ async function decir(req, texto) {
     }
     console.warn('[voz] ElevenLabs falló, cae a Polly:', r.error);
   }
-  return `<Say language="es-MX" voice="Polly.Mia-Neural">${esc(texto)}</Say>`;
+  const { lang, voz } = vozTwilio();
+  return `<Say language="${lang}" voice="${voz}">${esc(texto)}</Say>`;
 }
 
 function gather(req, action, saySay) {
-  return `<Gather input="speech" language="es-MX" speechTimeout="auto" action="${action}" method="POST">${saySay}</Gather>`;
+  return `<Gather input="speech" language="${vozTwilio().lang}" speechTimeout="auto" action="${action}" method="POST">${saySay}</Gather>`;
 }
 
 // Llamada entrante: saludo + escucha
 router.post('/webhook/voz', (req, res) => conCuentaDeLaLlamada(req, async () => {
-  const saludo = `Hola, te comunicaste con ${NOMBRE_PROFESIONAL()}. Soy tu asistente virtual. Contame qué trabajo necesitás y te paso presupuesto y horarios disponibles.`;
+  const f = frases();
   res.type('text/xml').send(
     xml(
-      gather(req, '/webhook/voz/turno', await decir(req, saludo)) +
-        (await decir(req, 'No te escuché. Llamanos de nuevo cuando quieras. ¡Hasta luego!'))
+      gather(req, '/webhook/voz/turno', await decir(req, f.saludo(NOMBRE_PROFESIONAL()))) +
+        (await decir(req, f.noEscuche))
     )
   );
 }));
@@ -74,9 +104,10 @@ router.post('/webhook/voz/turno', (req, res) => conCuentaDeLaLlamada(req, async 
   const dicho = req.body?.SpeechResult;
   const llamante = req.body?.From || 'desconocido';
 
+  const f = frases();
   if (!dicho) {
     return res.type('text/xml').send(
-      xml(gather(req, '/webhook/voz/turno', await decir(req, 'Perdón, no te escuché bien. ¿Me lo repetís?')))
+      xml(gather(req, '/webhook/voz/turno', await decir(req, f.repetime)))
     );
   }
 
@@ -87,13 +118,13 @@ router.post('/webhook/voz/turno', (req, res) => conCuentaDeLaLlamada(req, async 
     res.type('text/xml').send(
       xml(
         (await decir(req, paraVoz)) +
-          gather(req, '/webhook/voz/turno', await decir(req, '¿Algo más?')) +
-          (await decir(req, 'Gracias por llamar. ¡Hasta luego!'))
+          gather(req, '/webhook/voz/turno', await decir(req, f.algoMas)) +
+          (await decir(req, f.gracias))
       )
     );
   } catch (err) {
     console.error('[voz] Error:', err);
-    res.type('text/xml').send(xml(await decir(req, 'Tuvimos un inconveniente técnico. Un agente te va a devolver la llamada.')));
+    res.type('text/xml').send(xml(await decir(req, f.error)));
   }
 }));
 
@@ -104,7 +135,7 @@ router.post('/webhook/voz/conectar', (req, res) => {
   const destino = String(req.query.destino || '').replace(/[^\d+]/g, '');
   if (!destino) return res.type('text/xml').send(xml('<Say language="es-MX">Falta el número de destino.</Say>'));
   res.type('text/xml').send(
-    xml(`<Say language="es-MX" voice="Polly.Mia-Neural">Te conecto con el cliente.</Say><Dial>${esc(destino)}</Dial>`)
+    xml(`<Say language="${vozTwilio().lang}" voice="${vozTwilio().voz}">${esc(frases().conecto)}</Say><Dial>${esc(destino)}</Dial>`)
   );
 });
 

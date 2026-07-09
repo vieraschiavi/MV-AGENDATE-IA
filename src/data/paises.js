@@ -25,8 +25,20 @@ export const PAISES = {
 
 /** Lista para selects de UI: [{clave, nombre, moneda, simbolo}] */
 export function listarPaises() {
-  return Object.entries(PAISES).map(([clave, p]) => ({ clave, ...p }));
+  return Object.entries(PAISES).map(([clave, p]) => ({ clave, ...p, idioma: p.locale.startsWith('pt') ? 'pt' : 'es' }));
 }
+
+/** Idioma del país (del locale): 'pt' para Brasil, 'es' para el resto. */
+export function idiomaDePais(paisClave) {
+  const p = PAISES[paisClave] || PAISES.uy;
+  return p.locale.startsWith('pt') ? 'pt' : 'es';
+}
+
+/** Descripción del idioma para instruir a la IA y elegir la voz. */
+export const NOMBRE_IDIOMA = {
+  es: 'español (rioplatense vos/tenés si es Uruguay o Argentina; neutro en el resto de LATAM)',
+  pt: 'portugués de Brasil (português do Brasil)',
+};
 
 /**
  * Parámetros de facturación activos según la config del profesional.
@@ -42,5 +54,6 @@ export function parametrosMoneda(paisClave, monedaPref) {
     moneda: enUsd ? 'USD' : pais.moneda,
     simbolo: enUsd ? 'US$' : pais.simbolo,
     locale: pais.locale,
+    idioma: pais.locale.startsWith('pt') ? 'pt' : 'es',
   };
 }

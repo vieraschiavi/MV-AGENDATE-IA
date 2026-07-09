@@ -12,7 +12,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { get as cfg } from '../store/config.js';
-import { parametrosMoneda } from '../data/paises.js';
+import { parametrosMoneda, idiomaDePais } from '../data/paises.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const oficiosBase = JSON.parse(
@@ -34,6 +34,11 @@ export function oficiosActivos() {
 /** Moneda/símbolo activos según el país configurado (o USD a elección). */
 export function monedaActiva() {
   return parametrosMoneda(cfg('pais') || 'uy', cfg('moneda'));
+}
+
+/** Idioma activo del negocio según el país configurado ('es' | 'pt'). */
+export function idiomaActivo() {
+  return idiomaDePais(cfg('pais') || 'uy');
 }
 
 // Factor de mercado: ajusta el precio base según franja horaria / urgencia.

@@ -87,3 +87,17 @@ test('estimarImpuestos rechaza ingresos inválidos', async () => {
   const r = await estimarImpuestos('no-es-numero');
   assert.equal(r.ok, false);
 });
+
+test('el idioma sale del país: portugués para Brasil, español para el resto', async () => {
+  const { idiomaDePais, listarPaises } = await import('../src/data/paises.js');
+  const { idiomaActivo } = await import('../src/ai/cotizador.js');
+  assert.equal(idiomaDePais('br'), 'pt');
+  assert.equal(idiomaDePais('uy'), 'es');
+  assert.equal(idiomaDePais('mx'), 'es');
+  assert.equal(idiomaDePais('inexistente'), 'es');
+  assert.ok(listarPaises().find((p) => p.clave === 'br').idioma === 'pt');
+  setConfig({ pais: 'br', moneda: '' });
+  assert.equal(idiomaActivo(), 'pt');
+  setConfig({ pais: 'uy', moneda: '' });
+  assert.equal(idiomaActivo(), 'es');
+});
