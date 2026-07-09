@@ -1,0 +1,31 @@
+========================================
+  MV Agendate IA — Versión PC (prueba)
+========================================
+
+¡Gracias por probar MV Agendate IA! Esta es la versión completa para
+computadora (Windows / Mac / Linux). Funciona GRATIS por 3 días; después
+te pide la licencia (la comprás una sola vez).
+
+--------- CÓMO ABRIRLO (2 pasos) ---------
+
+1) Necesitás Node.js instalado (una sola vez, es gratis):
+   descargalo de  https://nodejs.org/es/download  e instalá la versión "LTS".
+
+2) Abrí el programa:
+   - Windows:  doble clic en  "Iniciar-MV-Agendate.bat"
+   - Mac:      doble clic en  "Iniciar-MV-Agendate.command"
+               (si Mac lo bloquea: clic derecho -> Abrir -> Abrir)
+   - Linux:    ejecutá  ./Iniciar-MV-Agendate.command  en la terminal
+
+La primera vez tarda un par de minutos (baja lo que necesita). Después se
+abre solo en tu navegador, en  http://localhost:3000
+
+--------- PRIMEROS PASOS ---------
+
+- Entrá a "Configuración" y elegí tu profesión, tu país y tus precios.
+- Para que el chatbot use IA real, pegá tu API key (Claude, ChatGPT o Gemini)
+  en Configuración. Sin key igual podés usar agenda, cotizador, CRM y tableros.
+- Cuando compres, pegá tu código de licencia en Configuración para seguir
+  usándolo después de los 3 días.
+
+Dudas: escribinos desde el botón "Contacto" en la web.

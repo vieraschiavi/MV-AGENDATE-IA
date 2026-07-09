@@ -17,4 +17,6 @@ voces/*.onnx
 .env*
 !.env.example
 descargas/*.zip
+# Excepción: el paquete PC de PRUEBA sí se versiona (Vercel lo sirve como descarga gratis).
+!public/descargas/MV-Agendate-IA-PC.zip
 webapp/node_modules/
