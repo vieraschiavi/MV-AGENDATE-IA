@@ -10,6 +10,7 @@ import CuentasAdmin from './pages/CuentasAdmin.jsx';
 import CandadoPrueba from './pages/CandadoPrueba.jsx';
 import ErrorBoundary from './pages/ErrorBoundary.jsx';
 import { claveAdmin, cuentaSesion } from './api.js';
+import { t, idioma, setIdioma } from './i18n.js';
 
 const PAGINAS = [
   { to: '/panel', ico: '🗓️', label: 'Panel del día' },
@@ -25,7 +26,7 @@ export default function App() {
   const cuenta = cuentaSesion();
 
   const pedirClave = () => {
-    const k = prompt('Clave de administración:', claveAdmin());
+    const k = prompt(t('Clave de administración:'), claveAdmin());
     if (k != null) localStorage.setItem('mvAdminKey', k);
   };
 
@@ -33,7 +34,7 @@ export default function App() {
     <>
       <CandadoPrueba />
       <div className="mv-topbar-mobile">
-        <button onClick={() => setAbierto(!abierto)} aria-label="Abrir menú">☰</button>
+        <button onClick={() => setAbierto(!abierto)} aria-label={t('Abrir menú')}>☰</button>
         <strong>MV Agendate IA</strong>
       </div>
       <div className="mv-app">
@@ -41,27 +42,34 @@ export default function App() {
         <aside className={`mv-sidebar ${abierto ? 'open' : ''}`}>
           <div className="mv-ws">
             <img src="/logo-mv.svg" alt="MV" />
-            <div><strong>MV Agendate IA</strong><span>{cuenta ? (cuenta.nombre || cuenta.email) : 'Espacio de trabajo'}</span></div>
+            <div><strong>MV Agendate IA</strong><span>{cuenta ? (cuenta.nombre || cuenta.email) : t('Espacio de trabajo')}</span></div>
           </div>
           <nav className="mv-nav">
             {PAGINAS.map((p) => (
               <NavLink key={p.to} to={p.to} onClick={cerrar} className={({ isActive }) => (isActive ? 'on' : '')}>
-                <span className="ico">{p.ico}</span><span>{p.label}</span>
+                <span className="ico">{p.ico}</span><span>{t(p.label)}</span>
               </NavLink>
             ))}
           </nav>
           <div className="mv-nav-bottom">
             <NavLink to="/cuenta" onClick={cerrar} className={({ isActive }) => (isActive ? 'on' : '')}>
-              <span className="ico">👤</span><span>{cuenta ? 'Mi cuenta' : 'Cuenta online'}</span>
+              <span className="ico">👤</span><span>{cuenta ? t('Mi cuenta') : t('Cuenta online')}</span>
             </NavLink>
             {!cuenta && (
               <NavLink to="/cuentas-saas" onClick={cerrar} className={({ isActive }) => (isActive ? 'on' : '')}>
-                <span className="ico">🏢</span><span>Cuentas SaaS</span>
+                <span className="ico">🏢</span><span>{t('Cuentas SaaS')}</span>
               </NavLink>
             )}
-            <a href="/"><span className="ico">🏠</span><span>Inicio</span></a>
-            <a href="/config.html"><span className="ico">⚙️</span><span>Configuración</span></a>
-            {!cuenta && <button type="button" onClick={pedirClave}><span className="ico">🔑</span><span>Clave admin</span></button>}
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', fontSize: '.85rem', color: 'inherit' }}>
+              <span className="ico">🌐</span>
+              <select value={idioma()} onChange={(e) => setIdioma(e.target.value)} aria-label={t('Idioma')} style={{ flex: 1, padding: '4px 6px', borderRadius: 8, border: '1px solid #cbd5e1', background: 'transparent', color: 'inherit', fontSize: '.85rem' }}>
+                <option value="es">🇺🇾 Español</option>
+                <option value="pt">🇧🇷 Português</option>
+              </select>
+            </label>
+            <a href="/"><span className="ico">🏠</span><span>{t('Inicio')}</span></a>
+            <a href="/config.html"><span className="ico">⚙️</span><span>{t('Configuración')}</span></a>
+            {!cuenta && <button type="button" onClick={pedirClave}><span className="ico">🔑</span><span>{t('Clave admin')}</span></button>}
           </div>
         </aside>
         <main className="mv-main">

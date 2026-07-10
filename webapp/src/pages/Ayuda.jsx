@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { t as i18nT } from '../i18n.js';
 
 const PASOS = [
   ['Cargá tu API key de Claude', <>En <code>/config.html</code> pegá tu clave de <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer">console.anthropic.com</a>. Sin ella el programa corre en modo demo (todo se puede probar igual).</>],
@@ -31,7 +32,7 @@ const SUGERENCIAS = ['¿Cómo conecto WhatsApp?', '¿Qué incluye cada plan?', '
 
 export default function Ayuda() {
   const [msgs, setMsgs] = useState([
-    { de: 'ia', texto: 'Hola 👋 Soy el asistente de ayuda de MV Agendate IA. Preguntame lo que quieras sobre el programa: cómo configurarlo, conectar WhatsApp, los planes, la agenda…' },
+    { de: 'ia', texto: i18nT('Hola 👋 Soy el asistente de ayuda de MV Agendate IA. Preguntame lo que quieras sobre el programa: cómo configurarlo, conectar WhatsApp, los planes, la agenda…') },
   ]);
   const [pregunta, setPregunta] = useState('');
   const [enviando, setEnviando] = useState(false);
@@ -44,17 +45,17 @@ export default function Ayuda() {
     if (!t || enviando) return;
     setEnviando(true);
     setPregunta('');
-    setMsgs((m) => [...m, { de: 'yo', texto: t }, { de: 'ia', texto: 'Pensando…' }]);
+    setMsgs((m) => [...m, { de: 'yo', texto: t }, { de: 'ia', texto: i18nT('Pensando…') }]);
     try {
       const d = await fetch('/api/ayuda', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mensaje: t, sessionId: sessionRef.current }),
       }).then((r) => r.json());
       sessionRef.current = d.sessionId || sessionRef.current;
-      setMsgs((m) => [...m.slice(0, -1), { de: 'ia', texto: d.respuesta || d.error || 'No pude responder, probá de nuevo.' }]);
+      setMsgs((m) => [...m.slice(0, -1), { de: 'ia', texto: d.respuesta || d.error || i18nT('No pude responder, probá de nuevo.') }]);
       setBadge(d.ia ? '✓ Respondiendo con IA (Claude)' : 'Respondiendo desde la guía local — cargá tu API key en /config.html para IA.');
     } catch {
-      setMsgs((m) => [...m.slice(0, -1), { de: 'ia', texto: 'Error de conexión — revisá que el servidor esté corriendo y probá de nuevo.' }]);
+      setMsgs((m) => [...m.slice(0, -1), { de: 'ia', texto: i18nT('Error de conexión — revisá que el servidor esté corriendo y probá de nuevo.') }]);
     }
     setEnviando(false);
     setTimeout(() => { msgsRef.current?.scrollTo(0, msgsRef.current.scrollHeight); }, 50);
@@ -63,13 +64,13 @@ export default function Ayuda() {
   return (
     <>
       <div className="mv-pagehead">
-        <div><div className="mv-crumb">Espacio de trabajo</div><h1>❓ Ayuda</h1></div>
+        <div><div className="mv-crumb">{i18nT('Espacio de trabajo')}</div><h1>❓ {i18nT('Ayuda')}</h1></div>
       </div>
       <div className="mv-content">
         <div className="grid2" style={{ alignItems: 'start' }}>
           <div>
             <div className="card" style={{ marginBottom: 16 }}>
-              <h2 className="mv-h">🚀 Tutorial — primeros pasos</h2>
+              <h2 className="mv-h">{i18nT('🚀 Tutorial — primeros pasos')}</h2>
               <div className="pasos">
                 {PASOS.map(([titulo, cuerpo], i) => (
                   <div className="paso" key={i}><div><strong>{titulo}</strong><p>{cuerpo}</p></div></div>
@@ -77,7 +78,7 @@ export default function Ayuda() {
               </div>
             </div>
             <div className="card">
-              <h2 className="mv-h">📖 Guía por tema</h2>
+              <h2 className="mv-h">{i18nT('📖 Guía por tema')}</h2>
               {TEMAS.map(([t, c], i) => (
                 <details className="tema" key={i}>
                   <summary>{t}</summary>
@@ -88,9 +89,9 @@ export default function Ayuda() {
           </div>
 
           <div className="card">
-            <h2 className="mv-h">🤖 Preguntale a la IA sobre el programa</h2>
+            <h2 className="mv-h">{i18nT('🤖 Preguntale a la IA sobre el programa')}</h2>
             <p style={{ fontSize: '.83rem', color: 'var(--muted)', margin: '0 0 8px' }}>
-              Respuestas al instante sobre configuración, canales, agenda, planes y todo lo demás. Sin API key cargada responde desde la guía local.
+              {i18nT('Respuestas al instante sobre configuración, canales, agenda, planes y todo lo demás. Sin API key cargada responde desde la guía local.')}
             </p>
             <div className="chat">
               <div className="msgs" ref={msgsRef}>
@@ -98,14 +99,14 @@ export default function Ayuda() {
               </div>
               <div className="entrada">
                 <input
-                  placeholder="Ej: ¿cómo conecto WhatsApp?" maxLength={500} value={pregunta}
+                  placeholder={i18nT('Ej: ¿cómo conecto WhatsApp?')} maxLength={500} value={pregunta}
                   onChange={(e) => setPregunta(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') enviar(); }}
                 />
-                <button className="btn cel" onClick={() => enviar()}>Enviar</button>
+                <button className="btn cel" onClick={() => enviar()}>{i18nT('Enviar')}</button>
               </div>
               <div className="sugerencias">
-                {SUGERENCIAS.map((s) => <button key={s} type="button" onClick={() => enviar(s)}>{s}</button>)}
+                {SUGERENCIAS.map((s) => <button key={s} type="button" onClick={() => enviar(s)}>{i18nT(s)}</button>)}
               </div>
               {badge && <div className="ia-badge">{badge}</div>}
             </div>

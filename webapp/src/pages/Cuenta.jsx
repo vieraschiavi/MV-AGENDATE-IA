@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cuentaSesion, guardarSesion, cerrarSesion, fetchAdmin } from '../api.js';
+import { t } from '../i18n.js';
 
 // Tarjeta de créditos de IA: saldo + recarga por MercadoPago.
 function Creditos() {
@@ -9,23 +10,23 @@ function Creditos() {
   useEffect(() => { fetchAdmin('/api/creditos').then((r) => r.json()).then(setC).catch(() => {}); }, []);
   if (!c || !c.habilitado) return null;
   const recargar = async (monto) => {
-    setMsg('Conectando con MercadoPago…');
+    setMsg(t('Conectando con MercadoPago…'));
     const r = await fetchAdmin('/api/creditos/recargar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ monto }) });
     const d = await r.json();
     if (d.ok && d.init_point) { window.location.href = d.init_point; return; }
-    setMsg(d.error || 'No se pudo iniciar la recarga.');
+    setMsg(d.error || t('No se pudo iniciar la recarga.'));
   };
   const bajo = c.saldo <= 1;
   return (
     <div className="card" style={{ maxWidth: 520, marginTop: 16, borderLeft: bajo ? '4px solid #e3a72f' : undefined }}>
-      <h2 className="mv-h">🤖 Créditos de IA</h2>
-      <p style={{ margin: '0 0 6px' }}>Saldo: <strong style={{ color: bajo ? '#b45309' : '#166534' }}>US$ {c.saldo.toFixed(2)}</strong></p>
+      <h2 className="mv-h">🤖 {t('Créditos de IA')}</h2>
+      <p style={{ margin: '0 0 6px' }}>{t('Saldo:')} <strong style={{ color: bajo ? '#b45309' : '#166534' }}>US$ {c.saldo.toFixed(2)}</strong></p>
       <p style={{ fontSize: '.85rem', color: 'var(--muted)', margin: '0 0 12px' }}>
-        Con esto funciona el chatbot y el ChatVoice con IA. Cuando se agota, el asistente sigue respondiendo con lógica básica hasta que recargues.{bajo ? ' Te queda poco saldo.' : ''}
+        {t('Con esto funciona el chatbot y el ChatVoice con IA. Cuando se agota, el asistente sigue respondiendo con lógica básica hasta que recargues.')}{bajo ? t(' Te queda poco saldo.') : ''}
       </p>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         {(c.packs || [5, 10, 20]).map((p) => (
-          <button key={p} className="btn cel" onClick={() => recargar(p)}>Recargar US$ {p}</button>
+          <button key={p} className="btn cel" onClick={() => recargar(p)}>{t('Recargar US$')} {p}</button>
         ))}
       </div>
       {msg && <div style={{ fontSize: '.85rem', marginTop: 8, color: '#44535f' }}>{msg}</div>}
@@ -57,12 +58,12 @@ export default function Cuenta() {
         body: JSON.stringify(modo === 'registro' ? { email, password, nombre } : { email, password }),
       });
       const d = await r.json();
-      if (!d.ok) { setError(d.error || 'No se pudo iniciar sesión.'); return; }
+      if (!d.ok) { setError(d.error || t('No se pudo iniciar sesión.')); return; }
       guardarSesion(d.token, d.cuenta);
       nav('/panel');
       window.location.reload(); // recarga para que todo el workspace lea la cuenta nueva
     } catch {
-      setError('Error de conexión. Probá de nuevo.');
+      setError(t('Error de conexión. Probá de nuevo.'));
     } finally {
       setCargando(false);
     }
@@ -75,60 +76,60 @@ export default function Cuenta() {
   return (
     <>
       <div className="mv-pagehead">
-        <div><div className="mv-crumb">Espacio de trabajo</div><h1>👤 Cuenta online</h1></div>
+        <div><div className="mv-crumb">{t('Espacio de trabajo')}</div><h1>👤 {t('Cuenta online')}</h1></div>
       </div>
       <div className="mv-content">
         {cuenta ? (
           <div className="card" style={{ maxWidth: 520 }}>
-            <h2 className="mv-h">Mi cuenta</h2>
+            <h2 className="mv-h">{t('Mi cuenta')}</h2>
             <p style={{ margin: '0 0 4px' }}><strong>{cuenta.nombre || cuenta.email}</strong></p>
             <p style={{ margin: '0 0 10px', color: 'var(--muted)' }}>{cuenta.email}</p>
             <p style={{ margin: '0 0 14px' }}>
-              Estado:{' '}
+              {t('Estado:')}{' '}
               <strong>
                 {cuenta.estado === 'trial'
-                  ? `Prueba gratis (${Math.max(0, Math.ceil((new Date(cuenta.trialHasta) - Date.now()) / 86400000))} días restantes)`
-                  : cuenta.estado === 'activa' ? 'Suscripción activa' : cuenta.estado}
+                  ? `${t('Prueba gratis')} (${Math.max(0, Math.ceil((new Date(cuenta.trialHasta) - Date.now()) / 86400000))} ${t('días restantes')})`
+                  : cuenta.estado === 'activa' ? t('Suscripción activa') : cuenta.estado}
               </strong>
             </p>
             {cuenta.estado === 'trial' && (
               <p style={{ margin: '0 0 14px' }}>
-                <a className="btn cel" href="/comprar.html?plan=saas">Activar suscripción (USD 15/mes)</a>
+                <a className="btn cel" href="/comprar.html?plan=saas">{t('Activar suscripción (USD 15/mes)')}</a>
               </p>
             )}
-            <button className="btn sec" onClick={salir}>Cerrar sesión</button>
+            <button className="btn sec" onClick={salir}>{t('Cerrar sesión')}</button>
           </div>
         ) : null}
         {cuenta && <Creditos />}
         {!cuenta && (
           <div className="card" style={{ maxWidth: 460 }}>
-            <h2 className="mv-h">Usá MV desde el navegador, sin instalar nada</h2>
+            <h2 className="mv-h">{t('Usá MV desde el navegador, sin instalar nada')}</h2>
             <p style={{ fontSize: '.88rem', color: 'var(--muted)', margin: '0 0 12px' }}>
-              14 días de prueba gratis, después USD 15/mes por MercadoPago. Tus datos y tu configuración (profesión, país, precios, horarios, equipo, canales) quedan privados y aislados, disponibles desde cualquier dispositivo.
+              {t('14 días de prueba gratis, después USD 15/mes por MercadoPago. Tus datos y tu configuración (profesión, país, precios, horarios, equipo, canales) quedan privados y aislados, disponibles desde cualquier dispositivo.')}
             </p>
             <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-              <button className={`btn ${modo === 'login' ? '' : 'sec'}`} onClick={() => setModo('login')} type="button">Iniciar sesión</button>
-              <button className={`btn ${modo === 'registro' ? '' : 'sec'}`} onClick={() => setModo('registro')} type="button">Crear cuenta</button>
+              <button className={`btn ${modo === 'login' ? '' : 'sec'}`} onClick={() => setModo('login')} type="button">{t('Iniciar sesión')}</button>
+              <button className={`btn ${modo === 'registro' ? '' : 'sec'}`} onClick={() => setModo('registro')} type="button">{t('Crear cuenta')}</button>
             </div>
             <form onSubmit={enviar} style={{ display: 'grid', gap: 10 }}>
               {modo === 'registro' && (
-                <label style={estiloLabel}>Nombre o empresa
-                  <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Ej: Estudio Jurídico Pérez" />
+                <label style={estiloLabel}>{t('Nombre o empresa')}
+                  <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder={t('Ej: Estudio Jurídico Pérez')} />
                 </label>
               )}
               <label style={estiloLabel}>Email
                 <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@email.com" />
               </label>
-              <label style={estiloLabel}>Contraseña {modo === 'registro' ? '(mínimo 8 caracteres)' : ''}
+              <label style={estiloLabel}>{t('Contraseña')} {modo === 'registro' ? t('(mínimo 8 caracteres)') : ''}
                 <input type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
               </label>
               {error && <p style={{ color: '#dc2626', margin: 0, fontSize: '.86rem' }}>{error}</p>}
               <button className="btn" disabled={cargando}>
-                {cargando ? 'Un momento…' : modo === 'registro' ? 'Crear cuenta (14 días gratis)' : 'Entrar'}
+                {cargando ? t('Un momento…') : modo === 'registro' ? t('Crear cuenta (14 días gratis)') : t('Entrar')}
               </button>
             </form>
             <p style={{ marginTop: 12, fontSize: '.8rem', color: 'var(--muted)' }}>
-              ¿Preferís tenerlo instalado en tu PC o Android con pago único? Esta pantalla es solo para el modo online — la versión descargable no necesita cuenta.
+              {t('¿Preferís tenerlo instalado en tu PC o Android con pago único? Esta pantalla es solo para el modo online — la versión descargable no necesita cuenta.')}
             </p>
           </div>
         )}
