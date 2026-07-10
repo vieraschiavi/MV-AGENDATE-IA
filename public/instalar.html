@@ -59,62 +59,106 @@
 
 <div class="nav">
   <div class="marca"><img src="/logo-mv.svg" alt="MV">MV <span>Agendate IA</span></div>
-  <div><a href="/">← Inicio</a></div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <select class="mv-sel-idioma" aria-label="Idioma" style="padding:5px 7px;border-radius:8px;border:1px solid #cbd5e1;font-size:14px;">
+      <option value="es">🇺🇾 ES</option>
+      <option value="pt">🇧🇷 PT</option>
+    </select>
+    <a href="/" data-i18n="volver">← Inicio</a>
+  </div>
 </div>
 
 <div class="hero">
-  <div class="kicker">🎁 GRATIS · PROBÁ 3 DÍAS LA VERSIÓN COMPLETA</div>
-  <h1>Instalá MV Agendate IA <em>en tu celular o PC</em> y usalo hoy</h1>
-  <p>La app completa —agenda con IA, cotizador, CRM y dashboards— instalada en un toque, sin Play Store ni instaladores raros. Probala 3 días gratis; después seguís con tu licencia.</p>
+  <div class="kicker" data-i18n="kicker">🎁 GRATIS · PROBÁ 3 DÍAS LA VERSIÓN COMPLETA</div>
+  <h1 data-i18n-html="h1">Instalá MV Agendate IA <em>en tu celular o PC</em> y usalo hoy</h1>
+  <p data-i18n="lead">La app completa —agenda con IA, cotizador, CRM y dashboards— instalada en un toque, sin Play Store ni instaladores raros. Probala 3 días gratis; después seguís con tu licencia.</p>
   <div class="botones">
-    <button class="cta" data-instalar>📲 Instalar en el celular</button>
-    <a class="cta sec" href="/descargas/MV-Agendate-IA-PC.zip" download>💻 Descargar para PC</a>
+    <a class="cta" href="/descargas/MV-Agendate-IA.apk" download data-i18n="btnApk">🤖 Descargar APK Android</a>
+    <button class="cta sec" data-instalar data-i18n="btnPwa">📲 Instalar sin descargar (PWA)</button>
+    <a class="cta sec" href="/descargas/MV-Agendate-IA-PC.zip" download data-i18n="btnPc">💻 Descargar para PC</a>
   </div>
-  <div class="mini">Celular: Android e iPhone (app instalable). PC: Windows, Mac y Linux. Sin tarjeta para probar.</div>
+  <div class="mini" data-i18n="mini">Android: APK propia o app instalable. iPhone: app instalable (PWA). PC: Windows, Mac y Linux. Sin tarjeta para probar.</div>
 </div>
 
 <section>
-  <h2>Cómo la instalás</h2>
-  <p class="sub">Es una app web instalable (PWA): se agrega a tu pantalla de inicio y se abre a pantalla completa, como cualquier app.</p>
+  <h2 data-i18n="apkH2">🤖 APK Android (recomendada para el celular)</h2>
+  <p class="sub" data-i18n="apkSub">Una app Android de verdad: ícono propio, exportaciones que van a Descargas, WhatsApp y teléfono integrados. Pesa menos de 1 MB.</p>
   <div class="pasos">
-    <div class="paso"><div class="ic">1</div><div><h3>Tocá "Instalar la app gratis"</h3><p>Si tu navegador lo permite, te aparece el cartel de instalación y listo. Si no, seguí las instrucciones de abajo según tu dispositivo.</p></div></div>
-    <div class="paso"><div class="ic">2</div><div><h3>Confirmá "Instalar" / "Agregar"</h3><p>Queda el ícono de MV Agendate IA en tu pantalla de inicio, junto a tus otras apps.</p></div></div>
-    <div class="paso"><div class="ic">3</div><div><h3>Abrila y empezá</h3><p>Cargá tu oficio y tus precios, y ya podés cotizar y agendar. Tenés 3 días completos gratis.</p></div></div>
+    <div class="paso"><div class="ic">1</div><div><h3 data-i18n="apk1h">Descargá la APK</h3><p data-i18n="apk1p">Tocá "Descargar APK Android" arriba. Se baja en segundos.</p></div></div>
+    <div class="paso"><div class="ic">2</div><div><h3 data-i18n="apk2h">Permití la instalación</h3><p data-i18n="apk2p">Al abrirla, Android te pide permitir "instalar apps desconocidas" para tu navegador (es normal fuera de Play Store: es nuestra app oficial, firmada). Aceptá → Instalar.</p></div></div>
+    <div class="paso"><div class="ic">3</div><div><h3 data-i18n="apk3h">Abrila y empezá</h3><p data-i18n="apk3p">Iniciá sesión con tu cuenta (o creala gratis). Si usás la versión de PC, mantené presionado el ícono → "Configurar servidor" y poné la dirección de tu PC.</p></div></div>
   </div>
+</section>
 
+<section>
+  <h2 data-i18n="pwaH2">Sin descargar nada (app instalable / PWA)</h2>
+  <p class="sub" data-i18n="pwaSub">También podés agregarla a tu pantalla de inicio directo desde el navegador — única opción en iPhone.</p>
   <div id="instrucciones-instalar">
-    <div class="plat">📱 <b>Android (Chrome):</b><p>Menú ⋮ (arriba a la derecha) → "Instalar aplicación" o "Agregar a pantalla de inicio".</p></div>
-    <div class="plat">🍏 <b>iPhone (Safari):</b><p>Botón Compartir (cuadrito con flecha ↑) → "Agregar a inicio".</p></div>
-    <div class="plat">💻 <b>PC (Chrome/Edge):</b><p>En la barra de direcciones aparece un ícono de instalar (una pantallita con ↓). Tocalo → "Instalar". O menú ⋮ → "Instalar MV Agendate IA".</p></div>
+    <div class="plat">📱 <b data-i18n="pAndB">Android (Chrome):</b><p data-i18n="pAndP">Menú ⋮ (arriba a la derecha) → "Instalar aplicación" o "Agregar a pantalla de inicio".</p></div>
+    <div class="plat">🍏 <b data-i18n="pIosB">iPhone (Safari):</b><p data-i18n="pIosP">Botón Compartir (cuadrito con flecha ↑) → "Agregar a inicio".</p></div>
+    <div class="plat">💻 <b data-i18n="pPcB">PC (Chrome/Edge):</b><p data-i18n="pPcP">En la barra de direcciones aparece un ícono de instalar (una pantallita con ↓). Tocalo → "Instalar". O menú ⋮ → "Instalar MV Agendate IA".</p></div>
   </div>
 </section>
 
 <section>
-  <h2>💻 En la computadora (descarga)</h2>
-  <p class="sub">Preferís tenerlo en la PC con todos tus datos en tu máquina. Dos formas:</p>
+  <h2 data-i18n="pcH2">💻 En la computadora (descarga)</h2>
+  <p class="sub" data-i18n="pcSub">Preferís tenerlo en la PC con todos tus datos en tu máquina. Dos formas:</p>
   <div class="pasos">
-    <div class="paso"><div class="ic">⚡</div><div><h3>Rápido: instalá desde el navegador</h3><p>En Chrome o Edge, entrá a la <a href="/app/">app</a> y tocá el ícono de "Instalar" en la barra de direcciones. Queda como app de escritorio, sin descargar nada.</p></div></div>
-    <div class="paso"><div class="ic">📦</div><div><h3>Descarga completa (Windows/Mac/Linux)</h3><p>Bajá el paquete, descomprimilo y hacé doble clic en <b>Iniciar-MV-Agendate</b>. La primera vez instala lo necesario (requiere <a href="https://nodejs.org/es/download" target="_blank" rel="noreferrer">Node.js</a>, gratis) y se abre solo en tu navegador. Corre 3 días full.</p><p style="margin-top:8px;"><a class="cta sec" style="display:inline-block;color:var(--cel);border-color:var(--cel);" href="/descargas/MV-Agendate-IA-PC.zip" download>⬇ Descargar paquete PC (.zip)</a></p></div></div>
+    <div class="paso"><div class="ic">⚡</div><div><h3 data-i18n="pc1h">Rápido: instalá desde el navegador</h3><p data-i18n-html="pc1p">En Chrome o Edge, entrá a la <a href="/app/">app</a> y tocá el ícono de "Instalar" en la barra de direcciones. Queda como app de escritorio, sin descargar nada.</p></div></div>
+    <div class="paso"><div class="ic">📦</div><div><h3 data-i18n="pc2h">Descarga completa (Windows/Mac/Linux)</h3><p data-i18n-html="pc2p">Bajá el paquete, descomprimilo y hacé doble clic en <b>Iniciar-MV-Agendate</b>. La primera vez instala lo necesario (requiere <a href="https://nodejs.org/es/download" target="_blank" rel="noreferrer">Node.js</a>, gratis) y se abre solo en tu navegador. Corre 3 días full.</p><p style="margin-top:8px;"><a class="cta sec" style="display:inline-block;color:var(--cel);border-color:var(--cel);" href="/descargas/MV-Agendate-IA-PC.zip" download data-i18n="pcBtn">⬇ Descargar paquete PC (.zip)</a></p></div></div>
   </div>
 </section>
 
 <section>
-  <div class="trial">
+  <div class="trial" data-i18n-html="trial">
     🎁 <b>3 días gratis con TODO habilitado.</b> Después, seguís con tu licencia (pago único) o la cuenta online. Si no te sirve, no pagás nada — nunca te pedimos la tarjeta para probar.
   </div>
 </section>
 
 <div class="cierre">
-  <h2>¿Lista para trabajar?</h2>
-  <p>Instalala ahora y en un minuto estás cotizando y agendando desde tu celular, incluso en la calle.</p>
+  <h2 data-i18n="cieH2">¿Lista para trabajar?</h2>
+  <p data-i18n="cieP">Instalala ahora y en un minuto estás cotizando y agendando desde tu celular, incluso en la calle.</p>
   <div class="botones">
-    <button class="cta" data-instalar>⬇ Instalar la app gratis</button>
-    <a class="cta sec" href="/comprar.html">Ver planes</a>
+    <a class="cta" href="/descargas/MV-Agendate-IA.apk" download data-i18n="cieBtn">🤖 Descargar APK Android</a>
+    <a class="cta sec" href="/comprar.html" data-i18n="ciePlanes">Ver planes</a>
   </div>
 </div>
 
-<footer>MV Agendate IA · Turnos y presupuestos con IA para cualquier profesión u oficio de LATAM · <a href="/">Inicio</a> · <a href="/comprar.html">Comprar</a> · <a href="/app/">Abrir la app</a></footer>
+<footer data-i18n-html="pie">MV Agendate IA · Turnos y presupuestos con IA para cualquier profesión u oficio de LATAM · <a href="/">Inicio</a> · <a href="/comprar.html">Comprar</a> · <a href="/app/">Abrir la app</a></footer>
 
+<script>
+window.MV_PT = {
+  volver: '← Início',
+  kicker: '🎁 GRÁTIS · TESTE 3 DIAS A VERSÃO COMPLETA',
+  h1: 'Instale o MV Agendate IA <em>no seu celular ou PC</em> e use hoje',
+  lead: 'O app completo —agenda com IA, orçamentos, CRM e dashboards— instalado em um toque, sem Play Store nem instaladores estranhos. Teste 3 dias grátis; depois continue com a sua licença.',
+  btnApk: '🤖 Baixar APK Android', btnPwa: '📲 Instalar sem baixar (PWA)', btnPc: '💻 Baixar para PC',
+  mini: 'Android: APK própria ou app instalável. iPhone: app instalável (PWA). PC: Windows, Mac e Linux. Sem cartão para testar.',
+  apkH2: '🤖 APK Android (recomendada para o celular)',
+  apkSub: 'Um app Android de verdade: ícone próprio, exportações que vão para Downloads, WhatsApp e telefone integrados. Pesa menos de 1 MB.',
+  apk1h: 'Baixe a APK', apk1p: 'Toque em "Baixar APK Android" acima. Baixa em segundos.',
+  apk2h: 'Permita a instalação', apk2p: 'Ao abri-la, o Android pede para permitir "instalar apps desconhecidos" para o seu navegador (é normal fora da Play Store: é o nosso app oficial, assinado). Aceite → Instalar.',
+  apk3h: 'Abra e comece', apk3p: 'Entre com a sua conta (ou crie grátis). Se usa a versão de PC, mantenha pressionado o ícone → "Configurar servidor" e coloque o endereço do seu PC.',
+  pwaH2: 'Sem baixar nada (app instalável / PWA)',
+  pwaSub: 'Você também pode adicioná-lo à tela inicial direto do navegador — única opção no iPhone.',
+  pAndB: 'Android (Chrome):', pAndP: 'Menu ⋮ (canto superior direito) → "Instalar aplicativo" ou "Adicionar à tela inicial".',
+  pIosB: 'iPhone (Safari):', pIosP: 'Botão Compartilhar (quadradinho com seta ↑) → "Adicionar à Tela de Início".',
+  pPcB: 'PC (Chrome/Edge):', pPcP: 'Na barra de endereços aparece um ícone de instalar (uma telinha com ↓). Toque nele → "Instalar". Ou menu ⋮ → "Instalar MV Agendate IA".',
+  pcH2: '💻 No computador (download)',
+  pcSub: 'Prefere tê-lo no PC com todos os seus dados na sua máquina. Duas formas:',
+  pc1h: 'Rápido: instale pelo navegador',
+  pc1p: 'No Chrome ou Edge, entre no <a href="/app/">app</a> e toque no ícone de "Instalar" na barra de endereços. Fica como app de desktop, sem baixar nada.',
+  pc2h: 'Download completo (Windows/Mac/Linux)',
+  pc2p: 'Baixe o pacote, descompacte e dê dois cliques em <b>Iniciar-MV-Agendate</b>. Na primeira vez instala o necessário (requer <a href="https://nodejs.org/pt/download" target="_blank" rel="noreferrer">Node.js</a>, grátis) e abre sozinho no seu navegador. Roda 3 dias completo.',
+  pcBtn: '⬇ Baixar pacote PC (.zip)',
+  trial: '🎁 <b>3 dias grátis com TUDO habilitado.</b> Depois, continue com a sua licença (pagamento único) ou a conta online. Se não servir, não paga nada — nunca pedimos o cartão para testar.',
+  cieH2: 'Pronta para trabalhar?',
+  cieP: 'Instale agora e em um minuto você está orçando e agendando do seu celular, mesmo na rua.',
+  cieBtn: '🤖 Baixar APK Android', ciePlanes: 'Ver planos',
+  pie: 'MV Agendate IA · Agendamentos e orçamentos com IA para qualquer profissão ou ofício da América Latina · <a href="/">Início</a> · <a href="/comprar.html">Comprar</a> · <a href="/app/">Abrir o app</a>'
+};
+</script>
+<script src="/js/i18n.js"></script>
 <script src="/js/pwa.js" defer></script>
 </body>
 </html>

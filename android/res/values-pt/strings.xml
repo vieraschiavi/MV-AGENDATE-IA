@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MV Agendate IA</string>
+    <string name="atajo_servidor">Configurar servidor</string>
+    <string name="atajo_servidor_largo">Escolher a qual servidor conectar</string>
+    <string name="dialogo_servidor_titulo">Servidor do MV Agendate IA</string>
+    <string name="dialogo_servidor_detalle">Deixe o endereço da nuvem, ou coloque o do seu PC (ex.: http://192.168.1.50:3000) se instalou a versão para download.</string>
+    <string name="guardar">Salvar</string>
+    <string name="cancelar">Cancelar</string>
+    <string name="restaurar_nube">Usar a nuvem</string>
+    <string name="descargando">Baixando…</string>
+    <string name="descarga_lista">Salvo em Downloads</string>
+    <string name="permiso_descarga">Permita o acesso ao armazenamento para salvar a exportação.</string>
+    <string name="sin_app">Não há um aplicativo para abrir este link.</string>
+    <string name="error_titulo">Sem conexão com o servidor</string>
+    <string name="error_detalle">Não consegui conectar. Verifique sua internet (ou se o seu PC está ligado, se usa o servidor local).</string>
+    <string name="reintentar">Tentar de novo</string>
+    <string name="cambiar_servidor">Trocar servidor</string>
+</resources>

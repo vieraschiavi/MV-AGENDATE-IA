@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MV Agendate IA — app Android nativa (WebView).
+     Abre el servidor configurado (por defecto la nube; puede apuntarse a la
+     copia instalada en la PC vía "Configurar servidor" — atajo del ícono).
+     usesCleartextTraffic permite http:// en la LAN (PC local sin certificado). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="uy.mv.agendate">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Solo Android 9 o menor necesita este permiso para guardar las
+         exportaciones (Excel/PDF) en Descargas; en 10+ no hace falta. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+
+    <application
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true"
+        android:supportsRtl="false"
+        android:allowBackup="true"
+        android:theme="@style/MVTema">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/atajos" />
+        </activity>
+    </application>
+</manifest>

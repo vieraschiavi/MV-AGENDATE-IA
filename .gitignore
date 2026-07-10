@@ -19,4 +19,8 @@ voces/*.onnx
 descargas/*.zip
 # Excepción: el paquete PC de PRUEBA sí se versiona (Vercel lo sirve como descarga gratis).
 !public/descargas/MV-Agendate-IA-PC.zip
+# La APK Android firmada también se versiona (misma razón; ~110 KB).
+!public/descargas/MV-Agendate-IA.apk
+# Artefactos de compilación de la APK (android/build-apk.sh los regenera).
+android/build/
 webapp/node_modules/

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Atajo del ícono (mantener presionado el ícono de la app):
+     abre directamente el diálogo para configurar el servidor. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="servidor"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/atajo_servidor"
+        android:shortcutLongLabel="@string/atajo_servidor_largo">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="uy.mv.agendate"
+            android:targetClass="uy.mv.agendate.MainActivity">
+            <extra android:name="abrir_config" android:value="true" />
+        </intent>
+    </shortcut>
+</shortcuts>

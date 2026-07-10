@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="mv_azul">#0f2a43</color>
+    <color name="mv_celeste">#1f7ae0</color>
+    <style name="MVTema" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash</item>
+        <item name="android:statusBarColor">@color/mv_azul</item>
+        <item name="android:navigationBarColor">@color/mv_azul</item>
+        <item name="android:colorAccent">@color/mv_celeste</item>
+    </style>
+</resources>
