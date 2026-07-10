@@ -31,39 +31,65 @@
 </style>
 </head>
 <body>
-<header><img src="/logo-mv.svg" alt="MV"><strong>MV Agendate IA</strong><a href="/">Inicio</a></header>
+<header><img src="/logo-mv.svg" alt="MV"><strong>MV Agendate IA</strong><a href="/" data-i18n="inicio">Inicio</a></header>
 <div class="wrap">
   <div class="card">
     <div class="ico">🎉</div>
-    <h1>¡Gracias por tu compra!</h1>
-    <p class="lead">Pedido <code id="idPedido">—</code></p>
+    <h1 data-i18n="h1">¡Gracias por tu compra!</h1>
+    <p class="lead"><span data-i18n="pedido">Pedido</span> <code id="idPedido">—</code></p>
 
     <div class="resumen" id="resumen" style="display:none;">
-      <div class="row"><span>Plan</span><b id="rPlan">—</b></div>
-      <div class="row"><span>Versión</span><b id="rVer">—</b></div>
+      <div class="row"><span data-i18n="plan">Plan</span><b id="rPlan">—</b></div>
+      <div class="row"><span data-i18n="version">Versión</span><b id="rVer">—</b></div>
       <div class="row"><span>Total</span><b id="rTot">—</b></div>
     </div>
 
     <div id="estadoBox"></div>
 
-    <p style="margin-top:18px;"><a class="volver" href="/comprar.html">← Volver a la tienda</a></p>
+    <p style="margin-top:18px;"><a class="volver" href="/comprar.html" data-i18n="volver">← Volver a la tienda</a></p>
   </div>
 </div>
 <script>
+window.MV_PT = {
+  inicio:'Início', h1:'Obrigado pela sua compra!', pedido:'Pedido',
+  plan:'Plano', version:'Versão', volver:'← Voltar à loja'
+};
+</script>
+<script src="/js/i18n.js"></script>
+<script>
 const $ = (s) => document.querySelector(s);
+const _pt = () => (window.mvIdioma && window.mvIdioma() === 'pt');
 const VERNOMBRE = { pc: '💻 PC / Servidor', apk: '📱 Android (APK)', ios: '🍏 iOS', todas: '📦 Todas las versiones' };
+// Textos dinámicos del estado del pedido, según idioma.
+const TX = () => _pt() ? {
+  sinPedido:'Não encontrei o seu pedido. Se acabou de pagar, espere alguns segundos e recarregue, ou fale conosco.',
+  sinConexion:'Não consegui conectar ao servidor. Tentando de novo…',
+  noExiste:'Não encontrei esse pedido. Verifique o link ou fale conosco.',
+  confirmado:'✅ Pagamento confirmado', licencia:'Licença', descargar:'⬇ Baixar ', software:'o software',
+  guarda:'Guarde a sua licença — você vai precisar dela na primeira vez que abrir o programa. Se perder o link de download, volte a esta página com o seu nº de pedido',
+  confirmando:'Confirmando seu pagamento com o MercadoPago…',
+  actualiza:'Assim que o MercadoPago confirmar, esta página se atualiza sozinha com a sua licença e o download. Você pode fechá-la e voltar com o seu nº de pedido'
+} : {
+  sinPedido:'No encontré tu pedido. Si venís de pagar, esperá unos segundos y recargá, o contactanos.',
+  sinConexion:'No pude conectar con el servidor. Reintentando…',
+  noExiste:'No encontré ese pedido. Verificá el link o contactanos.',
+  confirmado:'✅ Pago confirmado', licencia:'Licencia', descargar:'⬇ Descargar ', software:'el software',
+  guarda:'Guardá tu licencia — la vas a necesitar la primera vez que abras el programa. Si perdés el link de descarga, volvé a esta página con tu N° de pedido',
+  confirmando:'Confirmando tu pago con MercadoPago…',
+  actualiza:'Apenas MercadoPago confirme, esta página se actualiza sola con tu licencia y la descarga. Podés cerrarla y volver con tu N° de pedido'
+};
 const id = new URLSearchParams(location.search).get('pedido');
 $('#idPedido').textContent = id || '—';
 if (!id) {
-  $('#estadoBox').innerHTML = '<div class="estado pend">No encontré tu pedido. Si venís de pagar, esperá unos segundos y recargá, o contactanos.</div>';
+  $('#estadoBox').innerHTML = '<div class="estado pend">' + TX().sinPedido + '</div>';
 } else {
   poll();
 }
 async function poll() {
   let d;
   try { d = await (await fetch('/api/pedido/' + encodeURIComponent(id))).json(); }
-  catch { $('#estadoBox').innerHTML = '<div class="estado pend">No pude conectar con el servidor. Reintentando…</div>'; return setTimeout(poll, 4000); }
-  if (!d.ok) { $('#estadoBox').innerHTML = '<div class="estado pend">No encontré ese pedido. Verificá el link o contactanos.</div>'; return; }
+  catch { $('#estadoBox').innerHTML = '<div class="estado pend">' + TX().sinConexion + '</div>'; return setTimeout(poll, 4000); }
+  if (!d.ok) { $('#estadoBox').innerHTML = '<div class="estado pend">' + TX().noExiste + '</div>'; return; }
 
   $('#resumen').style.display = 'block';
   $('#rPlan').textContent = d.planNombre || d.plan || '—';
@@ -72,12 +98,12 @@ async function poll() {
 
   if (d.estado === 'pagado' && d.token) {
     $('#estadoBox').innerHTML =
-      '<div class="estado ok"><strong>✅ Pago confirmado</strong><br>Licencia: <code>' + d.licencia + '</code></div>' +
-      '<a class="btn" href="/descargar/' + d.token + '">⬇ Descargar ' + (VERNOMBRE[d.version] || 'el software') + '</a>' +
-      '<div class="box">Guardá tu licencia — la vas a necesitar la primera vez que abras el programa. Si perdés el link de descarga, volvé a esta página con tu N° de pedido (<code>' + id + '</code>).</div>';
+      '<div class="estado ok"><strong>' + TX().confirmado + '</strong><br>' + TX().licencia + ': <code>' + d.licencia + '</code></div>' +
+      '<a class="btn" href="/descargar/' + d.token + '">' + TX().descargar + (VERNOMBRE[d.version] || TX().software) + '</a>' +
+      '<div class="box">' + TX().guarda + ' (<code>' + id + '</code>).</div>';
   } else {
     $('#estadoBox').innerHTML =
-      '<div class="estado pend"><span class="spin"></span><strong>Confirmando tu pago con MercadoPago…</strong><br>Apenas MercadoPago confirme, esta página se actualiza sola con tu licencia y la descarga. Podés cerrarla y volver con tu N° de pedido (<code>' + id + '</code>).</div>';
+      '<div class="estado pend"><span class="spin"></span><strong>' + TX().confirmando + '</strong><br>' + TX().actualiza + ' (<code>' + id + '</code>).</div>';
     setTimeout(poll, 4000);
   }
 }

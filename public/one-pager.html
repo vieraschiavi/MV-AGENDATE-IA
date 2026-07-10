@@ -31,50 +31,85 @@
 </style>
 </head>
 <body>
-<div class="noprint"><button onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button></div>
+<div class="noprint" style="display:flex;gap:10px;align-items:center;">
+  <button onclick="window.print()" data-i18n="imprimir">🖨️ Imprimir / Guardar como PDF</button>
+  <select class="mv-sel-idioma" aria-label="Idioma" style="padding:5px 7px;border-radius:8px;border:1px solid #cbd5e1;font-size:14px;">
+    <option value="es">🇺🇾 ES</option>
+    <option value="pt">🇧🇷 PT</option>
+  </select>
+</div>
 
 <div class="cab">
   <img class="logo" src="/logo-mv.png" alt="MV">
-  <h1>MV Agendate IA<small>El asistente que agenda y cotiza por vos, en cualquier oficio</small></h1>
+  <h1>MV Agendate IA<small data-i18n="sub">El asistente que agenda y cotiza por vos, en cualquier oficio</small></h1>
 </div>
 
-<div class="franja">Tus clientes te escriben por <b>WhatsApp o te llaman</b> a cualquier hora. MV cotiza el trabajo, arma la agenda considerando traslados y tus descansos, y avisa solo si vas a llegar tarde — vos te dedicás al trabajo.</div>
+<div class="franja" data-i18n-html="franja">Tus clientes te escriben por <b>WhatsApp o te llaman</b> a cualquier hora. MV cotiza el trabajo, arma la agenda considerando traslados y tus descansos, y avisa solo si vas a llegar tarde — vos te dedicás al trabajo.</div>
 
-<h2>Qué hace por tu oficio</h2>
+<h2 data-i18n="h2a">Qué hace por tu oficio</h2>
 <div class="cols">
-  <div>💬 <b>Chatbot IA real:</b> atiende por WhatsApp con tu nombre, en español rioplatense, para médicos, abogados, escribanos, psicólogos, talleres y cualquier profesión u oficio (catálogo 100% editable)</div>
-  <div>💰 <b>Cotiza al instante:</b> presupuesto con mano de obra, materiales y traslado, según tu propia lista de precios por trabajo</div>
-  <div>🗓️ <b>Agenda inteligente:</b> propone horarios considerando el traslado real entre citas y tus días/horarios de descanso</div>
-  <div>🎙️ <b>Atiende el teléfono:</b> voz rioplatense natural que cotiza y agenda por voz</div>
-  <div>⏰ <b>Avisa retrasos solo:</b> si el trabajo anterior se extendió, le escribe al próximo cliente 30 min antes, sin que vos hagas nada</div>
-  <div>👥 <b>Base de clientes:</b> confirma dirección y quién te va a recibir si no está el titular</div>
-  <div>📊 <b>Dashboard completo:</b> trabajos por día/semana/mes/año, comparativas y facturación total</div>
-  <div>📱 <b>App PC y Android:</b> tu agenda y tu CRM en la computadora y en el celular</div>
+  <div data-i18n-html="q1">💬 <b>Chatbot IA real:</b> atiende por WhatsApp con tu nombre, en español rioplatense, para médicos, abogados, escribanos, psicólogos, talleres y cualquier profesión u oficio (catálogo 100% editable)</div>
+  <div data-i18n-html="q2">💰 <b>Cotiza al instante:</b> presupuesto con mano de obra, materiales y traslado, según tu propia lista de precios por trabajo</div>
+  <div data-i18n-html="q3">🗓️ <b>Agenda inteligente:</b> propone horarios considerando el traslado real entre citas y tus días/horarios de descanso</div>
+  <div data-i18n-html="q4">🎙️ <b>Atiende el teléfono:</b> voz rioplatense natural que cotiza y agenda por voz</div>
+  <div data-i18n-html="q5">⏰ <b>Avisa retrasos solo:</b> si el trabajo anterior se extendió, le escribe al próximo cliente 30 min antes, sin que vos hagas nada</div>
+  <div data-i18n-html="q6">👥 <b>Base de clientes:</b> confirma dirección y quién te va a recibir si no está el titular</div>
+  <div data-i18n-html="q7">📊 <b>Dashboard completo:</b> trabajos por día/semana/mes/año, comparativas y facturación total</div>
+  <div data-i18n-html="q8">📱 <b>App PC y Android:</b> tu agenda y tu CRM en la computadora y en el celular</div>
 </div>
 
-<h2>Por dónde atiende</h2>
+<h2 data-i18n="h2b">Por dónde atiende</h2>
 <div class="cols">
-  <div>📲 WhatsApp con tu número</div>
-  <div>☎️ Tu teléfono fijo o celular (ChatVoice)</div>
-  <div>🌐 En tu página web (chat embebido)</div>
-  <div>📊 Todo en un panel: agenda del día, clientes y facturación</div>
+  <div data-i18n="d1">📲 WhatsApp con tu número</div>
+  <div data-i18n="d2">☎️ Tu teléfono fijo o celular (ChatVoice)</div>
+  <div data-i18n="d3">🌐 En tu página web (chat embebido)</div>
+  <div data-i18n="d4">📊 Todo en un panel: agenda del día, clientes y facturación</div>
 </div>
 
-<h2>Planes (pago único · sin permanencia)</h2>
+<h2 data-i18n="h2c">Planes (pago único · sin permanencia)</h2>
 <table>
-  <tr><th></th><th>Básico<br>USD 129</th><th class="dest">Full (con IA)<br>USD 299</th></tr>
-  <tr><td>Agenda con traslados y descansos + cotizador multi-oficio</td><td>✓</td><td class="dest">✓</td></tr>
-  <tr><td>CRM de clientes + dashboards + exportación Excel/PDF</td><td>✓</td><td class="dest">✓</td></tr>
-  <tr><td>App PC / Android</td><td>✓</td><td class="dest">✓</td></tr>
-  <tr><td>Chatbot y ChatVoice con IA (WhatsApp/voz)</td><td>—</td><td class="dest">✓</td></tr>
-  <tr><td>Aviso automático de retraso al próximo cliente</td><td>—</td><td class="dest">✓</td></tr>
+  <tr><th></th><th data-i18n-html="thB">Básico<br>USD 129</th><th class="dest" data-i18n-html="thF">Full (con IA)<br>USD 299</th></tr>
+  <tr><td data-i18n="p1">Agenda con traslados y descansos + cotizador multi-oficio</td><td>✓</td><td class="dest">✓</td></tr>
+  <tr><td data-i18n="p2">CRM de clientes + dashboards + exportación Excel/PDF</td><td>✓</td><td class="dest">✓</td></tr>
+  <tr><td data-i18n="p3">App PC / Android</td><td>✓</td><td class="dest">✓</td></tr>
+  <tr><td data-i18n="p4">Chatbot y ChatVoice con IA (WhatsApp/voz)</td><td>—</td><td class="dest">✓</td></tr>
+  <tr><td data-i18n="p5">Aviso automático de retraso al próximo cliente</td><td>—</td><td class="dest">✓</td></tr>
 </table>
-<p style="font-size:.82rem;color:#7a8896;margin-top:8px;">El plan Full usa tus propias cuentas de Claude (IA), WhatsApp Business y, si querés voz, Twilio — el costo de uso es aparte (de referencia, USD 20-40/mes según volumen) y corre directo a esas cuentas, sin intermediarios.</p>
+<p style="font-size:.82rem;color:#7a8896;margin-top:8px;" data-i18n="notaFull">El plan Full usa tus propias cuentas de Claude (IA), WhatsApp Business y, si querés voz, Twilio — el costo de uso es aparte (de referencia, USD 20-40/mes según volumen) y corre directo a esas cuentas, sin intermediarios.</p>
 
 <div class="pie">
-  <div><b>Demo en vivo:</b> probá el cotizador y la agenda antes de comprar.</div>
-  <div><b>Contacto:</b> vieraschiavi@gmail.com</div>
+  <div data-i18n-html="pie1"><b>Demo en vivo:</b> probá el cotizador y la agenda antes de comprar.</div>
+  <div><b data-i18n="pie2">Contacto:</b> vieraschiavi@gmail.com</div>
 </div>
+<script>
+window.MV_PT = {
+  imprimir:'🖨️ Imprimir / Salvar como PDF',
+  sub:'O assistente que agenda e orça por você, em qualquer profissão',
+  franja:'Seus clientes escrevem pelo <b>WhatsApp ou ligam</b> a qualquer hora. O MV orça o serviço, monta a agenda considerando deslocamentos e seus descansos, e avisa sozinho se você vai chegar atrasado — você se dedica ao trabalho.',
+  h2a:'O que ele faz pela sua profissão',
+  q1:'💬 <b>Chatbot IA de verdade:</b> atende pelo WhatsApp com o seu nome, em português, para médicos, advogados, tabeliães, psicólogos, oficinas e qualquer profissão ou ofício (catálogo 100% editável)',
+  q2:'💰 <b>Orça na hora:</b> orçamento com mão de obra, materiais e deslocamento, conforme a sua própria tabela de preços por serviço',
+  q3:'🗓️ <b>Agenda inteligente:</b> propõe horários considerando o deslocamento real entre visitas e seus dias/horários de descanso',
+  q4:'🎙️ <b>Atende o telefone:</b> voz natural que orça e agenda por voz',
+  q5:'⏰ <b>Avisa atrasos sozinho:</b> se o serviço anterior se estendeu, escreve ao próximo cliente 30 min antes, sem você fazer nada',
+  q6:'👥 <b>Base de clientes:</b> confirma endereço e quem vai receber você se o titular não estiver',
+  q7:'📊 <b>Dashboard completo:</b> serviços por dia/semana/mês/ano, comparativos e faturamento total',
+  q8:'📱 <b>App PC e Android:</b> sua agenda e seu CRM no computador e no celular',
+  h2b:'Por onde ele atende',
+  d1:'📲 WhatsApp com o seu número', d2:'☎️ Seu telefone fixo ou celular (ChatVoice)',
+  d3:'🌐 No seu site (chat embutido)', d4:'📊 Tudo em um painel: agenda do dia, clientes e faturamento',
+  h2c:'Planos (pagamento único · sem fidelidade)',
+  thB:'Básico<br>USD 129', thF:'Full (com IA)<br>USD 299',
+  p1:'Agenda com deslocamentos e descansos + orçamentos multi-profissão',
+  p2:'CRM de clientes + dashboards + exportação Excel/PDF',
+  p3:'App PC / Android', p4:'Chatbot e ChatVoice com IA (WhatsApp/voz)',
+  p5:'Aviso automático de atraso ao próximo cliente',
+  notaFull:'O plano Full usa as suas próprias contas de Claude (IA), WhatsApp Business e, se quiser voz, Twilio — o custo de uso é à parte (de referência, USD 20-40/mês conforme o volume) e vai direto a essas contas, sem intermediários.',
+  pie1:'<b>Demo ao vivo:</b> teste o orçamentador e a agenda antes de comprar.',
+  pie2:'Contato:'
+};
+</script>
+<script src="/js/i18n.js"></script>
 <script src="/js/contacto.js" defer></script>
 </body>
 </html>

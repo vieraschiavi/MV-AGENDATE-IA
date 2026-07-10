@@ -28,52 +28,91 @@
 </style>
 </head>
 <body>
-<header><img src="/logo-mv.svg" alt="MV"><strong>Comprar MV Agendate IA</strong><a href="/">Inicio</a></header>
+<header><img src="/logo-mv.svg" alt="MV"><strong data-i18n="titulo">Comprar MV Agendate IA</strong>
+  <span style="display:flex;align-items:center;gap:10px;">
+    <select class="mv-sel-idioma" aria-label="Idioma" style="padding:4px 6px;border-radius:8px;border:1px solid #cbd5e1;font-size:13px;">
+      <option value="es">🇺🇾 ES</option>
+      <option value="pt">🇧🇷 PT</option>
+    </select>
+    <a href="/" data-i18n="inicio">Inicio</a>
+  </span>
+</header>
 <div class="wrap">
   <div>
     <div class="card">
-      <h2>1. Elegí tu plan</h2>
+      <h2 data-i18n="h1">1. Elegí tu plan</h2>
       <div id="planes"></div>
     </div>
     <div class="card" id="versionCard">
-      <h2>2. Versión a descargar</h2>
+      <h2 data-i18n="h2">2. Versión a descargar</h2>
       <select id="version">
-        <option value="pc">💻 PC / Servidor (completa)</option>
-        <option value="apk">📱 Android (APK)</option>
-        <option value="ios">🍏 iOS (próximamente)</option>
-        <option value="todas">📦 Todas las versiones</option>
+        <option value="pc" data-i18n="vPc">💻 PC / Servidor (completa)</option>
+        <option value="apk" data-i18n="vApk">📱 Android (APK)</option>
+        <option value="ios" data-i18n="vIos">🍏 iOS (próximamente)</option>
+        <option value="todas" data-i18n="vTodas">📦 Todas las versiones</option>
       </select>
-      <p style="font-size:.8rem;color:#5a6b7c;margin-top:8px;">Las versiones móviles son clientes livianos que se conectan al servidor PC (por eso salen más económicas).</p>
+      <p style="font-size:.8rem;color:#5a6b7c;margin-top:8px;" data-i18n="notaVer">Las versiones móviles son clientes livianos que se conectan al servidor PC (por eso salen más económicas).</p>
     </div>
     <div class="card">
-      <h2>3. Tus datos</h2>
-      <label>Nombre / Negocio</label><input id="nombre">
+      <h2 data-i18n="h3">3. Tus datos</h2>
+      <label data-i18n="lNombre">Nombre / Negocio</label><input id="nombre">
       <label>Email</label><input id="email" type="email" placeholder="tu@email.com">
       <div class="medios" id="medios" style="margin-top:12px;">
-        <div class="medio on" style="cursor:default;">🟦 Pagás con <b>MercadoPago</b><br><small>tarjeta, débito o saldo — checkout seguro de MercadoPago</small></div>
+        <div class="medio on" style="cursor:default;" data-i18n-html="medioMp">🟦 Pagás con <b>MercadoPago</b><br><small>tarjeta, débito o saldo — checkout seguro de MercadoPago</small></div>
       </div>
       <div id="modalidadNota" style="font-size:.78rem;color:#5a6b7c;margin-top:8px;"></div>
-      <button class="btn" id="btnComprar">Ir a pagar con MercadoPago →</button>
+      <button class="btn" id="btnComprar" data-i18n="btnPagar">Ir a pagar con MercadoPago →</button>
       <p id="errPago" style="display:none;color:#c0392b;font-size:.85rem;margin-top:10px;"></p>
     </div>
   </div>
   <div>
     <div class="card resumen">
-      <h2>Resumen</h2>
+      <h2 data-i18n="hRes">Resumen</h2>
       <div class="row"><span id="rPlan">—</span><span id="rPrecio">—</span></div>
-      <div class="row"><span>Versión</span><span id="rVer">PC</span></div>
+      <div class="row"><span data-i18n="lVer">Versión</span><span id="rVer">PC</span></div>
       <div class="row" style="border:0;margin-top:8px;"><span>Total</span><span class="tot" id="rTot">USD 0</span></div>
       <p id="notaVariable" style="font-size:.78rem;color:#8a5a00;margin-top:8px;"></p>
     </div>
     <div class="card" id="panel">
-      <h2>4. Pago</h2>
+      <h2 data-i18n="hPago">4. Pago</h2>
       <div id="pagoInfo"></div>
       <div id="descarga"></div>
     </div>
   </div>
 </div>
 <script>
+window.MV_PT = {
+  titulo:'Comprar MV Agendate IA', inicio:'Início',
+  h1:'1. Escolha seu plano', h2:'2. Versão para baixar', h3:'3. Seus dados',
+  vPc:'💻 PC / Servidor (completa)', vApk:'📱 Android (APK)', vIos:'🍏 iOS (em breve)', vTodas:'📦 Todas as versões',
+  notaVer:'As versões móveis são clientes leves que se conectam ao servidor PC (por isso saem mais em conta).',
+  lNombre:'Nome / Negócio',
+  medioMp:'🟦 Você paga com <b>MercadoPago</b><br><small>cartão, débito ou saldo — checkout seguro do MercadoPago</small>',
+  btnPagar:'Ir pagar com MercadoPago →',
+  hRes:'Resumo', lVer:'Versão', hPago:'4. Pagamento'
+};
+</script>
+<script src="/js/i18n.js"></script>
+<script>
 const $ = (s) => document.querySelector(s);
+// Textos dinámicos (JS) según el idioma elegido en el selector.
+const _pt = () => (window.mvIdioma && window.mvIdioma() === 'pt');
+const TX = () => _pt() ? {
+  online:'Online (sem download)', mes:'/mês',
+  recurrente:'Cobrado pelo MercadoPago todo mês até você cancelar. Cancele quando quiser.',
+  unico:'Pagamento único pelo MercadoPago; sem renovação automática.',
+  email:'Coloque seu email.', conectando:'Conectando com o MercadoPago…',
+  err:'Não foi possível iniciar o pagamento com o MercadoPago. Tente de novo em alguns minutos.',
+  errConn:'Erro de conexão. Tente de novo.', btn:'Ir pagar com MercadoPago →'
+} : {
+  online:'Online (sin descarga)', mes:'/mes',
+  recurrente:'Se cobra por MercadoPago cada mes hasta que canceles. Cancelás cuando quieras.',
+  unico:'Pago único por MercadoPago; sin renovación automática.',
+  email:'Poné tu email.', conectando:'Conectando con MercadoPago…',
+  err:'No se pudo iniciar el pago con MercadoPago. Probá de nuevo en unos minutos.',
+  errConn:'Error de conexión. Probá de nuevo.', btn:'Ir a pagar con MercadoPago →'
+};
+document.addEventListener('mv:idioma', () => { if (Object.keys(PLANES).length) render(); });
 let PLANES = {}, plan = 'basico', medio = 'mercadopago', recurrente = false, pedidoId = null;
 // Plan preseleccionado desde la landing (?plan=basico|full)
 const _planUrl = new URLSearchParams(location.search).get('plan');
@@ -82,11 +121,11 @@ function render() {
   $('#planes').innerHTML = Object.entries(PLANES).map(([k,p])=>`<div class="plan ${k===plan?'on':''}" data-k="${k}"><div><strong>${p.nombre}</strong><small>${p.incluye}</small></div><div class="p">USD ${p.precio}${p.mensual?'/mes':''}</div></div>`).join('');
   document.querySelectorAll('.plan').forEach(el=>el.onclick=()=>{ plan=el.dataset.k; if(plan!=='full') recurrente=false; render(); });
   const p = PLANES[plan]||{};
-  const sufijo = (p.mensual || (medio === 'mercadopago' && recurrente)) ? '/mes' : '';
+  const sufijo = (p.mensual || (medio === 'mercadopago' && recurrente)) ? TX().mes : '';
   $('#rPlan').textContent = p.nombre||'—'; $('#rPrecio').textContent = 'USD '+(p.precio||0)+sufijo; $('#rTot').textContent='USD '+(p.precio||0)+sufijo;
   // El plan SaaS es online: no hay versión para descargar.
   $('#versionCard').style.display = p.mensual ? 'none' : '';
-  $('#rVer').textContent = p.mensual ? 'Online (sin descarga)' : $('#version').options[$('#version').selectedIndex].text;
+  $('#rVer').textContent = p.mensual ? TX().online : $('#version').options[$('#version').selectedIndex].text;
   $('#notaVariable').textContent = p.nota_costo_variable || '';
   actualizarModalidad();
 }
@@ -94,25 +133,23 @@ function actualizarModalidad() {
   // El plan SaaS y el Full son suscripción mensual por MercadoPago; el Básico, pago único.
   const p = PLANES[plan]||{};
   recurrente = !!(p.mensual || plan === 'full');
-  $('#modalidadNota').textContent = recurrente
-    ? 'Se cobra por MercadoPago cada mes hasta que canceles. Cancelás cuando quieras.'
-    : 'Pago único por MercadoPago; sin renovación automática.';
+  $('#modalidadNota').textContent = recurrente ? TX().recurrente : TX().unico;
 }
 $('#version').onchange = render;
 $('#btnComprar').onclick = async () => {
   const email=$('#email').value.trim();
   $('#errPago').style.display='none';
-  if(!email) return alert('Poné tu email.');
-  const btn=$('#btnComprar'); btn.disabled=true; btn.textContent='Conectando con MercadoPago…';
+  if(!email) return alert(TX().email);
+  const btn=$('#btnComprar'); btn.disabled=true; btn.textContent=TX().conectando;
   try {
     const body = { plan, version:$('#version').value, email, nombre:$('#nombre').value };
     const r = await (await fetch('/api/comprar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
     // Solo avanzamos si MercadoPago devolvió el checkout real. Nunca simulamos la compra.
     if(r.ok && r.init_point){ window.location.href = r.init_point; return; }
-    $('#errPago').textContent = r.error || 'No se pudo iniciar el pago con MercadoPago. Probá de nuevo en unos minutos.';
+    $('#errPago').textContent = r.error || TX().err;
     $('#errPago').style.display='block';
-  } catch { $('#errPago').textContent='Error de conexión. Probá de nuevo.'; $('#errPago').style.display='block'; }
-  finally { btn.disabled=false; btn.textContent='Ir a pagar con MercadoPago →'; }
+  } catch { $('#errPago').textContent=TX().errConn; $('#errPago').style.display='block'; }
+  finally { btn.disabled=false; btn.textContent=TX().btn; }
 };
 </script>
 <script type="module" src="/js/botid-init.js"></script>
