@@ -226,6 +226,42 @@ const PT = {
 
   // ---- Cuentas SaaS (panel del vendedor) ----
   'Cuentas SaaS registradas': 'Contas SaaS registradas',
+
+  // ---- Onboarding (wizard de primer uso) ----
+  '¡Bienvenido a MV Agendate IA!': 'Bem-vindo ao MV Agendate IA!',
+  'En 4 pasos cortos dejamos tu asistente listo para cotizar y agendar.': 'Em 4 passos curtos deixamos seu assistente pronto para orçar e agendar.',
+  'Vos y tu país': 'Você e o seu país',
+  'Tu nombre (así te presenta el asistente)': 'Seu nome (é assim que o assistente apresenta você)',
+  'Ej: Marcelo Techera': 'Ex.: Marcelo Silva',
+  'País (define moneda, idioma y precios de mercado)': 'País (define moeda, idioma e preços de mercado)',
+  'Siguiente →': 'Próximo →',
+  'Configurar después': 'Configurar depois',
+  'Tu profesión u oficio': 'Sua profissão ou ofício',
+  'Elegí la tuya — el catálogo de trabajos y precios se arma solo': 'Escolha a sua — o catálogo de serviços e preços se monta sozinho',
+  '¿No está la tuya? Elegí la más parecida y después creá la propia en Configuración → Profesiones (1 minuto).': 'A sua não está? Escolha a mais parecida e depois crie a própria em Configuração → Profissões (1 minuto).',
+  '← Atrás': '← Voltar',
+  'Tu jornada': 'Sua jornada',
+  'Empezás': 'Começa',
+  'Terminás': 'Termina',
+  'Almuerzo desde': 'Almoço desde',
+  'Almuerzo hasta': 'Almoço até',
+  'Días libres (la agenda nunca ofrece turnos ahí):': 'Dias de folga (a agenda nunca oferece horários neles):',
+  'Lun': 'Seg', 'Mar': 'Ter', 'Mié': 'Qua', 'Jue': 'Qui', 'Vie': 'Sex', 'Sáb': 'Sáb', 'Dom': 'Dom',
+  'Guardando…': 'Salvando…',
+  'Guardar y seguir →': 'Salvar e continuar →',
+  'Precios de tu mercado (opcional)': 'Preços do seu mercado (opcional)',
+  'La IA investiga qué se cobra hoy en tu país por cada trabajo de tu profesión y deja tu catálogo con esos valores de referencia. Podés saltearlo y cargar los tuyos a mano.':
+    'A IA pesquisa o que se cobra hoje no seu país por cada serviço da sua profissão e deixa seu catálogo com esses valores de referência. Você pode pular e cadastrar os seus manualmente.',
+  '🔎 Sugerir precios con IA': '🔎 Sugerir preços com IA',
+  'Investigando…': 'Pesquisando…',
+  '🔎 Investigando precios de tu mercado con IA… (unos segundos)': '🔎 Pesquisando preços do seu mercado com IA… (alguns segundos)',
+  'No se pudo investigar.': 'Não foi possível pesquisar.',
+  'No se pudo aplicar.': 'Não foi possível aplicar.',
+  'Listo: tu catálogo quedó con precios de mercado de': 'Pronto: seu catálogo ficou com preços de mercado de',
+  'Los afinás cuando quieras en Configuración → Precios.': 'Você os ajusta quando quiser em Configuração → Preços.',
+  '¡Listo, a trabajar! →': 'Pronto, ao trabalho! →',
+  'Saltear y terminar': 'Pular e terminar',
+  'Después conectá tu WhatsApp y tu teléfono desde Configuración — el webchat de la demo ya funciona.': 'Depois conecte seu WhatsApp e seu telefone em Configuração — o webchat da demo já funciona.',
 };
 
 /** Traduce un texto de UI al idioma activo (fallback: el texto tal cual). */

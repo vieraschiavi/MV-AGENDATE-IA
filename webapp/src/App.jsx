@@ -8,6 +8,7 @@ import Ayuda from './pages/Ayuda.jsx';
 import Cuenta from './pages/Cuenta.jsx';
 import CuentasAdmin from './pages/CuentasAdmin.jsx';
 import CandadoPrueba from './pages/CandadoPrueba.jsx';
+import Onboarding from './pages/Onboarding.jsx';
 import ErrorBoundary from './pages/ErrorBoundary.jsx';
 import { claveAdmin, cuentaSesion } from './api.js';
 import { t, idioma, setIdioma } from './i18n.js';
@@ -33,6 +34,7 @@ export default function App() {
   return (
     <>
       <CandadoPrueba />
+      <Onboarding />
       <div className="mv-topbar-mobile">
         <button onClick={() => setAbierto(!abierto)} aria-label={t('Abrir menú')}>☰</button>
         <strong>MV Agendate IA</strong>
