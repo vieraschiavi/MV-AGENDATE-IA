@@ -45,14 +45,23 @@ export async function haySaldo(cuentaId) {
   return c.saldo > 0;
 }
 
-/** Descuenta el costo (con margen) de una llamada de IA. */
+// Umbral de "saldo bajo" (USD): al cruzarlo hacia abajo se avisa por email.
+const UMBRAL_BAJO = 1;
+
+/**
+ * Descuenta el costo (con margen) de una llamada de IA.
+ * Devuelve { saldo, cruzoUmbral } — cruzoUmbral=true la ÚNICA vez que el
+ * saldo pasa de arriba a abajo del umbral (para avisar sin spamear).
+ */
 export async function consumir(cuentaId, usage) {
-  if (!creditosHabilitado()) return;
+  if (!creditosHabilitado()) return { saldo: Infinity, cruzoUmbral: false };
   const c = await cargar(cuentaId);
+  const antes = c.saldo;
   const cobro = costoDeLlamada(usage) * margen();
   c.saldo = Math.round((c.saldo - cobro) * 1e6) / 1e6;
   c.consumido = (c.consumido || 0) + cobro;
   await kvSet(clave(cuentaId), c);
+  return { saldo: c.saldo, cruzoUmbral: antes > UMBRAL_BAJO && c.saldo <= UMBRAL_BAJO };
 }
 
 /** Acredita una recarga (USD) — desde el webhook de MercadoPago. */

@@ -70,6 +70,10 @@ const ENV = {
   creditosMargen: 'CREDITOS_MARGEN',    // margen sobre el costo crudo (default 2.5)
   creditosBono: 'CREDITOS_BONO',        // saldo gratis de bienvenida en USD (default 3)
   mercadopagoToken: 'MERCADOPAGO_TOKEN', // Access Token de MercadoPago (cobros → payout a tu banco)
+  // Emails transaccionales (bienvenida, prueba por vencer, licencia, créditos):
+  // API key de resend.com (tier gratis). Sin ella no se envía nada (no-op).
+  resendApiKey: 'RESEND_API_KEY',
+  emailFrom: 'EMAIL_FROM',              // remitente verificado, ej. "MV <hola@tudominio.com>"
   piperBin: 'PIPER_BIN',          // binario de Piper (default 'piper' en el PATH)
   piperVoz: 'PIPER_VOZ',          // ruta al modelo de voz .onnx (default voces/es_AR-daniela-high.onnx)
   // ID del plan recurrente (Preapproval) de MercadoPago para el plan Full —
@@ -95,7 +99,7 @@ const CLAVES = Object.keys(ENV);
 const SECRETAS = new Set([
   'anthropicApiKey', 'openaiApiKey', 'geminiApiKey', 'whatsappToken', 'whatsappVerifyToken',
   'twilioAuthToken', 'deepgramApiKey', 'elevenlabsApiKey', 'adminKey', 'mercadopagoToken',
-  'jwtSecret'
+  'jwtSecret', 'resendApiKey'
 ]);
 
 // Clave/config EMBEBIDA por el vendedor (oculta, base64) que viaja con el
@@ -127,7 +131,7 @@ function cargar() {
  * el oficio, país, precios y credenciales de ESA cuenta sin cambios de código.
  * Los overrides no aplican a las claves del vendedor (admin, pagos, licencia).
  */
-const NUNCA_OVERRIDE = new Set(['adminKey', 'mercadopagoToken', 'jwtSecret', 'licenciaLocal', 'demoLimite', 'demoMaxUsos', 'sitioUrl', 'preapprovalPlanFull', 'preapprovalPlanSaas']);
+const NUNCA_OVERRIDE = new Set(['adminKey', 'mercadopagoToken', 'jwtSecret', 'licenciaLocal', 'demoLimite', 'demoMaxUsos', 'sitioUrl', 'preapprovalPlanFull', 'preapprovalPlanSaas', 'resendApiKey', 'emailFrom']);
 export function get(clave) {
   const ov = overridesActivos();
   if (ov && !NUNCA_OVERRIDE.has(clave) && ov[clave] !== undefined && ov[clave] !== '') return ov[clave];

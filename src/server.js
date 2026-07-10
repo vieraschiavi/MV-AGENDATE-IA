@@ -22,6 +22,7 @@ import * as cuentas from './store/cuentas.js';
 import * as cotizaciones from './store/cotizaciones.js';
 import { estadoPrueba, pruebaBloqueada, activarLicencia } from './store/prueba.js';
 import { estadoCreditos, acreditar, PACKS as PACKS_CREDITOS } from './store/creditos.js';
+import * as emails from './store/emails.js';
 import { runConCuenta, runConDemoPais } from './store/contextoCuenta.js';
 import { obtenerOverrides, guardarOverrides, configPublicaCuenta } from './store/configCuentas.js';
 import { fichaCitaHTML, agendaCSV, agendaExcelHTML, clientesCSV, clientesExcelHTML } from './exports/documentos.js';
@@ -363,6 +364,11 @@ app.post('/api/admin/cuentas/:id/estado', soloAdmin, async (req, res) => {
 app.post('/api/auth/registro', async (req, res) => {
   if (await esBot(req)) return res.status(403).json({ error: 'Acceso denegado.' });
   const r = await cuentas.registrar(req.body ?? {});
+  if (r.ok && r.cuenta?.email) {
+    // Bienvenida (no bloquea la respuesta; no-op si los emails no están configurados)
+    emails.enviarPlantilla('bienvenida', 'es', r.cuenta.email,
+      { nombre: r.cuenta.nombre, url: `${req.protocol}://${req.get('host')}/app/#/cuenta` });
+  }
   res.status(r.ok ? 200 : 400).json(r);
 });
 app.post('/api/auth/login', async (req, res) => {
@@ -637,9 +643,18 @@ app.post('/api/pago/mercadopago', async (req, res) => {
         // Recarga de créditos de IA: "credito:{cuentaId}:{monto}".
         if (String(pago.external_reference).startsWith('credito:')) {
           const [, cuentaId, monto] = String(pago.external_reference).split(':');
-          await acreditar(cuentaId, Number(monto));
+          const r = await acreditar(cuentaId, Number(monto));
+          if (r.ok) emails.avisarRecarga(cuentaId, Number(monto), r.saldo).catch(() => {});
         } else {
-          lic.confirmarPago(pago.external_reference);
+          const r = lic.confirmarPago(pago.external_reference);
+          // La licencia también viaja por email (además de verse en /gracias.html)
+          if (r.ok && !r.yaEstaba && r.pedido?.email) {
+            const base = cfg('sitioUrl') || `${req.protocol}://${req.get('host')}`;
+            emails.enviarPlantilla('compraConfirmada', 'es', r.pedido.email, {
+              nombre: r.pedido.nombre, plan: r.pedido.plan, licencia: r.pedido.licencia,
+              urlDescarga: r.pedido.token ? `${base}/descargar/${r.pedido.token}` : ''
+            });
+          }
         }
       }
     } else if ((tipo === 'preapproval' || tipo === 'subscription_preapproval') && dataId) {
@@ -681,6 +696,13 @@ app.post('/api/creditos/recargar', adminOCuenta, async (req, res) => {
   const pago = await crearPreferenciaCreditos({ cuentaId: req.cuentaId, monto, email: req.cuentaEmail }, base);
   if (!pago.ok || !pago.init_point) return res.status(502).json({ ok: false, error: pago.error || 'No pude iniciar la recarga.' });
   res.json({ ok: true, init_point: pago.init_point });
+});
+
+// --- Cron diario: avisos de "tu prueba vence" por email (idempotente vía Redis).
+// Invocalo 1 vez al día: Vercel Cron (vercel.json), cron-job.org o GitHub Actions.
+app.get('/api/cron/diario', async (_req, res) => {
+  try { res.json(await emails.avisarTrialsPorVencer()); }
+  catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
 // --- Prueba gratis de la copia descargada (banner + activación de licencia) ---

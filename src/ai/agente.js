@@ -452,7 +452,16 @@ export async function conversar(sessionId, texto, canal = 'webchat') {
         mensajes
       });
       registrarUso(respuesta.usage, cuentaActiva());
-      if (conCreditos) await consumir(cuentaActiva(), respuesta.usage);
+      if (conCreditos) {
+        const gasto = await consumir(cuentaActiva(), respuesta.usage);
+        // Primera vez que el saldo cruza el umbral bajo → email al profesional
+        // (fire-and-forget: jamás frena la conversación con el cliente).
+        if (gasto?.cruzoUmbral) {
+          import('../store/emails.js')
+            .then((m) => m.avisarCreditosBajos(cuentaActiva(), gasto.saldo))
+            .catch(() => {});
+        }
+      }
 
       mensajes.push({ role: 'assistant', content: respuesta.content });
 

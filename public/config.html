@@ -233,6 +233,15 @@
     </details>
 
     <details>
+      <summary>✉️ Emails automáticos (bienvenida, prueba por vencer, licencia)</summary>
+      <label>Resend — API key</label>
+      <input id="resendApiKey" type="password" placeholder="re_... (resend.com — tier gratis)" autocomplete="off">
+      <label>Remitente</label>
+      <input id="emailFrom" placeholder='Ej: MV Agendate IA <hola@tudominio.com>' autocomplete="off">
+      <div class="hint">Con la API key de <a href="https://resend.com" target="_blank" rel="noreferrer">resend.com</a> (gratis hasta 100 emails/día) el programa envía solo: bienvenida al registrarse, aviso de "tu prueba vence" (2 días y 1 día antes), la licencia al confirmarse un pago, recargas de créditos y aviso de créditos bajos. Sin key no se envía nada y todo funciona igual. El aviso de vencimiento corre con el Cron diario de Vercel (ya configurado) o un cron externo a <code>/api/cron/diario</code>.</div>
+    </details>
+
+    <details>
       <summary>🎁 Modo demostración (para mostrar el producto)</summary>
       <div class="row">
         <div><label>Instancia de demo con cupo</label><select id="demoLimite"><option value="">No (producto completo)</option><option value="1">Sí (limitar usos)</option></select></div>
@@ -311,7 +320,7 @@
 
 <script>
 const $ = (s) => document.querySelector(s);
-const CAMPOS = ['proveedorIA','anthropicApiKey','openaiApiKey','geminiApiKey','creditosSaas','creditosMargen','creditosBono','nombreProfesional','oficioProfesional','pais','moneda','aprobarCotizaciones','agenciaNombre','agenciaTelefono','logoUrl','horarioInicio','horarioFin','almuerzoInicio','almuerzoFin','diasLibres','whatsappToken','whatsappPhoneId','whatsappVerifyToken','twilioAccountSid','twilioAuthToken','twilioNumero','deepgramApiKey','elevenlabsApiKey','elevenlabsVoiceId','crmWebhookUrl','mercadopagoToken','demoLimite','demoMaxUsos','licenciaLocal'];
+const CAMPOS = ['proveedorIA','anthropicApiKey','openaiApiKey','geminiApiKey','creditosSaas','creditosMargen','creditosBono','nombreProfesional','oficioProfesional','pais','moneda','aprobarCotizaciones','agenciaNombre','agenciaTelefono','logoUrl','horarioInicio','horarioFin','almuerzoInicio','almuerzoFin','diasLibres','whatsappToken','whatsappPhoneId','whatsappVerifyToken','twilioAccountSid','twilioAuthToken','twilioNumero','deepgramApiKey','elevenlabsApiKey','elevenlabsVoiceId','crmWebhookUrl','mercadopagoToken','resendApiKey','emailFrom','demoLimite','demoMaxUsos','licenciaLocal'];
 
 // Combo de oficios (cargado desde el catálogo del cotizador) + chips de días libres.
 const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
