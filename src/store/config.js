@@ -64,6 +64,11 @@ const ENV = {
   demoMaxUsos: 'DEMO_MAX_USOS',   // usos gratis antes de bloquear (default 3)
   costoInputMusd: 'COSTO_INPUT_MUSD',   // USD por millón de tokens de entrada (ref)
   costoOutputMusd: 'COSTO_OUTPUT_MUSD', // USD por millón de tokens de salida (ref)
+  // Créditos de IA (modo SaaS): el vendedor pone su key y le vende créditos a
+  // cada cuenta. '0' = desactivado (cada cuenta trae su propia key/BYOK).
+  creditosSaas: 'CREDITOS_SAAS',
+  creditosMargen: 'CREDITOS_MARGEN',    // margen sobre el costo crudo (default 2.5)
+  creditosBono: 'CREDITOS_BONO',        // saldo gratis de bienvenida en USD (default 3)
   mercadopagoToken: 'MERCADOPAGO_TOKEN', // Access Token de MercadoPago (cobros → payout a tu banco)
   piperBin: 'PIPER_BIN',          // binario de Piper (default 'piper' en el PATH)
   piperVoz: 'PIPER_VOZ',          // ruta al modelo de voz .onnx (default voces/es_AR-daniela-high.onnx)

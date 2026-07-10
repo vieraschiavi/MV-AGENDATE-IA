@@ -118,6 +118,33 @@ export async function crearPreferencia(pedido, baseUrl) {
   } catch (e) { return { ok: false, error: 'Error conectando con MercadoPago: ' + e.message }; }
 }
 
+/**
+ * Preferencia de pago para una RECARGA DE CRÉDITOS de IA de una cuenta SaaS.
+ * external_reference = "credito:{cuentaId}:{monto}" — el webhook lo acredita.
+ */
+export async function crearPreferenciaCreditos({ cuentaId, monto, email }, baseUrl) {
+  const token = cfg('mercadopagoToken');
+  if (!token) return { ok: false, error: 'MercadoPago no está configurado (falta el Access Token).' };
+  const ref = `credito:${cuentaId}:${monto}`;
+  const body = {
+    items: [{ title: `MV Agendate IA — Créditos de IA (US$ ${monto})`, quantity: 1, currency_id: 'USD', unit_price: Number(monto) }],
+    payer: email ? { email } : undefined,
+    external_reference: ref,
+    back_urls: { success: `${baseUrl}/app/#/cuenta`, pending: `${baseUrl}/app/#/cuenta`, failure: `${baseUrl}/app/#/cuenta` },
+    auto_return: 'approved',
+    notification_url: `${baseUrl}/api/pago/mercadopago`
+  };
+  try {
+    const r = await fetch(`${API}/checkout/preferences`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (!r.ok) return { ok: false, error: d.message || 'No pude crear la preferencia de MercadoPago.' };
+    return { ok: true, init_point: d.init_point || d.sandbox_init_point };
+  } catch (e) { return { ok: false, error: 'Error conectando con MercadoPago: ' + e.message }; }
+}
+
 /** Consulta el estado de un pago por su id. Devuelve { status, external_reference }. */
 export async function consultarPago(paymentId) {
   const token = cfg('mercadopagoToken');

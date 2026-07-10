@@ -1,6 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { cuentaSesion, guardarSesion, cerrarSesion } from '../api.js';
+import { cuentaSesion, guardarSesion, cerrarSesion, fetchAdmin } from '../api.js';
+
+// Tarjeta de créditos de IA: saldo + recarga por MercadoPago.
+function Creditos() {
+  const [c, setC] = useState(null);
+  const [msg, setMsg] = useState('');
+  useEffect(() => { fetchAdmin('/api/creditos').then((r) => r.json()).then(setC).catch(() => {}); }, []);
+  if (!c || !c.habilitado) return null;
+  const recargar = async (monto) => {
+    setMsg('Conectando con MercadoPago…');
+    const r = await fetchAdmin('/api/creditos/recargar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ monto }) });
+    const d = await r.json();
+    if (d.ok && d.init_point) { window.location.href = d.init_point; return; }
+    setMsg(d.error || 'No se pudo iniciar la recarga.');
+  };
+  const bajo = c.saldo <= 1;
+  return (
+    <div className="card" style={{ maxWidth: 520, marginTop: 16, borderLeft: bajo ? '4px solid #e3a72f' : undefined }}>
+      <h2 className="mv-h">🤖 Créditos de IA</h2>
+      <p style={{ margin: '0 0 6px' }}>Saldo: <strong style={{ color: bajo ? '#b45309' : '#166534' }}>US$ {c.saldo.toFixed(2)}</strong></p>
+      <p style={{ fontSize: '.85rem', color: 'var(--muted)', margin: '0 0 12px' }}>
+        Con esto funciona el chatbot y el ChatVoice con IA. Cuando se agota, el asistente sigue respondiendo con lógica básica hasta que recargues.{bajo ? ' Te queda poco saldo.' : ''}
+      </p>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {(c.packs || [5, 10, 20]).map((p) => (
+          <button key={p} className="btn cel" onClick={() => recargar(p)}>Recargar US$ {p}</button>
+        ))}
+      </div>
+      {msg && <div style={{ fontSize: '.85rem', marginTop: 8, color: '#44535f' }}>{msg}</div>}
+    </div>
+  );
+}
 
 // Cuenta online (modo SaaS): registro con 14 días de prueba gratis y login.
 // Con sesión iniciada, agenda/clientes/dashboards pasan a operar sobre los
@@ -67,7 +98,9 @@ export default function Cuenta() {
             )}
             <button className="btn sec" onClick={salir}>Cerrar sesión</button>
           </div>
-        ) : (
+        ) : null}
+        {cuenta && <Creditos />}
+        {!cuenta && (
           <div className="card" style={{ maxWidth: 460 }}>
             <h2 className="mv-h">Usá MV desde el navegador, sin instalar nada</h2>
             <p style={{ fontSize: '.88rem', color: 'var(--muted)', margin: '0 0 12px' }}>

@@ -6,14 +6,15 @@
 // configuración (panel /config.html), así el mismo motor sirve para
 // cualquier rubro: electricista, plomero, abogado, psicólogo, etc.
 import Anthropic from '@anthropic-ai/sdk';
-import { chatearLLM, iaConfigurada, LLMError } from './llm.js';
+import { chatearLLM, iaConfigurada, LLMError, proveedorActivo } from './llm.js';
 import { cotizar, cotizarToolDef, listarOficios, monedaActiva, idiomaActivo } from './cotizador.js';
 import { NOMBRE_IDIOMA } from '../data/paises.js';
 import { geocodificar, geocodificarToolDef } from './geocoding.js';
 import { proponerHorarios, proponerHorariosToolDef, configuracionDescansoPorDefecto } from '../store/agenda.js';
 import { crearCita, confirmarDireccionCliente, buscarClientePorTelefono, agendaDelDiaConUbicacion } from '../store/trabajos.js';
 import { aprobacionRequerida, crearCotizacion, cotizacionDeSesion } from '../store/cotizaciones.js';
-import { cuentaActiva } from '../store/contextoCuenta.js';
+import { cuentaActiva, overridesActivos } from '../store/contextoCuenta.js';
+import { creditosHabilitado, haySaldo, consumir } from '../store/creditos.js';
 import { get as cfg, listarProfesionales } from '../store/config.js';
 import { registrarUso } from '../store/uso.js';
 
@@ -392,8 +393,21 @@ function responderDemo(sessionId, texto, canal) {
  * @param {string} texto — mensaje del cliente
  * @param {string} canal — 'webchat' | 'whatsapp' | 'telefono' | 'voz'
  */
+/** ¿La cuenta activa consume créditos del vendedor? (usa la key global, no la propia). */
+function modoCreditos() {
+  if (!creditosHabilitado() || cuentaActiva() === 'default') return false;
+  const ov = overridesActivos();
+  const campo = { claude: 'anthropicApiKey', openai: 'openaiApiKey', gemini: 'geminiApiKey' }[proveedorActivo()];
+  return !(ov && ov[campo]); // sin key propia → usa la del vendedor → consume créditos
+}
+
 export async function conversar(sessionId, texto, canal = 'webchat') {
   if (!iaConfigurada()) return responderDemo(sessionId, texto, canal);
+  // Modo créditos: si la cuenta se quedó sin saldo, atendemos con la lógica
+  // local (sin costo) en vez de cortar — el cliente nunca ve un error; el
+  // profesional recarga para volver a la IA completa.
+  const conCreditos = modoCreditos();
+  if (conCreditos && !(await haySaldo(cuentaActiva()))) return responderDemo(sessionId, texto, canal);
 
   // En el modo SaaS las sesiones se aíslan por cuenta: el mismo cliente
   // (wa:598...) hablando con dos profesionales distintos son DOS charlas.
@@ -412,7 +426,8 @@ export async function conversar(sessionId, texto, canal = 'webchat') {
         tools: construirTools(),
         mensajes
       });
-      registrarUso(respuesta.usage, canal);
+      registrarUso(respuesta.usage, cuentaActiva());
+      if (conCreditos) await consumir(cuentaActiva(), respuesta.usage);
 
       mensajes.push({ role: 'assistant', content: respuesta.content });
 

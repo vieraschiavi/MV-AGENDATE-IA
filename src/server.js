@@ -21,13 +21,14 @@ import * as trabajos from './store/trabajos.js';
 import * as cuentas from './store/cuentas.js';
 import * as cotizaciones from './store/cotizaciones.js';
 import { estadoPrueba, pruebaBloqueada, activarLicencia } from './store/prueba.js';
+import { estadoCreditos, acreditar, PACKS as PACKS_CREDITOS } from './store/creditos.js';
 import { runConCuenta } from './store/contextoCuenta.js';
 import { obtenerOverrides, guardarOverrides, configPublicaCuenta } from './store/configCuentas.js';
 import { fichaCitaHTML, agendaCSV, agendaExcelHTML, clientesCSV, clientesExcelHTML } from './exports/documentos.js';
 import { resumenUso, catalogoConEstado } from './store/uso.js';
 import * as lic from './store/licencias.js';
 import {
-  crearPreferencia, consultarPago, mercadopagoActivo,
+  crearPreferencia, crearPreferenciaCreditos, consultarPago, mercadopagoActivo,
   planRecurrente, consultarPreapproval, consultarPagoRecurrente
 } from './store/mercadopago.js';
 import * as suscripciones from './store/suscripciones.js';
@@ -625,7 +626,15 @@ app.post('/api/pago/mercadopago', async (req, res) => {
     const dataId = req.body?.data?.id || req.query['data.id'] || req.query.id;
     if (tipo === 'payment' && dataId) {
       const pago = await consultarPago(dataId);
-      if (pago && pago.status === 'approved' && pago.external_reference) lic.confirmarPago(pago.external_reference);
+      if (pago && pago.status === 'approved' && pago.external_reference) {
+        // Recarga de créditos de IA: "credito:{cuentaId}:{monto}".
+        if (String(pago.external_reference).startsWith('credito:')) {
+          const [, cuentaId, monto] = String(pago.external_reference).split(':');
+          await acreditar(cuentaId, Number(monto));
+        } else {
+          lic.confirmarPago(pago.external_reference);
+        }
+      }
     } else if ((tipo === 'preapproval' || tipo === 'subscription_preapproval') && dataId) {
       const pre = await consultarPreapproval(dataId);
       if (pre) await procesarPreapproval(pre);
@@ -649,6 +658,22 @@ app.get('/api/licencia/estado', async (req, res) => {
   const s = await suscripciones.obtenerSuscripcion(licencia);
   if (!s) return res.json({ ok: true, gestionada: false, activo: true });
   res.json({ ok: true, gestionada: true, activo: s.estado === 'activo', estado: s.estado, plan: s.plan });
+});
+
+// --- Créditos de IA de la cuenta SaaS (saldo + recarga por MercadoPago) ---
+app.get('/api/creditos', adminOCuenta, async (req, res) => {
+  if (req.cuentaId === 'default') return res.json({ habilitado: false });
+  res.json({ ...(await estadoCreditos(req.cuentaId)), packs: PACKS_CREDITOS });
+});
+app.post('/api/creditos/recargar', adminOCuenta, async (req, res) => {
+  if (req.cuentaId === 'default') return res.status(400).json({ ok: false, error: 'Solo cuentas online.' });
+  const monto = Number(req.body?.monto);
+  if (!PACKS_CREDITOS.includes(monto)) return res.status(400).json({ ok: false, error: 'Monto de recarga inválido.' });
+  if (!mercadopagoActivo()) return res.status(503).json({ ok: false, error: 'MercadoPago no está activo (falta configurar el token del vendedor).' });
+  const base = `${req.protocol}://${req.get('host')}`;
+  const pago = await crearPreferenciaCreditos({ cuentaId: req.cuentaId, monto, email: req.cuentaEmail }, base);
+  if (!pago.ok || !pago.init_point) return res.status(502).json({ ok: false, error: pago.error || 'No pude iniciar la recarga.' });
+  res.json({ ok: true, init_point: pago.init_point });
 });
 
 // --- Prueba gratis de la copia descargada (banner + activación de licencia) ---

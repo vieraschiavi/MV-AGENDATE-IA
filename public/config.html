@@ -110,6 +110,16 @@
     </div>
     <div class="hint">Se guarda en tu servidor, nunca se expone al cliente. Al guardar con una key válida, el chatbot pasa de "modo demo" a IA real automáticamente. <strong>Copilot</strong> no ofrece una API general para este uso; si trabajás con modelos de Microsoft/Azure, usá la opción OpenAI con tu endpoint.</div>
 
+    <h2 style="margin-top:22px;">💳 Créditos de IA (para vender cuentas online)</h2>
+    <div class="sub">Si vendés cuentas SaaS, con TU key le vendés "créditos" a cada cuenta: usan tu IA y cada mensaje descuenta su saldo. Cuando se agota, la IA se corta hasta que recarguen por MercadoPago. (Si preferís que cada cuenta traiga su propia key, desactivalo.)</div>
+    <div class="row">
+      <div><label>Modo créditos</label><select id="creditosSaas"><option value="">Activado (vendés créditos)</option><option value="0">Desactivado (cada cuenta trae su key)</option></select></div>
+      <div><label>Margen sobre el costo (×)</label><input id="creditosMargen" type="number" step="0.1" placeholder="2.5"></div>
+    </div>
+    <label>Bono gratis de bienvenida por cuenta (US$)</label>
+    <input id="creditosBono" type="number" step="1" placeholder="3">
+    <div class="hint">El saldo se descuenta al costo real de la IA × el margen. Ej: con margen 2.5, US$ 10 de recarga ≈ US$ 4 de costo real = cientos de mensajes. Ajustá según tu estrategia.</div>
+
     <h2 style="margin-top:22px;">🌎 País y moneda</h2>
     <div class="sub">Elegí tu país: la moneda de cotización y facturación se ajusta sola (o facturá en USD si preferís). El estimador de impuestos y el sugeridor de precios de mercado también usan esto.</div>
     <div class="row">
@@ -301,7 +311,7 @@
 
 <script>
 const $ = (s) => document.querySelector(s);
-const CAMPOS = ['proveedorIA','anthropicApiKey','openaiApiKey','geminiApiKey','nombreProfesional','oficioProfesional','pais','moneda','aprobarCotizaciones','agenciaNombre','agenciaTelefono','logoUrl','horarioInicio','horarioFin','almuerzoInicio','almuerzoFin','diasLibres','whatsappToken','whatsappPhoneId','whatsappVerifyToken','twilioAccountSid','twilioAuthToken','twilioNumero','deepgramApiKey','elevenlabsApiKey','elevenlabsVoiceId','crmWebhookUrl','mercadopagoToken','demoLimite','demoMaxUsos','licenciaLocal'];
+const CAMPOS = ['proveedorIA','anthropicApiKey','openaiApiKey','geminiApiKey','creditosSaas','creditosMargen','creditosBono','nombreProfesional','oficioProfesional','pais','moneda','aprobarCotizaciones','agenciaNombre','agenciaTelefono','logoUrl','horarioInicio','horarioFin','almuerzoInicio','almuerzoFin','diasLibres','whatsappToken','whatsappPhoneId','whatsappVerifyToken','twilioAccountSid','twilioAuthToken','twilioNumero','deepgramApiKey','elevenlabsApiKey','elevenlabsVoiceId','crmWebhookUrl','mercadopagoToken','demoLimite','demoMaxUsos','licenciaLocal'];
 
 // Combo de oficios (cargado desde el catálogo del cotizador) + chips de días libres.
 const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];

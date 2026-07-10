@@ -60,6 +60,13 @@ const costo = (input, output) => {
   return Math.round((input / 1e6 * t.inMusd + output / 1e6 * t.outMusd) * 100) / 100;
 };
 
+/** Costo en USD (crudo, sin margen) de una llamada de IA a partir de su usage. */
+export function costoDeLlamada(usage) {
+  if (!usage) return 0;
+  const t = tarifas();
+  return (usage.input_tokens || 0) / 1e6 * t.inMusd + (usage.output_tokens || 0) / 1e6 * t.outMusd;
+}
+
 /** Resumen de uso + costo estimado (para el panel del vendedor). */
 export function resumenUso() {
   cargar();
