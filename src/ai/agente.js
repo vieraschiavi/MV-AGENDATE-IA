@@ -297,13 +297,13 @@ const norm = (s) => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-
 
 // Sinónimos coloquiales → clave de trabajo (por oficio, solo si esa clave existe).
 const SINONIMOS = {
-  instalacion_toma: ['toma', 'tomacorriente', 'tomacorrientes', 'enchufe', 'enchufes', 'zocalo'],
-  instalacion_luminaria: ['luz', 'luces', 'lampara', 'foco', 'luminaria', 'artefacto', 'plafon', 'spot', 'aplique', 'dicroica'],
-  cambio_tablero: ['tablero', 'termica', 'llave termica', 'disyuntor', 'breaker', 'diferencial'],
-  cortocircuito: ['corto', 'cortocircuito', 'chispa', 'se corta la luz', 'salta la llave', 'no hay luz', 'huele a quemado'],
-  diagnostico: ['diagnostico', 'revisar', 'revision', 'ver que pasa', 'presupuesto general'],
-  destape: ['destap', 'tapado', 'tapada', 'canaleta'],
-  perdida: ['perdida', 'gotea', 'gotera', 'fuga', 'pierde agua'],
+  instalacion_toma: ['toma', 'tomacorriente', 'tomacorrientes', 'enchufe', 'enchufes', 'zocalo', 'tomada', 'tomadas'],
+  instalacion_luminaria: ['luz', 'luces', 'lampara', 'foco', 'luminaria', 'artefacto', 'plafon', 'spot', 'aplique', 'dicroica', 'lampada', 'luminaria', 'luminarias', 'lustre'],
+  cambio_tablero: ['tablero', 'termica', 'llave termica', 'disyuntor', 'breaker', 'diferencial', 'quadro', 'disjuntor'],
+  cortocircuito: ['corto', 'cortocircuito', 'chispa', 'se corta la luz', 'salta la llave', 'no hay luz', 'huele a quemado', 'curto', 'curto-circuito', 'faisca', 'sem luz', 'cheiro de queimado'],
+  diagnostico: ['diagnostico', 'revisar', 'revision', 'ver que pasa', 'presupuesto general', 'diagnostico', 'revisao', 'orcamento geral'],
+  destape: ['destap', 'tapado', 'tapada', 'canaleta', 'entupido', 'entupida', 'desentupir'],
+  perdida: ['perdida', 'gotea', 'gotera', 'fuga', 'pierde agua', 'vazamento', 'goteira', 'pinga', 'vaza agua'],
 };
 
 /** Detecta el trabajo pedido dentro del catálogo del oficio (sinónimos + tokens del nombre). */
@@ -319,10 +319,10 @@ function detectarTrabajo(oficio, texto) {
   return null;
 }
 
-const tieneDireccion = (t) => /\d{2,}/.test(t) && /[a-záéíóú]{3,}/i.test(t) && !/(cuanto|precio|cuesta|sale)/i.test(t);
-const quiereHorario = (t) => /(turno|horario|agend|cita|cuando|dispon|manana|mañana|semana|lunes|martes|miercoles|jueves|viernes|sabado|hoy|tarde)/.test(norm(t));
-const confirma = (t) => /(^| )(si|dale|listo|confirm|de una|perfecto|va|ok|okey)( |$|\.|,|!)/.test(norm(t));
-const saluda = (t) => /(hola|buenas|buen dia|buenos dias|buenas tardes|buenas noches|que tal)/.test(norm(t));
+const tieneDireccion = (t) => /\d{2,}/.test(t) && /[a-záéíóúãõç]{3,}/i.test(t) && !/(cuanto|precio|cuesta|sale|quanto|preco|custa)/i.test(t);
+const quiereHorario = (t) => /(turno|horario|agend|cita|cuando|dispon|manana|mañana|semana|lunes|martes|miercoles|jueves|viernes|sabado|hoy|tarde|horario|marcar|quando|disponivel|amanha|segunda|terca|quarta|quinta|sexta|sabado|hoje)/.test(norm(t));
+const confirma = (t) => /(^| )(si|dale|listo|confirm|de una|perfecto|va|ok|okey|sim|isso|fechado|combinado|beleza|pode ser)( |$|\.|,|!)/.test(norm(t));
+const saluda = (t) => /(hola|buenas|buen dia|buenos dias|buenas tardes|buenas noches|que tal|ola|oi|bom dia|boa tarde|boa noite|tudo bem)/.test(norm(t));
 
 function responderDemo(sessionId, texto, canal) {
   const prof = listarProfesionales()[0];
@@ -330,7 +330,9 @@ function responderDemo(sessionId, texto, canal) {
   const propio = oficios.find((o) => o.clave === prof.oficio) || oficios[0];
   const st = demoSesiones.get(sessionId) || {};
   const t = norm(texto);
-  const nombreServicio = (clave) => propio.trabajos.find((x) => x.clave === clave)?.nombre || 'el trabajo';
+  const pt = idiomaActivo() === 'pt';
+  const L = (es, ptt) => (pt ? ptt : es); // elige la frase según el idioma del país configurado
+  const nombreServicio = (clave) => propio.trabajos.find((x) => x.clave === clave)?.nombre || L('el trabajo', 'o serviço');
   const cotizarDe = (clave) => cotizar({ oficio: propio.clave, trabajo: clave, distanciaKm: 5 });
   const guardar = () => demoSesiones.set(sessionId, st);
 
@@ -344,45 +346,68 @@ function responderDemo(sessionId, texto, canal) {
   // Helper: proponer horarios (cuando ya sabemos el trabajo).
   const proponerSlots = () => {
     st.propuso = true; guardar();
-    const dir = st.direccion ? ` en ${st.direccion}` : '';
-    return `${BADGE}Genial. Para "${nombreServicio(st.trabajo)}"${dir} tengo estos horarios: mañana 9:30–10:30, mañana 15:00–16:00 o pasado 11:00–12:00. ¿Cuál te queda mejor? (Los calculamos considerando el traslado hasta tu zona.)`;
+    const dir = st.direccion ? L(` en ${st.direccion}`, ` em ${st.direccion}`) : '';
+    return L(
+      `${BADGE}Genial. Para "${nombreServicio(st.trabajo)}"${dir} tengo estos horarios: mañana 9:30–10:30, mañana 15:00–16:00 o pasado 11:00–12:00. ¿Cuál te queda mejor? (Los calculamos considerando el traslado hasta tu zona.)`,
+      `${BADGE}Ótimo. Para "${nombreServicio(st.trabajo)}"${dir} tenho estes horários: amanhã 9:30–10:30, amanhã 15:00–16:00 ou depois de amanhã 11:00–12:00. Qual fica melhor? (Calculamos considerando o deslocamento até a sua região.)`
+    );
   };
 
   // Confirmó un horario ya propuesto → cerramos (demo).
   if (st.propuso && confirma(texto)) {
     demoSesiones.delete(sessionId);
-    return `${BADGE}¡Listo! Quedó agendado ✅ Te llega la confirmación por WhatsApp y, si el profesional se demora, te avisamos antes. ¡Gracias! (Demo — en la versión real esto queda cargado en la agenda y el CRM.)`;
+    return L(
+      `${BADGE}¡Listo! Quedó agendado ✅ Te llega la confirmación por WhatsApp y, si el profesional se demora, te avisamos antes. ¡Gracias! (Demo — en la versión real esto queda cargado en la agenda y el CRM.)`,
+      `${BADGE}Pronto! Ficou agendado ✅ Você recebe a confirmação pelo WhatsApp e, se o profissional atrasar, avisamos antes. Obrigado! (Demo — na versão real isto fica registrado na agenda e no CRM.)`
+    );
   }
 
   // Pidió/mencionó un trabajo → cotizamos y encaminamos hacia el horario.
-  if (trabajo || (st.trabajo && /(cuanto|precio|presupuesto|cotiz|cuesta|sale)/.test(t))) {
+  if (trabajo || (st.trabajo && /(cuanto|precio|presupuesto|cotiz|cuesta|sale|quanto|preco|orcamento|custa)/.test(t))) {
     const r = cotizarDe(st.trabajo);
     st.cotizado = true; guardar();
-    const sig = st.direccion ? ' ¿Te propongo horarios?' : ' Pasame tu dirección y qué día te viene bien, y te doy 2-3 horarios.';
-    return `${BADGE}"${r.trabajo}" ronda los ${r.simbolo || '$'}${r.total} (${r.moneda}), con una duración estimada de ${r.duracion_estimada_min} min. El precio final lo confirma ${prof.nombre}.${sig}`;
+    const sig = st.direccion
+      ? L(' ¿Te propongo horarios?', ' Quer que eu proponha horários?')
+      : L(' Pasame tu dirección y qué día te viene bien, y te doy 2-3 horarios.', ' Me passe seu endereço e que dia fica bom, e te dou 2-3 horários.');
+    return L(
+      `${BADGE}"${r.trabajo}" ronda los ${r.simbolo || '$'}${r.total} (${r.moneda}), con una duración estimada de ${r.duracion_estimada_min} min. El precio final lo confirma ${prof.nombre}.${sig}`,
+      `${BADGE}"${r.trabajo}" fica em torno de ${r.simbolo || '$'}${r.total} (${r.moneda}), com duração estimada de ${r.duracion_estimada_min} min. O preço final é confirmado por ${prof.nombre}.${sig}`
+    );
   }
 
   // Pidió horario: si ya sabemos el trabajo, proponemos; si no, lo pedimos.
   if (quiereHorario(texto)) {
     if (st.trabajo) return proponerSlots();
     guardar();
-    return `${BADGE}Con gusto coordino. ¿Qué trabajo necesitás? (por ejemplo: instalar un tomacorriente, colocar una luminaria, revisar el tablero). Con eso y tu dirección te propongo horarios.`;
+    return L(
+      `${BADGE}Con gusto coordino. ¿Qué trabajo necesitás? (por ejemplo: instalar un tomacorriente, colocar una luminaria, revisar el tablero). Con eso y tu dirección te propongo horarios.`,
+      `${BADGE}Com prazer coordeno. Qual serviço você precisa? (por exemplo: instalar uma tomada, colocar uma luminária, revisar o quadro). Com isso e seu endereço te proponho horários.`
+    );
   }
 
   // Dio dirección sin trabajo aún.
   if (st.direccion && !st.trabajo) {
     guardar();
-    return `${BADGE}¡Anotada la dirección! ¿Qué necesitás que haga ${prof.nombre}? Contame el trabajo y te paso presupuesto y horarios.`;
+    return L(
+      `${BADGE}¡Anotada la dirección! ¿Qué necesitás que haga ${prof.nombre}? Contame el trabajo y te paso presupuesto y horarios.`,
+      `${BADGE}Endereço anotado! O que você precisa que ${prof.nombre} faça? Me conte o serviço e te passo orçamento e horários.`
+    );
   }
 
   if (saluda(texto) || !texto.trim()) {
-    return `${BADGE}¡Hola! Soy el asistente de ${prof.nombre} (${propio?.nombre || prof.oficio}). Contame qué necesitás —por ejemplo "instalar un tomacorriente"— y te paso presupuesto y horarios. 😊`;
+    return L(
+      `${BADGE}¡Hola! Soy el asistente de ${prof.nombre} (${propio?.nombre || prof.oficio}). Contame qué necesitás —por ejemplo "instalar un tomacorriente"— y te paso presupuesto y horarios. 😊`,
+      `${BADGE}Olá! Sou o assistente de ${prof.nombre} (${propio?.nombre || prof.oficio}). Me conte o que você precisa —por exemplo "instalar uma tomada"— e te passo orçamento e horários. 😊`
+    );
   }
 
   // No entendimos el trabajo: ofrecemos ejemplos reales del catálogo.
   const ejemplos = propio.trabajos.slice(0, 3).map((x) => `“${x.nombre}”`).join(', ');
   guardar();
-  return `${BADGE}Puedo ayudarte con trabajos como ${ejemplos}. Decime cuál necesitás (o contame el problema) y te paso presupuesto y horarios.`;
+  return L(
+    `${BADGE}Puedo ayudarte con trabajos como ${ejemplos}. Decime cuál necesitás (o contame el problema) y te paso presupuesto y horarios.`,
+    `${BADGE}Posso te ajudar com serviços como ${ejemplos}. Me diga qual você precisa (ou conte o problema) e te passo orçamento e horários.`
+  );
 }
 
 // ---------- Conversación con Claude ----------

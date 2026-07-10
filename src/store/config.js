@@ -5,7 +5,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { overridesActivos } from './contextoCuenta.js';
+import { overridesActivos, paisDemoActivo } from './contextoCuenta.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const FILE = join(process.env.VERCEL ? '/tmp/mvdata' : join(here, '../../data'), 'config.json');
@@ -131,6 +131,9 @@ const NUNCA_OVERRIDE = new Set(['adminKey', 'mercadopagoToken', 'jwtSecret', 'li
 export function get(clave) {
   const ov = overridesActivos();
   if (ov && !NUNCA_OVERRIDE.has(clave) && ov[clave] !== undefined && ov[clave] !== '') return ov[clave];
+  // Demo pública multiidioma: el visitante eligió un país → forzamos solo el
+  // 'pais' (idioma/moneda) para esa request, sin cuenta SaaS de por medio.
+  if (clave === 'pais') { const pd = paisDemoActivo(); if (pd) return pd; }
   return cargar()[clave] || '';
 }
 

@@ -27,3 +27,18 @@ export function overridesActivos() {
   const ctx = als.getStore();
   return ctx && ctx.cuentaId !== 'default' ? ctx.overrides : null;
 }
+
+/**
+ * Ejecuta fn forzando el país (y por lo tanto el idioma/moneda) SOLO para la
+ * demo pública, sin tocar el modelo de cuentas: cuentaActiva() sigue siendo
+ * 'default'. Sirve para que el visitante de la web elija es/pt y el asistente
+ * de demostración responda en ese idioma con la moneda de ese país.
+ */
+export function runConDemoPais(pais, fn) {
+  return als.run({ cuentaId: 'default', overrides: {}, paisDemo: pais }, fn);
+}
+
+/** País forzado por la demo pública (null si no hay ninguno en contexto). */
+export function paisDemoActivo() {
+  return als.getStore()?.paisDemo || null;
+}

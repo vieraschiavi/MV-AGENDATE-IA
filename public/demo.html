@@ -43,15 +43,21 @@
 <body>
 
 <header>
-  <span style="display:flex;align-items:center;gap:10px;"><img src="/logo-mv.svg" alt="MV" style="width:34px;height:34px;border-radius:8px;"><strong>MV Agendate IA — Demo en vivo</strong></span>
-  <span><a href="/">← Volver</a></span>
+  <span style="display:flex;align-items:center;gap:10px;"><img src="/logo-mv.svg" alt="MV" style="width:34px;height:34px;border-radius:8px;"><strong id="hTitulo">MV Agendate IA — Demo en vivo</strong></span>
+  <span style="display:flex;align-items:center;gap:12px;">
+    <select id="selIdioma" aria-label="Idioma / Idioma" style="padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;font-size:15px;">
+      <option value="es">🇺🇾 Español</option>
+      <option value="pt">🇧🇷 Português</option>
+    </select>
+    <a id="hVolver" href="/">← Volver</a>
+  </span>
 </header>
 
 <main>
   <div class="col">
-    <h2>💬 Hablá con el asistente del profesional</h2>
+    <h2 id="hChat">💬 Hablá con el asistente del profesional</h2>
     <div id="mensajes"></div>
-    <div class="chips">
+    <div class="chips" id="chips">
       <span onclick="sugerir(this)">¿Cuánto sale instalar un tomacorriente?</span>
       <span onclick="sugerir(this)">Necesito un electricista para mañana</span>
       <span onclick="sugerir(this)">¿Tenés horarios esta semana?</span>
@@ -63,14 +69,14 @@
   </div>
 
   <div class="col">
-    <h2>💰 Cotizador instantáneo</h2>
+    <h2 id="hCot">💰 Cotizador instantáneo</h2>
     <form class="cot" id="formCot">
-      <div><label>Oficio</label><select name="oficio" id="selOficio"></select></div>
-      <div><label>Trabajo</label><select name="trabajo" id="selTrabajo"></select></div>
-      <div><label>Distancia estimada (km)</label><input name="distanciaKm" type="number" value="5" /></div>
-      <div><label>Urgencia</label><select name="urgencia"><option value="normal">Normal (agendado)</option><option value="mismo_dia">Mismo día</option><option value="urgente">Urgente</option></select></div>
-      <div class="full"><label>Horario</label><select name="horario"><option value="habil">Horario hábil</option><option value="nocturno">Nocturno (después de 20h)</option><option value="feriado">Feriado</option></select></div>
-      <div class="full"><button type="submit" style="width:100%;">Cotizar</button></div>
+      <div><label id="lOficio">Oficio</label><select name="oficio" id="selOficio"></select></div>
+      <div><label id="lTrabajo">Trabajo</label><select name="trabajo" id="selTrabajo"></select></div>
+      <div><label id="lDistancia">Distancia estimada (km)</label><input name="distanciaKm" type="number" value="5" /></div>
+      <div><label id="lUrgencia">Urgencia</label><select name="urgencia"><option value="normal">Normal (agendado)</option><option value="mismo_dia">Mismo día</option><option value="urgente">Urgente</option></select></div>
+      <div class="full"><label id="lHorario">Horario</label><select name="horario"><option value="habil">Horario hábil</option><option value="nocturno">Nocturno (después de 20h)</option><option value="feriado">Feriado</option></select></div>
+      <div class="full"><button type="submit" id="btnCotizar" style="width:100%;">Cotizar</button></div>
     </form>
     <div id="resultado"></div>
     <div id="horarios"></div>
@@ -81,6 +87,56 @@
 const $ = (s) => document.querySelector(s);
 let sessionId = null;
 
+// --- Multiidioma es/pt (la web y la demo entienden ambos, igual que el chatbot) ---
+const I18N = {
+  es: {
+    titulo: 'MV Agendate IA — Demo en vivo', volver: '← Volver',
+    chat: '💬 Hablá con el asistente del profesional', cot: '💰 Cotizador instantáneo',
+    oficio: 'Oficio', trabajo: 'Trabajo', distancia: 'Distancia estimada (km)',
+    urgencia: 'Urgencia', horario: 'Horario', cotizar: 'Cotizar', enviar: 'Enviar',
+    placeholder: 'Escribí tu mensaje...', escribiendo: 'Escribiendo…',
+    saludo: '¡Hola! Soy el asistente virtual del profesional 👋 Contame qué necesitás y te paso presupuesto y horarios disponibles.',
+    errconn: 'No pude conectar con el servidor.',
+    chips: ['¿Cuánto sale instalar un tomacorriente?', 'Necesito un electricista para mañana', '¿Tenés horarios esta semana?'],
+    duracion: 'Duración estimada', minutos: 'minutos', propuestos: 'Horarios propuestos para mañana:', traslado: 'traslado'
+  },
+  pt: {
+    titulo: 'MV Agendate IA — Demo ao vivo', volver: '← Voltar',
+    chat: '💬 Fale com o assistente do profissional', cot: '💰 Orçamento instantâneo',
+    oficio: 'Profissão', trabajo: 'Serviço', distancia: 'Distância estimada (km)',
+    urgencia: 'Urgência', horario: 'Horário', cotizar: 'Orçar', enviar: 'Enviar',
+    placeholder: 'Escreva sua mensagem...', escribiendo: 'Escrevendo…',
+    saludo: 'Olá! Sou o assistente virtual do profissional 👋 Me conte o que você precisa e te passo orçamento e horários disponíveis.',
+    errconn: 'Não consegui conectar ao servidor.',
+    chips: ['Quanto custa instalar uma tomada?', 'Preciso de um eletricista para amanhã', 'Tem horários esta semana?'],
+    duracion: 'Duração estimada', minutos: 'minutos', propuestos: 'Horários propostos para amanhã:', traslado: 'deslocamento'
+  }
+};
+let idioma = localStorage.getItem('mvIdioma')
+  || ((navigator.language || '').toLowerCase().startsWith('pt') ? 'pt' : 'es');
+if (!I18N[idioma]) idioma = 'es';
+const T = () => I18N[idioma];
+
+function aplicarIdioma() {
+  const t = T();
+  document.documentElement.lang = idioma === 'pt' ? 'pt-BR' : 'es';
+  $('#hTitulo').textContent = t.titulo;
+  $('#hVolver').textContent = t.volver;
+  $('#hChat').textContent = t.chat;
+  $('#hCot').textContent = t.cot;
+  $('#lOficio').textContent = t.oficio;
+  $('#lTrabajo').textContent = t.trabajo;
+  $('#lDistancia').textContent = t.distancia;
+  $('#lUrgencia').textContent = t.urgencia;
+  $('#lHorario').textContent = t.horario;
+  $('#btnCotizar').textContent = t.cotizar;
+  $('#btnEnviar').textContent = t.enviar;
+  $('#entrada').placeholder = t.placeholder;
+  const chips = document.querySelectorAll('#chips span');
+  t.chips.forEach((c, i) => { if (chips[i]) chips[i].textContent = c; });
+  $('#selIdioma').value = idioma;
+}
+
 function agregar(texto, quien) {
   const div = document.createElement('div');
   div.className = 'msg ' + quien;
@@ -90,7 +146,18 @@ function agregar(texto, quien) {
   return div;
 }
 
-agregar('¡Hola! Soy el asistente virtual del profesional 👋 Contame qué necesitás y te paso presupuesto y horarios disponibles.', 'bot');
+aplicarIdioma();
+agregar(T().saludo, 'bot');
+
+$('#selIdioma').addEventListener('change', (e) => {
+  idioma = I18N[e.target.value] ? e.target.value : 'es';
+  localStorage.setItem('mvIdioma', idioma);
+  aplicarIdioma();
+  // Reiniciamos la charla para que el saludo y el hilo queden en el nuevo idioma.
+  sessionId = null;
+  $('#mensajes').innerHTML = '';
+  agregar(T().saludo, 'bot');
+});
 
 function sugerir(el) { $('#entrada').value = el.textContent; $('#formChat').requestSubmit(); }
 
@@ -101,18 +168,18 @@ $('#formChat').addEventListener('submit', async (e) => {
   agregar(texto, 'user');
   $('#entrada').value = '';
   $('#btnEnviar').disabled = true;
-  const pensando = agregar('Escribiendo…', 'bot');
+  const pensando = agregar(T().escribiendo, 'bot');
   try {
     const r = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mensaje: texto, sessionId })
+      body: JSON.stringify({ mensaje: texto, sessionId, idioma })
     });
     const data = await r.json();
     sessionId = data.sessionId || sessionId;
     pensando.textContent = data.respuesta || data.error || 'Error inesperado.';
   } catch {
-    pensando.textContent = 'No pude conectar con el servidor.';
+    pensando.textContent = T().errconn;
   } finally {
     $('#btnEnviar').disabled = false;
     $('#entrada').focus();
@@ -146,8 +213,8 @@ $('#formCot').addEventListener('submit', async (e) => {
   const sim = d.simbolo || '$';
   const etiqueta = d.etiqueta_mano_obra || 'Mano de obra';
   caja.innerHTML =
-    '<div class="rango">' + sim + ' ' + d.total.toLocaleString('es-UY') + ' <span style="font-size:.9rem;color:#5a6b7c;">' + (d.moneda || '') + '</span></div>' +
-    'Duración estimada: <strong>' + d.duracion_estimada_min + ' minutos</strong>' +
+    '<div class="rango">' + sim + ' ' + d.total.toLocaleString(idioma === 'pt' ? 'pt-BR' : 'es-UY') + ' <span style="font-size:.9rem;color:#5a6b7c;">' + (d.moneda || '') + '</span></div>' +
+    T().duracion + ': <strong>' + d.duracion_estimada_min + ' ' + T().minutos + '</strong>' +
     '<small>' + etiqueta + ': ' + sim + d.desglose.mano_obra +
       (d.tipo_cobro === 'honorarios' && !d.desglose.materiales ? '' : ' · Materiales: ' + sim + d.desglose.materiales) +
       ' · Traslado: ' + sim + d.desglose.traslado + '</small>' +
@@ -166,7 +233,7 @@ $('#formCot').addEventListener('submit', async (e) => {
     })
   })).json();
   $('#horarios').innerHTML = propuestos.propuestas?.length
-    ? '<strong>Horarios propuestos para mañana:</strong>' + propuestos.propuestas.map(p => `<div class="horario">🕐 ${p.inicio} - ${p.fin} (traslado: ${p.traslado_previo_min + p.traslado_posterior_min} min)</div>`).join('')
+    ? '<strong>' + T().propuestos + '</strong>' + propuestos.propuestas.map(p => `<div class="horario">🕐 ${p.inicio} - ${p.fin} (${T().traslado}: ${p.traslado_previo_min + p.traslado_posterior_min} min)</div>`).join('')
     : (propuestos.motivo_descarte ? `<div class="horario">${propuestos.motivo_descarte}</div>` : '');
 });
 </script>

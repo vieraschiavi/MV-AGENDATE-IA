@@ -22,7 +22,7 @@ import * as cuentas from './store/cuentas.js';
 import * as cotizaciones from './store/cotizaciones.js';
 import { estadoPrueba, pruebaBloqueada, activarLicencia } from './store/prueba.js';
 import { estadoCreditos, acreditar, PACKS as PACKS_CREDITOS } from './store/creditos.js';
-import { runConCuenta } from './store/contextoCuenta.js';
+import { runConCuenta, runConDemoPais } from './store/contextoCuenta.js';
 import { obtenerOverrides, guardarOverrides, configPublicaCuenta } from './store/configCuentas.js';
 import { fichaCitaHTML, agendaCSV, agendaExcelHTML, clientesCSV, clientesExcelHTML } from './exports/documentos.js';
 import { resumenUso, catalogoConEstado } from './store/uso.js';
@@ -135,7 +135,14 @@ app.post('/api/chat', async (req, res) => {
     trabajos.notificarDemo({ canal: 'chat', visitante: visitante(req), restantes: c.restantes, detalle: mensaje });
   }
   try {
-    const respuesta = await conversar(sid, mensaje.slice(0, 2000), 'webchat');
+    // Demo pública multiidioma: el visitante puede pedir el asistente en
+    // portugués (idioma=pt → país Brasil) sin afectar la config del vendedor.
+    // Solo aplica a la demo (cuenta 'default'); una cuenta SaaS usa su país.
+    const idiomaPedido = String(req.body?.idioma || '').toLowerCase();
+    const correr = () => conversar(sid, mensaje.slice(0, 2000), 'webchat');
+    const respuesta = (req.cuentaId === 'default' && idiomaPedido === 'pt')
+      ? await runConDemoPais('br', correr)
+      : await correr();
     res.json({ respuesta, sessionId: sid, demo: enModoDemo(), restantes: res.locals.restantes });
   } catch (err) {
     console.error('[api/chat]', err);

@@ -202,24 +202,28 @@
 <div class="nav">
   <div class="marca"><img src="/logo-mv.svg" alt="MV">MV <span>Agendate IA</span></div>
   <div class="links">
-    <a href="#video">Video</a><a href="#como-funciona">Cómo funciona</a><a href="#precios">Planes</a><a href="/instalar.html">Instalar</a><a href="/demo.html">Demo</a>
-    <a class="cta" href="/instalar.html">Probar gratis</a>
+    <a href="#video" data-i18n="navVideo">Video</a><a href="#como-funciona" data-i18n="navComo">Cómo funciona</a><a href="#precios" data-i18n="navPlanes">Planes</a><a href="/instalar.html" data-i18n="navInstalar">Instalar</a><a href="/demo.html" data-i18n="navDemo">Demo</a>
+    <a class="cta" href="/instalar.html" data-i18n="navProbar">Probar gratis</a>
+    <select id="selIdioma" aria-label="Idioma / Idioma" style="margin-left:8px;padding:5px 7px;border-radius:8px;border:1px solid rgba(255,255,255,.35);background:transparent;color:inherit;font-size:14px;">
+      <option value="es">🇺🇾 ES</option>
+      <option value="pt">🇧🇷 PT</option>
+    </select>
   </div>
 </div>
 
 <div class="hero">
   <div>
-    <div class="kicker">WhatsApp · Teléfono · Agenda</div>
-    <h1>Que tus clientes agenden y paguen <em>sin que atiendas el teléfono</em></h1>
-    <p class="lead">MV Agendate IA responde por WhatsApp o por llamada, en tu nombre y con voz rioplatense, cotiza cada trabajo con tu propia lista de precios y arma la agenda considerando los traslados reales entre citas y tus horarios de descanso. Si te atrasás, le avisa solo al próximo cliente.</p>
+    <div class="kicker" data-i18n="heroKicker">WhatsApp · Teléfono · Agenda</div>
+    <h1 data-i18n-html="heroH1">Que tus clientes agenden y paguen <em>sin que atiendas el teléfono</em></h1>
+    <p class="lead" data-i18n="heroLead">MV Agendate IA responde por WhatsApp o por llamada, en tu nombre y con voz rioplatense, cotiza cada trabajo con tu propia lista de precios y arma la agenda considerando los traslados reales entre citas y tus horarios de descanso. Si te atrasás, le avisa solo al próximo cliente.</p>
     <div class="botones">
-      <a class="b1" href="/instalar.html">📲 Instalá la app gratis · probá 3 días</a>
-      <a class="b2" href="/demo.html">▶ Ver la demo</a>
+      <a class="b1" href="/instalar.html" data-i18n="heroB1">📲 Instalá la app gratis · probá 3 días</a>
+      <a class="b2" href="/demo.html" data-i18n="heroB2">▶ Ver la demo</a>
     </div>
     <div class="stats">
-      <div><b>18+</b><span>oficios preconfigurados, 100% editables</span></div>
-      <div><b>1 pago</b><span>sin mensualidades del software</span></div>
-      <div><b>24/7</b><span>respuesta inmediata a cada cliente</span></div>
+      <div><b>18+</b><span data-i18n="stat1">oficios preconfigurados, 100% editables</span></div>
+      <div><b data-i18n="stat2b">1 pago</b><span data-i18n="stat2">sin mensualidades del software</span></div>
+      <div><b>24/7</b><span data-i18n="stat3">respuesta inmediata a cada cliente</span></div>
     </div>
   </div>
   <div class="mock">
@@ -234,9 +238,9 @@
 <section id="video" class="video-sec">
   <div class="inner">
     <div class="cabecera">
-      <div class="kicker">Miralo en 1 minuto</div>
-      <h2>Así trabaja MV Agendate IA</h2>
-      <p class="lead">Cotización con IA, agenda optimizada por traslados, fichas de trabajo, CRM y dashboards — todo con voz rioplatense.</p>
+      <div class="kicker" data-i18n="vidKicker">Miralo en 1 minuto</div>
+      <h2 data-i18n="vidH2">Así trabaja MV Agendate IA</h2>
+      <p class="lead" data-i18n="vidLead">Cotización con IA, agenda optimizada por traslados, fichas de trabajo, CRM y dashboards — todo con voz rioplatense.</p>
     </div>
     <div class="video-wrap">
       <video controls preload="metadata" poster="/video/poster.jpg" playsinline>
@@ -250,23 +254,23 @@
 <section id="como-funciona" class="como">
   <div class="inner">
     <div class="cabecera">
-      <div class="kicker">De la consulta al cobro</div>
-      <h2>Un mismo flujo, de punta a punta</h2>
-      <p class="lead">Elegí un paso para ver qué hace el asistente en cada momento de la conversación con tu cliente.</p>
+      <div class="kicker" data-i18n="comoKicker">De la consulta al cobro</div>
+      <h2 data-i18n="comoH2">Un mismo flujo, de punta a punta</h2>
+      <p class="lead" data-i18n="comoLead">Elegí un paso para ver qué hace el asistente en cada momento de la conversación con tu cliente.</p>
     </div>
 
     <div class="pasos" role="tablist" aria-label="Pasos del flujo de MV Agendate IA">
-      <button class="paso-btn on" data-paso="1" role="tab" aria-selected="true"><span class="n">1</span> Te escribe o te llama</button>
-      <button class="paso-btn" data-paso="2" role="tab" aria-selected="false"><span class="n">2</span> Cotiza al instante</button>
-      <button class="paso-btn" data-paso="3" role="tab" aria-selected="false"><span class="n">3</span> Propone horario</button>
-      <button class="paso-btn" data-paso="4" role="tab" aria-selected="false"><span class="n">4</span> Vos ves todo en el panel</button>
+      <button class="paso-btn on" data-paso="1" role="tab" aria-selected="true"><span class="n">1</span> <span data-i18n="paso1">Te escribe o te llama</span></button>
+      <button class="paso-btn" data-paso="2" role="tab" aria-selected="false"><span class="n">2</span> <span data-i18n="paso2">Cotiza al instante</span></button>
+      <button class="paso-btn" data-paso="3" role="tab" aria-selected="false"><span class="n">3</span> <span data-i18n="paso3">Propone horario</span></button>
+      <button class="paso-btn" data-paso="4" role="tab" aria-selected="false"><span class="n">4</span> <span data-i18n="paso4">Vos ves todo en el panel</span></button>
     </div>
 
     <div class="escenario">
       <div class="panel-demo on" data-panel="1">
         <div class="txt">
-          <h3>Atiende por WhatsApp o por teléfono, con tu nombre</h3>
-          <p>El cliente escribe o llama al número de siempre. El asistente responde en español rioplatense (voz Piper/ElevenLabs si es llamada), entiende qué necesita y a qué oficio corresponde — sin que el profesional intervenga.</p>
+          <h3 data-i18n="p1h">Atiende por WhatsApp o por teléfono, con tu nombre</h3>
+          <p data-i18n="p1p">El cliente escribe o llama al número de siempre. El asistente responde en español rioplatense (voz Piper/ElevenLabs si es llamada), entiende qué necesita y a qué oficio corresponde — sin que el profesional intervenga.</p>
         </div>
         <div class="mock" style="max-width:100%;box-shadow:none;border:1px solid var(--line);">
           <div class="cab"><div class="av">💬</div><div><b>Cliente</b><small>● escribiendo</small></div></div>
@@ -277,8 +281,8 @@
 
       <div class="panel-demo" data-panel="2">
         <div class="txt">
-          <h3>Cotiza con tu propia lista de precios — nunca inventa un número</h3>
-          <p>Cada oficio tiene su catálogo de trabajos, con mano de obra, materiales y costo de traslado por kilómetro. El asistente arma el presupuesto desglosado al instante, siempre dentro de los precios que vos cargaste.</p>
+          <h3 data-i18n="p2h">Cotiza con tu propia lista de precios — nunca inventa un número</h3>
+          <p data-i18n="p2p">Cada oficio tiene su catálogo de trabajos, con mano de obra, materiales y costo de traslado por kilómetro. El asistente arma el presupuesto desglosado al instante, siempre dentro de los precios que vos cargaste.</p>
         </div>
         <div class="quote-card">
           <div class="item"><span>Mano de obra</span><span>$ 850</span></div>
@@ -290,8 +294,8 @@
 
       <div class="panel-demo" data-panel="3">
         <div class="txt">
-          <h3>Propone horarios que respetan traslados y descansos reales</h3>
-          <p>Calcula el tiempo de viaje entre citas según la distancia (Haversine) y la velocidad promedio configurada, y descarta cualquier hueco que invada tu almuerzo, tus días libres o tu horario de cierre.</p>
+          <h3 data-i18n="p3h">Propone horarios que respetan traslados y descansos reales</h3>
+          <p data-i18n="p3p">Calcula el tiempo de viaje entre citas según la distancia (Haversine) y la velocidad promedio configurada, y descarta cualquier hueco que invada tu almuerzo, tus días libres o tu horario de cierre.</p>
         </div>
         <div>
           <div class="slot">🕐 <b>14:30 – 15:30</b> · traslado estimado: 22 min desde la cita anterior</div>
@@ -302,8 +306,8 @@
 
       <div class="panel-demo" data-panel="4">
         <div class="txt">
-          <h3>Vos mirás el panel — y si hay un atraso, el asistente ya avisó</h3>
-          <p>Clientes, agenda, presupuestos y facturación en un panel único, con comparativas mes a mes y año a año. Si un trabajo se extiende 30 minutos o más, MV le escribe solo al próximo cliente para disculparse por el retraso.</p>
+          <h3 data-i18n="p4h">Vos mirás el panel — y si hay un atraso, el asistente ya avisó</h3>
+          <p data-i18n="p4p">Clientes, agenda, presupuestos y facturación en un panel único, con comparativas mes a mes y año a año. Si un trabajo se extiende 30 minutos o más, MV le escribe solo al próximo cliente para disculparse por el retraso.</p>
         </div>
         <div class="kpi-mini">
           <div class="k"><div class="n">7</div><div class="l">Trabajos hoy</div></div>
@@ -318,28 +322,28 @@
 
 <section id="funciones">
   <div class="cabecera">
-    <div class="kicker">La plataforma</div>
-    <h2>Todo lo que necesita un profesional independiente</h2>
-    <p class="lead">Pensado para el trabajo real de un oficio: se cotiza distinto según el trabajo, se agenda alrededor de los traslados, y el cliente necesita confirmación y una disculpa cuando algo se atrasa.</p>
+    <div class="kicker" data-i18n="funcKicker">La plataforma</div>
+    <h2 data-i18n="funcH2">Todo lo que necesita un profesional independiente</h2>
+    <p class="lead" data-i18n="funcLead">Pensado para el trabajo real de un oficio: se cotiza distinto según el trabajo, se agenda alrededor de los traslados, y el cliente necesita confirmación y una disculpa cuando algo se atrasa.</p>
   </div>
   <div class="grid">
-    <div class="card"><span class="ico">💬</span><h3>Chatbot con IA por WhatsApp</h3><p>Conversa en español rioplatense usando el número del profesional, entiende el pedido y deriva a un humano cuando hace falta.</p></div>
-    <div class="card"><span class="ico">🎙️</span><h3>Atiende el teléfono</h3><p>Voz natural rioplatense (Piper/ElevenLabs) que cotiza y agenda por llamada, tal como lo haría el profesional.</p></div>
-    <div class="card"><span class="ico">💰</span><h3>Cotizador multi-oficio</h3><p>Presupuesto con mano de obra, materiales y traslado, siempre según la lista de precios que cargó el profesional — nunca un valor inventado.</p></div>
-    <div class="card"><span class="ico">🗺️</span><h3>Agenda con traslados reales</h3><p>Calcula distancia y tiempo de viaje entre citas (Haversine + velocidad promedio configurable) antes de ofrecer un horario.</p></div>
-    <div class="card"><span class="ico">⏰</span><h3>Aviso automático de atraso</h3><p>Si un trabajo se extiende 30 minutos o más, le escribe solo al próximo cliente pidiendo disculpas por la demora — sin que el profesional haga nada.</p></div>
-    <div class="card"><span class="ico">🏠</span><h3>Confirma dirección y receptor</h3><p>Valida la dirección contra la ficha del cliente y pregunta quién va a recibir al profesional si no es el titular de la cuenta.</p></div>
-    <div class="card"><span class="ico">👥</span><h3>CRM de clientes</h3><p>Historial de trabajos, direcciones y contacto de cada cliente, siempre a mano para el próximo turno.</p></div>
-    <div class="card"><span class="ico">📊</span><h3>Dashboards completos</h3><p>Trabajos y facturación por día, semana, mes y año, con comparativas mes a mes y año a año — exportable a Excel, CSV y PDF.</p></div>
-    <div class="card"><span class="ico">📱</span><h3>App PC + Android</h3><p>Programa de escritorio y APK instalable en el celular, con la misma agenda y el mismo CRM sincronizados.</p></div>
+    <div class="card"><span class="ico">💬</span><h3 data-i18n="c1h">Chatbot con IA por WhatsApp</h3><p data-i18n="c1p">Conversa en español rioplatense usando el número del profesional, entiende el pedido y deriva a un humano cuando hace falta.</p></div>
+    <div class="card"><span class="ico">🎙️</span><h3 data-i18n="c2h">Atiende el teléfono</h3><p data-i18n="c2p">Voz natural rioplatense (Piper/ElevenLabs) que cotiza y agenda por llamada, tal como lo haría el profesional.</p></div>
+    <div class="card"><span class="ico">💰</span><h3 data-i18n="c3h">Cotizador multi-oficio</h3><p data-i18n="c3p">Presupuesto con mano de obra, materiales y traslado, siempre según la lista de precios que cargó el profesional — nunca un valor inventado.</p></div>
+    <div class="card"><span class="ico">🗺️</span><h3 data-i18n="c4h">Agenda con traslados reales</h3><p data-i18n="c4p">Calcula distancia y tiempo de viaje entre citas (Haversine + velocidad promedio configurable) antes de ofrecer un horario.</p></div>
+    <div class="card"><span class="ico">⏰</span><h3 data-i18n="c5h">Aviso automático de atraso</h3><p data-i18n="c5p">Si un trabajo se extiende 30 minutos o más, le escribe solo al próximo cliente pidiendo disculpas por la demora — sin que el profesional haga nada.</p></div>
+    <div class="card"><span class="ico">🏠</span><h3 data-i18n="c6h">Confirma dirección y receptor</h3><p data-i18n="c6p">Valida la dirección contra la ficha del cliente y pregunta quién va a recibir al profesional si no es el titular de la cuenta.</p></div>
+    <div class="card"><span class="ico">👥</span><h3 data-i18n="c7h">CRM de clientes</h3><p data-i18n="c7p">Historial de trabajos, direcciones y contacto de cada cliente, siempre a mano para el próximo turno.</p></div>
+    <div class="card"><span class="ico">📊</span><h3 data-i18n="c8h">Dashboards completos</h3><p data-i18n="c8p">Trabajos y facturación por día, semana, mes y año, con comparativas mes a mes y año a año — exportable a Excel, CSV y PDF.</p></div>
+    <div class="card"><span class="ico">📱</span><h3 data-i18n="c9h">App PC + Android</h3><p data-i18n="c9p">Programa de escritorio y APK instalable en el celular, con la misma agenda y el mismo CRM sincronizados.</p></div>
   </div>
 </section>
 
 <section id="oficios">
   <div class="cabecera">
-    <div class="kicker">Para cualquier oficio</div>
-    <h2>Para cualquier profesión u oficio — 18 precargados y creá el tuyo</h2>
-    <p class="lead">Cada oficio trae su propio catálogo de trabajos y precios de referencia, listos para editar. Si el tuyo no está en la lista, se agrega igual: el motor de cotización y agenda es el mismo para todos.</p>
+    <div class="kicker" data-i18n="ofiKicker">Para cualquier oficio</div>
+    <h2 data-i18n="ofiH2">Para cualquier profesión u oficio — 18 precargados y creá el tuyo</h2>
+    <p class="lead" data-i18n="ofiLead">Cada oficio trae su propio catálogo de trabajos y precios de referencia, listos para editar. Si el tuyo no está en la lista, se agrega igual: el motor de cotización y agenda es el mismo para todos.</p>
   </div>
   <div class="oficios-lista">
     <span class="of-chip">⚡ Electricista</span>
@@ -365,72 +369,72 @@
 
 <section class="diferencia">
   <div class="inner">
-    <div class="kicker" style="color:var(--oro)">Por qué pago único</div>
-    <h2>No es otro bot de turnos genérico, ni una suscripción más</h2>
-    <p class="lead" style="max-width:720px;">Lo habitual en la región son bots de WhatsApp genéricos o sistemas de turnos sin IA, todos cobrados como alquiler mensual y sin conocer los precios ni la logística reales de un oficio. MV Agendate IA está armado para el flujo concreto de un profesional independiente — cotizar, confirmar dirección y receptor, agendar alrededor de los traslados y avisar solo si hay un atraso — y se compra una sola vez, en vez de rentarse para siempre.</p>
+    <div class="kicker" style="color:var(--oro)" data-i18n="difKicker">Por qué pago único</div>
+    <h2 data-i18n="difH2">No es otro bot de turnos genérico, ni una suscripción más</h2>
+    <p class="lead" style="max-width:720px;" data-i18n="difLead">Lo habitual en la región son bots de WhatsApp genéricos o sistemas de turnos sin IA, todos cobrados como alquiler mensual y sin conocer los precios ni la logística reales de un oficio. MV Agendate IA está armado para el flujo concreto de un profesional independiente — cotizar, confirmar dirección y receptor, agendar alrededor de los traslados y avisar solo si hay un atraso — y se compra una sola vez, en vez de rentarse para siempre.</p>
     <div class="grid">
-      <div class="card"><h3>Pago único</h3><p>Se paga una vez por el software. No hay cuota mensual del sistema de agenda ni del cotizador.</p></div>
-      <div class="card"><h3>Precios propios, no genéricos</h3><p>Cotiza siempre con la lista de precios del profesional, no con un promedio de mercado inventado por un tercero.</p></div>
-      <div class="card"><h3>Costo de IA transparente</h3><p>El plan Full usa las cuentas propias del profesional (Claude, WhatsApp Business, Twilio); ese costo variable se paga directo al proveedor, sin margen agregado por MV.</p></div>
+      <div class="card"><h3 data-i18n="dif1h">Pago único</h3><p data-i18n="dif1p">Se paga una vez por el software. No hay cuota mensual del sistema de agenda ni del cotizador.</p></div>
+      <div class="card"><h3 data-i18n="dif2h">Precios propios, no genéricos</h3><p data-i18n="dif2p">Cotiza siempre con la lista de precios del profesional, no con un promedio de mercado inventado por un tercero.</p></div>
+      <div class="card"><h3 data-i18n="dif3h">Costo de IA transparente</h3><p data-i18n="dif3p">El plan Full usa las cuentas propias del profesional (Claude, WhatsApp Business, Twilio); ese costo variable se paga directo al proveedor, sin margen agregado por MV.</p></div>
     </div>
   </div>
 </section>
 
 <section id="precios" class="precios">
   <div class="cabecera">
-    <div class="kicker">Inversión</div>
-    <h2>Pago único para instalarlo — o cuenta online por suscripción</h2>
-    <p class="lead">Sin permanencia. Elegí si necesitás solo el motor de agenda y cotización, también el chatbot y ChatVoice con IA, o preferís usarlo online sin instalar nada.</p>
+    <div class="kicker" data-i18n="preKicker">Inversión</div>
+    <h2 data-i18n="preH2">Pago único para instalarlo — o cuenta online por suscripción</h2>
+    <p class="lead" data-i18n="preLead">Sin permanencia. Elegí si necesitás solo el motor de agenda y cotización, también el chatbot y ChatVoice con IA, o preferís usarlo online sin instalar nada.</p>
   </div>
   <div class="grid">
     <div class="card">
-      <h3>Básico</h3>
-      <div class="precio">USD 129<small> pago único</small></div>
+      <h3 data-i18n="plaBasico">Básico</h3>
+      <div class="precio">USD 129<small data-i18n="pagoUnico"> pago único</small></div>
       <ul>
-        <li>Agenda con optimización de traslados y descansos</li>
-        <li>Cotizador multi-oficio con tu propia lista de precios</li>
-        <li>CRM de clientes</li>
-        <li>Dashboards: trabajos por día/semana/mes/año y facturación</li>
-        <li>Exportación a Excel, CSV y PDF</li>
-        <li>App de escritorio (PC) + APK Android</li>
+        <li data-i18n="bas1">Agenda con optimización de traslados y descansos</li>
+        <li data-i18n="bas2">Cotizador multi-oficio con tu propia lista de precios</li>
+        <li data-i18n="bas3">CRM de clientes</li>
+        <li data-i18n="bas4">Dashboards: trabajos por día/semana/mes/año y facturación</li>
+        <li data-i18n="bas5">Exportación a Excel, CSV y PDF</li>
+        <li data-i18n="bas6">App de escritorio (PC) + APK Android</li>
       </ul>
-      <a class="cta-plan" style="background:var(--cel);color:#fff;" href="/comprar.html?plan=basico">Comprar Básico →</a>
+      <a class="cta-plan" style="background:var(--cel);color:#fff;" href="/comprar.html?plan=basico" data-i18n="ctaBasico">Comprar Básico →</a>
     </div>
     <div class="card destacado" data-badge="CON IA">
-      <h3>Full (con IA)</h3>
-      <div class="precio">USD 299<small> pago único</small></div>
+      <h3 data-i18n="plaFull">Full (con IA)</h3>
+      <div class="precio">USD 299<small data-i18n="pagoUnico2"> pago único</small></div>
       <ul>
-        <li>Todo lo del plan Básico</li>
-        <li>Chatbot y ChatVoice con IA por WhatsApp y por voz</li>
-        <li>Cotiza y agenda solo, con voz rioplatense</li>
-        <li>Aviso automático de atraso al próximo cliente</li>
-        <li>Usa tus propias cuentas de Claude, WhatsApp Business y Twilio</li>
+        <li data-i18n="ful1">Todo lo del plan Básico</li>
+        <li data-i18n="ful2">Chatbot y ChatVoice con IA por WhatsApp y por voz</li>
+        <li data-i18n="ful3">Cotiza y agenda solo, con voz rioplatense</li>
+        <li data-i18n="ful4">Aviso automático de atraso al próximo cliente</li>
+        <li data-i18n="ful5">Usa tus propias cuentas de Claude, WhatsApp Business y Twilio</li>
       </ul>
-      <a class="cta-plan" style="background:var(--oro);color:var(--azul);" href="/comprar.html?plan=full">Comprar Full →</a>
-      <p class="nota-var">El uso de IA, WhatsApp Business API y telefonía corre con tus propias cuentas — de referencia, USD 20–40/mes según volumen de conversaciones. Ese costo variable no está incluido en el precio del software y se paga directo al proveedor.</p>
+      <a class="cta-plan" style="background:var(--oro);color:var(--azul);" href="/comprar.html?plan=full" data-i18n="ctaFull">Comprar Full →</a>
+      <p class="nota-var" data-i18n="notaFull">El uso de IA, WhatsApp Business API y telefonía corre con tus propias cuentas — de referencia, USD 20–40/mes según volumen de conversaciones. Ese costo variable no está incluido en el precio del software y se paga directo al proveedor.</p>
     </div>
     <div class="card">
-      <h3>SaaS online</h3>
-      <div class="precio">USD 15<small> por mes</small></div>
+      <h3 data-i18n="plaSaas">SaaS online</h3>
+      <div class="precio">USD 15<small data-i18n="porMes"> por mes</small></div>
       <ul>
-        <li>Cuenta online lista en 1 minuto — sin instalar nada</li>
-        <li>Agenda optimizada + cotizador + CRM + dashboards</li>
-        <li>Tus datos privados y aislados, desde cualquier dispositivo</li>
-        <li>14 días de prueba gratis, cancelás cuando quieras</li>
+        <li data-i18n="saa1">Cuenta online lista en 1 minuto — sin instalar nada</li>
+        <li data-i18n="saa2">Agenda optimizada + cotizador + CRM + dashboards</li>
+        <li data-i18n="saa3">Tus datos privados y aislados, desde cualquier dispositivo</li>
+        <li data-i18n="saa4">14 días de prueba gratis, cancelás cuando quieras</li>
       </ul>
-      <a class="cta-plan" style="background:var(--verde,#5cb531);color:#fff;" href="/app/#/cuenta">Probar 14 días gratis →</a>
-      <p class="nota-var" style="color:#5a6b7c;"><a href="/online.html">Conocé todo sobre la versión online →</a></p>
+      <a class="cta-plan" style="background:var(--verde,#5cb531);color:#fff;" href="/app/#/cuenta" data-i18n="ctaSaas">Probar 14 días gratis →</a>
+      <p class="nota-var" style="color:#5a6b7c;"><a href="/online.html" data-i18n="masOnline">Conocé todo sobre la versión online →</a></p>
     </div>
   </div>
-  <p style="text-align:center;margin-top:20px;"><a href="/demo.html" style="color:var(--cel);font-weight:700;text-decoration:none;">¿Querés probarlo antes de comprar? Usá la demo gratis →</a></p>
+  <p style="text-align:center;margin-top:20px;"><a href="/demo.html" style="color:var(--cel);font-weight:700;text-decoration:none;" data-i18n="probarDemo">¿Querés probarlo antes de comprar? Usá la demo gratis →</a></p>
 </section>
 
 <section class="cierre">
-  <h2>Mirá el cotizador y la agenda funcionando ahora mismo</h2>
-  <p class="lead" style="margin:0 auto 22px;max-width:560px;">La demo corre en vivo: chateá con el asistente, pedí un presupuesto real y mirá cómo propone horarios considerando los traslados.</p>
+  <h2 data-i18n="cieH2">Mirá el cotizador y la agenda funcionando ahora mismo</h2>
+  <p class="lead" style="margin:0 auto 22px;max-width:560px;" data-i18n="cieLead">La demo corre en vivo: chateá con el asistente, pedí un presupuesto real y mirá cómo propone horarios considerando los traslados.</p>
   <div class="botones">
-    <a class="b1" href="/demo.html">▶ Abrir la demo</a>
-    <a class="b2" style="border:2px solid #c6d2dd;color:var(--azul);" href="/one-pager.html">Ver ficha de una página</a>
+    <a class="b1" href="/demo.html" data-i18n="cieB1">▶ Abrir la demo</a>
+    <a class="b2" style="border:2px solid #c6d2dd;color:var(--azul);" href="/one-pager.html" data-i18n="cieB2">Ver ficha de una página</a>
   </div>
 </section>
 
@@ -438,29 +442,29 @@
   <div class="inner">
     <div>
       <div class="marca-pie"><img src="/logo-mv.svg" alt="MV">MV Agendate IA</div>
-      <p>El asistente que cotiza y agenda por vos en WhatsApp y por teléfono, para médicos, abogados, escribanos, psicólogos, electricistas, talleres y cualquier profesión u oficio con agenda, en toda LATAM. Hecho en Uruguay 🇺🇾</p>
+      <p data-i18n="pieLead">El asistente que cotiza y agenda por vos en WhatsApp y por teléfono, para médicos, abogados, escribanos, psicólogos, electricistas, talleres y cualquier profesión u oficio con agenda, en toda LATAM. Hecho en Uruguay 🇺🇾</p>
     </div>
     <div>
-      <h4>Producto</h4>
+      <h4 data-i18n="pieProducto">Producto</h4>
       <ul>
-        <li><a href="/demo.html">Demo en vivo</a></li>
-        <li><a href="/comprar.html">Comprar</a></li>
-        <li><a href="/one-pager.html">Ficha de una página</a></li>
-        <li><a href="#precios">Planes y precios</a></li>
+        <li><a href="/demo.html" data-i18n="pieDemo">Demo en vivo</a></li>
+        <li><a href="/comprar.html" data-i18n="pieComprar">Comprar</a></li>
+        <li><a href="/one-pager.html" data-i18n="pieFicha">Ficha de una página</a></li>
+        <li><a href="#precios" data-i18n="piePlanes">Planes y precios</a></li>
       </ul>
     </div>
     <div>
-      <h4>Para profesionales activos</h4>
+      <h4 data-i18n="pieActivos">Para profesionales activos</h4>
       <ul>
-        <li><a href="/panel.html">Panel del día</a></li>
-        <li><a href="/dashboards.html">Dashboards de gestión</a></li>
-        <li><a href="/config.html">Configurar tu negocio</a></li>
-        <li><a href="/ayuda.html">Centro de ayuda (tutorial + IA)</a></li>
-        <li><a href="#" data-mvc-abrir>✉ Contacto</a></li>
+        <li><a href="/panel.html" data-i18n="piePanel">Panel del día</a></li>
+        <li><a href="/dashboards.html" data-i18n="pieDash">Dashboards de gestión</a></li>
+        <li><a href="/config.html" data-i18n="pieConfig">Configurar tu negocio</a></li>
+        <li><a href="/ayuda.html" data-i18n="pieAyuda">Centro de ayuda (tutorial + IA)</a></li>
+        <li><a href="#" data-mvc-abrir data-i18n="pieContacto">✉ Contacto</a></li>
       </ul>
     </div>
   </div>
-  <div class="legales">© MV Agendate IA — Software de pago único para profesionales independientes. Los costos de WhatsApp Business, telefonía e IA del plan Full corren por cuenta del profesional, directo a cada proveedor.</div>
+  <div class="legales" data-i18n="legales">© MV Agendate IA — Software de pago único para profesionales independientes. Los costos de WhatsApp Business, telefonía e IA del plan Full corren por cuenta del profesional, directo a cada proveedor.</div>
 </footer>
 
 <script>
@@ -473,6 +477,78 @@
       botonesPaso.forEach((b) => { b.classList.toggle('on', b === btn); b.setAttribute('aria-selected', b === btn ? 'true' : 'false'); });
       paneles.forEach((p) => p.classList.toggle('on', p.dataset.panel === id));
     });
+  });
+</script>
+<script>
+  // --- Web multiidioma es/pt: el visitante elige el idioma y toda la landing
+  // se traduce en el cliente (el diccionario PT reemplaza el texto ES base). ---
+  const PT = {
+    navVideo:'Vídeo', navComo:'Como funciona', navPlanes:'Planos', navInstalar:'Instalar', navDemo:'Demo', navProbar:'Testar grátis',
+    heroKicker:'WhatsApp · Telefone · Agenda',
+    heroH1:'Que seus clientes agendem e paguem <em>sem você atender o telefone</em>',
+    heroLead:'MV Agendate IA responde pelo WhatsApp ou por ligação, no seu nome e com voz natural, orça cada serviço com a sua própria tabela de preços e monta a agenda considerando os deslocamentos reais entre visitas e seus horários de descanso. Se você atrasar, avisa sozinho o próximo cliente.',
+    heroB1:'📲 Instale o app grátis · teste 3 dias', heroB2:'▶ Ver a demo',
+    stat1:'profissões pré-configuradas, 100% editáveis', stat2b:'1 pagamento', stat2:'sem mensalidades do software', stat3:'resposta imediata a cada cliente',
+    vidKicker:'Veja em 1 minuto', vidH2:'Assim trabalha o MV Agendate IA', vidLead:'Orçamento com IA, agenda otimizada por deslocamentos, fichas de serviço, CRM e dashboards — tudo com voz natural.',
+    comoKicker:'Da consulta ao pagamento', comoH2:'Um mesmo fluxo, de ponta a ponta', comoLead:'Escolha um passo para ver o que o assistente faz em cada momento da conversa com o seu cliente.',
+    paso1:'Escreve ou liga para você', paso2:'Orça na hora', paso3:'Propõe horário', paso4:'Você vê tudo no painel',
+    p1h:'Atende pelo WhatsApp ou telefone, com o seu nome', p1p:'O cliente escreve ou liga para o número de sempre. O assistente responde em português (com voz se for ligação), entende o que precisa e a qual profissão corresponde — sem o profissional intervir.',
+    p2h:'Orça com a sua própria tabela de preços — nunca inventa um número', p2p:'Cada profissão tem seu catálogo de serviços, com mão de obra, materiais e custo de deslocamento por quilômetro. O assistente monta o orçamento detalhado na hora, sempre dentro dos preços que você cadastrou.',
+    p3h:'Propõe horários que respeitam deslocamentos e descansos reais', p3p:'Calcula o tempo de viagem entre visitas pela distância (Haversine) e a velocidade média configurada, e descarta qualquer brecha que invada seu almoço, seus dias de folga ou seu horário de fechamento.',
+    p4h:'Você olha o painel — e se houver atraso, o assistente já avisou', p4p:'Clientes, agenda, orçamentos e faturamento em um painel único, com comparativos mês a mês e ano a ano. Se um serviço se estende 30 minutos ou mais, o MV escreve sozinho ao próximo cliente para se desculpar pelo atraso.',
+    funcKicker:'A plataforma', funcH2:'Tudo o que um profissional autônomo precisa', funcLead:'Pensado para o trabalho real de uma profissão: orça diferente conforme o serviço, agenda em torno dos deslocamentos, e o cliente precisa de confirmação e de um pedido de desculpas quando algo atrasa.',
+    c1h:'Chatbot com IA pelo WhatsApp', c1p:'Conversa em português usando o número do profissional, entende o pedido e encaminha para um humano quando necessário.',
+    c2h:'Atende o telefone', c2p:'Voz natural que orça e agenda por ligação, exatamente como o profissional faria.',
+    c3h:'Orçamento multi-profissão', c3p:'Orçamento com mão de obra, materiais e deslocamento, sempre pela tabela de preços que o profissional cadastrou — nunca um valor inventado.',
+    c4h:'Agenda com deslocamentos reais', c4p:'Calcula distância e tempo de viagem entre visitas (Haversine + velocidade média configurável) antes de oferecer um horário.',
+    c5h:'Aviso automático de atraso', c5p:'Se um serviço se estende 30 minutos ou mais, escreve sozinho ao próximo cliente pedindo desculpas pela demora — sem o profissional fazer nada.',
+    c6h:'Confirma endereço e quem recebe', c6p:'Valida o endereço com a ficha do cliente e pergunta quem vai receber o profissional se não for o titular da conta.',
+    c7h:'CRM de clientes', c7p:'Histórico de serviços, endereços e contato de cada cliente, sempre à mão para o próximo atendimento.',
+    c8h:'Dashboards completos', c8p:'Serviços e faturamento por dia, semana, mês e ano, com comparativos mês a mês e ano a ano — exportável para Excel, CSV e PDF.',
+    c9h:'App PC + Android', c9p:'Programa de desktop e APK instalável no celular, com a mesma agenda e o mesmo CRM sincronizados.',
+    ofiKicker:'Para qualquer profissão', ofiH2:'Para qualquer profissão ou ofício — 18 pré-carregados e crie o seu', ofiLead:'Cada profissão traz seu próprio catálogo de serviços e preços de referência, prontos para editar. Se a sua não estiver na lista, é adicionada do mesmo jeito: o motor de orçamento e agenda é o mesmo para todos.',
+    difKicker:'Por que pagamento único', difH2:'Não é mais um bot de agendamento genérico, nem outra assinatura', difLead:'O comum na região são bots de WhatsApp genéricos ou sistemas de agendamento sem IA, todos cobrados como aluguel mensal e sem conhecer os preços nem a logística reais de uma profissão. O MV Agendate IA foi feito para o fluxo concreto de um profissional autônomo — orçar, confirmar endereço e quem recebe, agendar em torno dos deslocamentos e avisar só se houver atraso — e se compra uma única vez, em vez de alugar para sempre.',
+    dif1h:'Pagamento único', dif1p:'Paga-se uma vez pelo software. Não há mensalidade do sistema de agenda nem do orçamentador.',
+    dif2h:'Preços próprios, não genéricos', dif2p:'Orça sempre com a tabela de preços do profissional, não com uma média de mercado inventada por terceiros.',
+    dif3h:'Custo de IA transparente', dif3p:'O plano Full usa as contas próprias do profissional (Claude, WhatsApp Business, Twilio); esse custo variável é pago direto ao fornecedor, sem margem adicional do MV.',
+    preKicker:'Investimento', preH2:'Pagamento único para instalar — ou conta online por assinatura', preLead:'Sem fidelidade. Escolha se precisa só do motor de agenda e orçamento, também do chatbot e ChatVoice com IA, ou prefere usá-lo online sem instalar nada.',
+    plaBasico:'Básico', pagoUnico:' pagamento único', pagoUnico2:' pagamento único', porMes:' por mês',
+    bas1:'Agenda com otimização de deslocamentos e descansos', bas2:'Orçamentador multi-profissão com a sua própria tabela de preços', bas3:'CRM de clientes', bas4:'Dashboards: serviços por dia/semana/mês/ano e faturamento', bas5:'Exportação para Excel, CSV e PDF', bas6:'App de desktop (PC) + APK Android',
+    ctaBasico:'Comprar Básico →',
+    plaFull:'Full (com IA)', ful1:'Tudo do plano Básico', ful2:'Chatbot e ChatVoice com IA pelo WhatsApp e por voz', ful3:'Orça e agenda sozinho, com voz natural', ful4:'Aviso automático de atraso ao próximo cliente', ful5:'Usa suas próprias contas de Claude, WhatsApp Business e Twilio',
+    ctaFull:'Comprar Full →', notaFull:'O uso de IA, WhatsApp Business API e telefonia corre pelas suas próprias contas — de referência, USD 20–40/mês conforme o volume de conversas. Esse custo variável não está incluído no preço do software e é pago direto ao fornecedor.',
+    plaSaas:'SaaS online', saa1:'Conta online pronta em 1 minuto — sem instalar nada', saa2:'Agenda otimizada + orçamentador + CRM + dashboards', saa3:'Seus dados privados e isolados, de qualquer dispositivo', saa4:'14 dias de teste grátis, cancela quando quiser',
+    ctaSaas:'Testar 14 dias grátis →', masOnline:'Conheça tudo sobre a versão online →', probarDemo:'Quer testar antes de comprar? Use a demo grátis →',
+    cieH2:'Veja o orçamentador e a agenda funcionando agora mesmo', cieLead:'A demo roda ao vivo: converse com o assistente, peça um orçamento real e veja como ele propõe horários considerando os deslocamentos.',
+    cieB1:'▶ Abrir a demo', cieB2:'Ver ficha de uma página',
+    pieLead:'O assistente que orça e agenda por você no WhatsApp e por telefone, para médicos, advogados, tabeliães, psicólogos, eletricistas, oficinas e qualquer profissão ou ofício com agenda, em toda a América Latina. Feito no Uruguai 🇺🇾',
+    pieProducto:'Produto', pieDemo:'Demo ao vivo', pieComprar:'Comprar', pieFicha:'Ficha de uma página', piePlanes:'Planos e preços',
+    pieActivos:'Para profissionais ativos', piePanel:'Painel do dia', pieDash:'Dashboards de gestão', pieConfig:'Configurar seu negócio', pieAyuda:'Central de ajuda (tutorial + IA)', pieContacto:'✉ Contato',
+    legales:'© MV Agendate IA — Software de pagamento único para profissionais autônomos. Os custos de WhatsApp Business, telefonia e IA do plano Full correm por conta do profissional, direto a cada fornecedor.'
+  };
+  // Guardamos el texto ES original para poder volver sin recargar.
+  const nodos = document.querySelectorAll('[data-i18n],[data-i18n-html]');
+  const ES = new Map();
+  nodos.forEach((n) => { const k = n.dataset.i18n || n.dataset.i18nHtml; ES.set(n, n.dataset.i18nHtml ? n.innerHTML : n.textContent); });
+  function aplicarIdioma(idi) {
+    document.documentElement.lang = idi === 'pt' ? 'pt-BR' : 'es';
+    nodos.forEach((n) => {
+      const html = !!n.dataset.i18nHtml;
+      const k = n.dataset.i18n || n.dataset.i18nHtml;
+      const val = idi === 'pt' ? (PT[k] ?? ES.get(n)) : ES.get(n);
+      if (html) n.innerHTML = val; else n.textContent = val;
+    });
+    const sel = document.getElementById('selIdioma');
+    if (sel) sel.value = idi;
+  }
+  let idi = localStorage.getItem('mvIdioma') || ((navigator.language || '').toLowerCase().startsWith('pt') ? 'pt' : 'es');
+  if (idi !== 'pt') idi = 'es';
+  aplicarIdioma(idi);
+  const selIdi = document.getElementById('selIdioma');
+  if (selIdi) selIdi.addEventListener('change', (e) => {
+    idi = e.target.value === 'pt' ? 'pt' : 'es';
+    localStorage.setItem('mvIdioma', idi);
+    aplicarIdioma(idi);
   });
 </script>
 <script src="/js/contacto.js" defer></script>
