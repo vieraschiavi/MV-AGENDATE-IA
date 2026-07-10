@@ -484,13 +484,16 @@ export async function conversar(sessionId, texto, canal = 'webchat') {
     if (err instanceof Anthropic.APIConnectionError) {
       return `Tuve un problema de conexión. Si es urgente, llamanos al ${telefonoProfesional()}.`;
     }
-    // Cualquier error de la IA (Claude/OpenAI/Gemini): no romper la conversación.
+    // Cualquier error de la IA (Claude/OpenAI/Gemini) — típicamente una key mal
+    // configurada (401) o el proveedor caído: en vez de dejar al cliente con un
+    // error, degradamos con elegancia a la lógica local (cotiza y agenda igual).
+    // El profesional ve el error en los logs y corrige su key/saldo.
     if (err instanceof Anthropic.APIError || err instanceof LLMError) {
-      console.error('[agente] Error de IA:', err.status || '', err.message);
-      return `Tuve un inconveniente técnico. Un agente humano puede ayudarte al ${telefonoProfesional()}.`;
+      console.error('[agente] Error de IA (se cae a lógica local):', err.status || '', err.message);
+      return responderDemo(sessionId, texto, canal);
     }
-    console.error('[agente] Error inesperado:', err?.message || err);
-    return `Tuve un inconveniente técnico. Un agente humano puede ayudarte al ${telefonoProfesional()}.`;
+    console.error('[agente] Error inesperado (se cae a lógica local):', err?.message || err);
+    return responderDemo(sessionId, texto, canal);
   }
 }
 
