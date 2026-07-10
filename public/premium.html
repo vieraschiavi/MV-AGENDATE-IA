@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MV Agendate IA — Tu asistente que cotiza y agenda solo</title>
+<link rel="icon" href="/logo-mv.svg" type="image/svg+xml">
+<meta name="description" content="El asistente con IA que atiende WhatsApp y teléfono, cotiza con tus precios y agenda optimizando traslados. Para cualquier profesión de LATAM.">
+<meta name="theme-color" content="#070d15">
+<meta property="og:type" content="website">
+<meta property="og:title" content="MV Agendate IA — tu asistente que cotiza y agenda solo">
+<meta property="og:description" content="IA que atiende WhatsApp y teléfono, cotiza con tus precios y agenda optimizando traslados reales.">
+<meta property="og:image" content="https://mv-agendate-ia.vercel.app/logo-mv.png">
+<style>
+  :root{
+    --fondo:#070d15; --fondo2:#0b1520; --tinta:#eaf2fa; --sub:#8fa6ba;
+    --cel:#2f9dff; --cel2:#1f7ae0; --oro:#e3a72f; --verde:#3ddc7a;
+    --line:rgba(143,166,186,.16); --card:rgba(17,30,45,.65);
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var(--fondo); color:var(--tinta); line-height:1.6; overflow-x:hidden; }
+  a{ color:var(--cel); }
+  ::selection{ background:var(--cel2); color:#fff; }
+
+  /* ---------- Nav ---------- */
+  .nav{ position:fixed; top:0; left:0; right:0; z-index:50; display:flex; justify-content:space-between; align-items:center;
+    padding:14px 5%; backdrop-filter:blur(14px); background:rgba(7,13,21,.55); border-bottom:1px solid var(--line); }
+  .nav .marca{ display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.02em; }
+  .nav .marca img{ width:34px; height:34px; border-radius:9px; }
+  .nav .marca span{ color:var(--oro); }
+  .nav .links{ display:flex; gap:20px; align-items:center; }
+  .nav .links a{ color:var(--tinta); text-decoration:none; font-size:.88rem; font-weight:600; opacity:.85; }
+  .nav .links a:hover{ opacity:1; }
+  .nav .cta{ background:var(--verde); color:#04240f !important; padding:9px 18px; border-radius:10px; font-weight:800; opacity:1 !important; }
+  .nav select{ background:transparent; color:var(--tinta); border:1px solid var(--line); border-radius:8px; padding:5px 7px; font-size:13px; }
+  @media (max-width:760px){ .nav .links a:not(.cta){ display:none; } }
+
+  /* ---------- Hero ---------- */
+  .hero{ position:relative; min-height:100svh; display:flex; align-items:center; justify-content:center; text-align:center; padding:110px 6% 80px; }
+  #lienzo{ position:absolute; inset:0; width:100%; height:100%; z-index:0; }
+  .hero .velo{ position:absolute; inset:0; z-index:1; background:radial-gradient(900px 500px at 50% 35%, rgba(31,122,224,.16), transparent 65%),
+    linear-gradient(180deg, rgba(7,13,21,.25) 0%, rgba(7,13,21,.05) 45%, var(--fondo) 96%); pointer-events:none; }
+  .hero .adentro{ position:relative; z-index:2; max-width:920px; }
+  .kicker{ display:inline-block; border:1px solid var(--line); background:rgba(31,122,224,.1); color:#9fd0ff;
+    border-radius:999px; padding:7px 18px; font-size:.78rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; margin-bottom:22px; }
+  .hero h1{ font-size:clamp(2.4rem, 7vw, 4.6rem); line-height:1.06; font-weight:800; letter-spacing:-.02em; }
+  .hero h1 em{ font-style:normal; background:linear-gradient(92deg, var(--cel) 0%, #7cc4ff 50%, var(--oro) 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .hero p.lead{ color:var(--sub); font-size:clamp(1rem, 2vw, 1.18rem); max-width:640px; margin:22px auto 34px; }
+  .botones{ display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
+  .b1{ background:linear-gradient(92deg, var(--cel2), var(--cel)); color:#fff; text-decoration:none; font-weight:800;
+    padding:16px 32px; border-radius:14px; font-size:1.02rem; box-shadow:0 10px 40px rgba(31,122,224,.35); transition:transform .2s; }
+  .b1:hover{ transform:translateY(-2px); }
+  .b2{ color:var(--tinta); text-decoration:none; font-weight:700; padding:16px 26px; border-radius:14px; border:1px solid var(--line); background:rgba(255,255,255,.03); }
+  .hero .mini{ margin-top:18px; color:var(--sub); font-size:.82rem; }
+  .flecha{ position:absolute; bottom:26px; left:50%; transform:translateX(-50%); z-index:2; color:var(--sub); font-size:1.4rem; animation:flota 2.2s ease-in-out infinite; }
+  @keyframes flota{ 0%,100%{ transform:translate(-50%,0);} 50%{ transform:translate(-50%,10px);} }
+
+  /* ---------- Secciones ---------- */
+  section{ padding:96px 6%; position:relative; }
+  .centro{ max-width:1080px; margin:0 auto; }
+  .cabeza{ text-align:center; max-width:720px; margin:0 auto 54px; }
+  .cabeza h2{ font-size:clamp(1.7rem, 4vw, 2.6rem); font-weight:800; letter-spacing:-.01em; line-height:1.15; }
+  .cabeza p{ color:var(--sub); margin-top:12px; }
+
+  /* Aparición al scroll */
+  .rev{ opacity:0; transform:translateY(34px); transition:opacity .8s cubic-bezier(.2,.65,.25,1), transform .8s cubic-bezier(.2,.65,.25,1); }
+  .rev.on{ opacity:1; transform:none; }
+  .rev.d1{ transition-delay:.1s } .rev.d2{ transition-delay:.22s } .rev.d3{ transition-delay:.34s } .rev.d4{ transition-delay:.46s }
+  @media (prefers-reduced-motion: reduce){ .rev{ opacity:1; transform:none; transition:none; } .flecha{ animation:none; } }
+
+  /* ---------- Stats ---------- */
+  .stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:18px; max-width:900px; margin:0 auto; }
+  .stat{ border:1px solid var(--line); border-radius:18px; padding:26px 20px; text-align:center; background:var(--card); }
+  .stat b{ display:block; font-size:clamp(1.9rem,4vw,2.6rem); font-weight:800; color:var(--cel); }
+  .stat span{ color:var(--sub); font-size:.85rem; }
+
+  /* ---------- Chat animado ---------- */
+  .chatwrap{ display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:center; max-width:1040px; margin:0 auto; }
+  @media (max-width:860px){ .chatwrap{ grid-template-columns:1fr; } }
+  .chatwrap h2{ font-size:clamp(1.6rem,3.5vw,2.3rem); font-weight:800; line-height:1.18; margin-bottom:14px; }
+  .chatwrap p{ color:var(--sub); }
+  .fono{ background:#0d1a26; border:1px solid var(--line); border-radius:26px; padding:16px; box-shadow:0 30px 80px rgba(0,0,0,.5), 0 0 0 1px rgba(47,157,255,.08); }
+  .fono .cab{ display:flex; gap:10px; align-items:center; padding:6px 8px 14px; border-bottom:1px solid var(--line); }
+  .fono .cab .av{ width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,var(--cel2),#0e3a63); display:flex; align-items:center; justify-content:center; }
+  .fono .cab b{ font-size:.92rem; } .fono .cab small{ display:block; color:var(--verde); font-size:.72rem; }
+  .fono .msgs{ padding:14px 4px 6px; display:flex; flex-direction:column; gap:10px; min-height:290px; }
+  .m{ max-width:86%; padding:10px 14px; border-radius:14px; font-size:.88rem; line-height:1.45; opacity:0; transform:translateY(12px) scale(.98); transition:opacity .5s, transform .5s; }
+  .m.on{ opacity:1; transform:none; }
+  .mu{ background:#12354f; align-self:flex-end; border-bottom-right-radius:4px; }
+  .mb{ background:#101c29; border:1px solid var(--line); align-self:flex-start; border-bottom-left-radius:4px; }
+  .mb b{ color:var(--cel); }
+
+  /* ---------- Pasos ---------- */
+  .pasos{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:18px; }
+  .paso{ border:1px solid var(--line); border-radius:18px; padding:28px 24px; background:var(--card); position:relative; overflow:hidden; }
+  .paso::before{ content:attr(data-n); position:absolute; right:14px; top:2px; font-size:4.4rem; font-weight:800; color:rgba(47,157,255,.10); }
+  .paso .ico{ font-size:1.7rem; }
+  .paso h3{ margin:10px 0 6px; font-size:1.06rem; }
+  .paso p{ color:var(--sub); font-size:.88rem; }
+
+  /* ---------- Video ---------- */
+  .videow{ max-width:860px; margin:0 auto; border-radius:22px; overflow:hidden; border:1px solid var(--line);
+    box-shadow:0 40px 120px rgba(31,122,224,.18); background:#000; }
+  .videow video{ display:block; width:100%; height:auto; }
+
+  /* ---------- Features ---------- */
+  .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:16px; }
+  .card{ border:1px solid var(--line); border-radius:18px; padding:24px; background:var(--card); transition:border-color .25s, transform .25s; }
+  .card:hover{ border-color:rgba(47,157,255,.4); transform:translateY(-3px); }
+  .card .ico{ font-size:1.5rem; }
+  .card h3{ margin:8px 0 6px; font-size:1rem; }
+  .card p{ color:var(--sub); font-size:.86rem; }
+
+  /* ---------- Planes ---------- */
+  .planes{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px; align-items:stretch; }
+  .plan{ border:1px solid var(--line); border-radius:20px; padding:28px 24px; background:var(--card); display:flex; flex-direction:column; }
+  .plan.destacado{ border-color:rgba(227,167,47,.55); background:linear-gradient(180deg, rgba(227,167,47,.08), rgba(17,30,45,.65)); position:relative; }
+  .plan.destacado::before{ content:'CON IA'; position:absolute; top:-11px; left:24px; background:var(--oro); color:#241a05; font-weight:800; font-size:.68rem; letter-spacing:.1em; padding:4px 12px; border-radius:999px; }
+  .plan h3{ font-size:1.05rem; }
+  .plan .precio{ font-size:2.1rem; font-weight:800; margin:8px 0 14px; }
+  .plan .precio small{ font-size:.85rem; color:var(--sub); font-weight:600; }
+  .plan ul{ list-style:none; flex:1; margin-bottom:18px; }
+  .plan li{ padding:5px 0 5px 24px; position:relative; color:#c3d3e2; font-size:.86rem; }
+  .plan li::before{ content:'✓'; position:absolute; left:0; color:var(--verde); font-weight:800; }
+  .plan a{ display:block; text-align:center; text-decoration:none; font-weight:800; padding:13px; border-radius:12px; }
+  .p-azul{ background:var(--cel2); color:#fff; } .p-oro{ background:var(--oro); color:#241a05; } .p-verde{ background:var(--verde); color:#04240f; }
+
+  /* ---------- Cierre ---------- */
+  .cierre{ text-align:center; padding:120px 6%; position:relative; overflow:hidden; }
+  .cierre .glow{ position:absolute; inset:auto -20% -60% -20%; height:480px; background:radial-gradient(600px 300px at 50% 100%, rgba(31,122,224,.35), transparent 70%); pointer-events:none; }
+  .cierre h2{ font-size:clamp(1.9rem,5vw,3.2rem); font-weight:800; letter-spacing:-.02em; max-width:760px; margin:0 auto 16px; line-height:1.1; }
+  .cierre p{ color:var(--sub); max-width:520px; margin:0 auto 30px; }
+
+  footer{ border-top:1px solid var(--line); padding:26px 6%; text-align:center; color:var(--sub); font-size:.82rem; }
+  footer a{ color:var(--sub); }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="marca"><img src="/logo-mv.svg" alt="MV">MV <span>Agendate IA</span></div>
+  <div class="links">
+    <a href="#como" data-i18n="nComo">Cómo funciona</a>
+    <a href="#video" data-i18n="nVideo">Video</a>
+    <a href="#planes" data-i18n="nPlanes">Planes</a>
+    <a href="/demo.html" data-i18n="nDemo">Demo</a>
+    <select class="mv-sel-idioma" aria-label="Idioma">
+      <option value="es">🇺🇾 ES</option>
+      <option value="pt">🇧🇷 PT</option>
+    </select>
+    <a class="cta" href="/instalar.html" data-i18n="nCta">Probar gratis</a>
+  </div>
+</div>
+
+<!-- ================= HERO ================= -->
+<header class="hero">
+  <canvas id="lienzo" aria-hidden="true"></canvas>
+  <div class="velo"></div>
+  <div class="adentro">
+    <div class="kicker rev" data-i18n="kicker">WhatsApp · Teléfono · Agenda con IA</div>
+    <h1 class="rev d1" data-i18n-html="h1">Mientras trabajás,<br><em>tu asistente vende por vos</em></h1>
+    <p class="lead rev d2" data-i18n="lead">Atiende WhatsApp y llamadas a cualquier hora, cotiza con TU lista de precios y agenda optimizando los traslados reales entre citas. Para médicos, abogados, electricistas y cualquier profesión de LATAM.</p>
+    <div class="botones rev d3">
+      <a class="b1" href="/instalar.html" data-i18n="b1">Probalo gratis 3 días →</a>
+      <a class="b2" href="/demo.html" data-i18n="b2">▶ Ver la demo en vivo</a>
+    </div>
+    <div class="mini rev d4" data-i18n="mini">Sin tarjeta · App Android + PC · También online por suscripción</div>
+  </div>
+  <div class="flecha">↓</div>
+</header>
+
+<!-- ================= STATS ================= -->
+<section style="padding-top:40px;">
+  <div class="stats">
+    <div class="stat rev"><b data-cuenta="18">0</b><span data-i18n="s1">profesiones precargadas</span></div>
+    <div class="stat rev d1"><b data-cuenta="24" data-sufijo="/7">0</b><span data-i18n="s2">respuesta inmediata</span></div>
+    <div class="stat rev d2"><b data-cuenta="19" data-prefijo="">0</b><span data-i18n="s3">países de LATAM (es/pt)</span></div>
+    <div class="stat rev d3"><b data-cuenta="1" data-sufijo=" pago">0</b><span data-i18n="s4">sin mensualidades del software</span></div>
+  </div>
+</section>
+
+<!-- ================= CHAT ANIMADO ================= -->
+<section id="como">
+  <div class="chatwrap">
+    <div class="rev">
+      <h2 data-i18n-html="chatH">Tu cliente escribe.<br>MV cotiza, agenda y confirma.</h2>
+      <p data-i18n="chatP">El asistente entiende el pedido, arma el presupuesto con tus precios (nunca inventa un número), propone horarios que respetan traslados y descansos, y te avisa si algo se atrasa. Vos solo aprobás el precio con un toque.</p>
+    </div>
+    <div class="fono rev d1">
+      <div class="cab"><div class="av">🔧</div><div><b data-i18n="chatNombre">Asistente de Marcelo — Electricista</b><small data-i18n="chatLinea">● en línea</small></div></div>
+      <div class="msgs" id="msgs">
+        <div class="m mu" data-i18n="m1">Hola! ¿Cuánto sale cambiar un tomacorriente doble y cuándo podés venir?</div>
+        <div class="m mb" data-i18n-html="m2"><b>MV:</b> ¡Hola! El cambio de tomacorriente doble sale <b>$ 1.350</b> (mano de obra + materiales + traslado). Tengo lugar <b>mañana 14:30</b>. ¿Confirmamos?</div>
+        <div class="m mu" data-i18n="m3">Sí, dale, confirmá 👍</div>
+        <div class="m mb" data-i18n-html="m4"><b>MV:</b> Quedaste agendado ✅ Si Marcelo se atrasa, te aviso yo mismo por acá.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PASOS ================= -->
+<section>
+  <div class="centro">
+    <div class="cabeza rev">
+      <h2 data-i18n="pasosH">De la consulta al cobro, sin que atiendas el teléfono</h2>
+      <p data-i18n="pasosP">Un mismo flujo de punta a punta, las 24 horas.</p>
+    </div>
+    <div class="pasos">
+      <div class="paso rev" data-n="1"><div class="ico">💬</div><h3 data-i18n="pa1h">Te escribe o te llama</h3><p data-i18n="pa1p">WhatsApp, teléfono o el chat de tu web. El asistente responde al instante, en tu nombre y en el idioma de tu país.</p></div>
+      <div class="paso rev d1" data-n="2"><div class="ico">💰</div><h3 data-i18n="pa2h">Cotiza con tus precios</h3><p data-i18n="pa2p">Presupuesto desglosado con mano de obra, materiales y traslado — siempre dentro de tu propia lista.</p></div>
+      <div class="paso rev d2" data-n="3"><div class="ico">🗓️</div><h3 data-i18n="pa3h">Agenda inteligente</h3><p data-i18n="pa3p">Propone horarios calculando el viaje real entre citas y respetando tu almuerzo y tus días libres.</p></div>
+      <div class="paso rev d3" data-n="4"><div class="ico">📊</div><h3 data-i18n="pa4h">Vos ves todo</h3><p data-i18n="pa4p">Panel, CRM y dashboards con exportación a Excel/PDF. Si hay atraso, el asistente ya le avisó al próximo cliente.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= VIDEO ================= -->
+<section id="video">
+  <div class="centro">
+    <div class="cabeza rev">
+      <h2 data-i18n="vidH">Miralo funcionando</h2>
+      <p data-i18n="vidP">Cotización con IA, agenda optimizada, CRM y dashboards — en 1 minuto.</p>
+    </div>
+    <div class="videow rev d1">
+      <video controls preload="metadata" poster="/video/poster.jpg" playsinline>
+        <source src="/video/mv-agendate-ia.mp4" type="video/mp4">
+      </video>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FEATURES ================= -->
+<section>
+  <div class="centro">
+    <div class="cabeza rev">
+      <h2 data-i18n="feaH">Todo lo que necesita un profesional independiente</h2>
+    </div>
+    <div class="grid">
+      <div class="card rev"><span class="ico">🤖</span><h3 data-i18n="f1h">Chatbot con IA real</h3><p data-i18n="f1p">Claude, ChatGPT o Gemini — elegís el motor. Entiende, cotiza y deriva a un humano cuando hace falta.</p></div>
+      <div class="card rev d1"><span class="ico">🎙️</span><h3 data-i18n="f2h">Atiende el teléfono</h3><p data-i18n="f2p">ChatVoice con voz natural que cotiza y agenda por llamada.</p></div>
+      <div class="card rev d2"><span class="ico">✅</span><h3 data-i18n="f3h">El precio lo aprobás vos</h3><p data-i18n="f3p">El asistente sugiere; el cliente no ve un monto hasta tu OK desde el panel.</p></div>
+      <div class="card rev"><span class="ico">🗺️</span><h3 data-i18n="f4h">Traslados reales</h3><p data-i18n="f4p">Calcula distancia y tiempo de viaje antes de ofrecer un horario.</p></div>
+      <div class="card rev d1"><span class="ico">⏰</span><h3 data-i18n="f5h">Aviso de atraso solo</h3><p data-i18n="f5p">Si un trabajo se estira, le escribe al próximo cliente por WhatsApp.</p></div>
+      <div class="card rev d2"><span class="ico">📱</span><h3 data-i18n="f6h">APK Android + PC</h3><p data-i18n="f6p">App nativa para el celular y programa de escritorio, mismos datos.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PLANES ================= -->
+<section id="planes">
+  <div class="centro">
+    <div class="cabeza rev">
+      <h2 data-i18n="plaH">Pago único para instalarlo — o cuenta online</h2>
+      <p data-i18n="plaP">Sin permanencia. El mismo motor, como prefieras usarlo.</p>
+    </div>
+    <div class="planes">
+      <div class="plan rev">
+        <h3 data-i18n="p1n">Básico</h3>
+        <div class="precio">USD 129 <small data-i18n="unico">pago único</small></div>
+        <ul>
+          <li data-i18n="p1a">Agenda optimizada + cotizador multi-oficio</li>
+          <li data-i18n="p1b">CRM + dashboards + exportación Excel/PDF</li>
+          <li data-i18n="p1c">App PC + APK Android</li>
+        </ul>
+        <a class="p-azul" href="/comprar.html?plan=basico" data-i18n="p1cta">Comprar Básico →</a>
+      </div>
+      <div class="plan destacado rev d1">
+        <h3 data-i18n="p2n">Full (con IA)</h3>
+        <div class="precio">USD 299 <small data-i18n="unico2">pago único</small></div>
+        <ul>
+          <li data-i18n="p2a">Todo lo del Básico</li>
+          <li data-i18n="p2b">Chatbot + ChatVoice con IA (WhatsApp y voz)</li>
+          <li data-i18n="p2c">Aviso automático de atraso</li>
+          <li data-i18n="p2d">Tus propias cuentas de IA/WhatsApp/Twilio</li>
+        </ul>
+        <a class="p-oro" href="/comprar.html?plan=full" data-i18n="p2cta">Comprar Full →</a>
+      </div>
+      <div class="plan rev d2">
+        <h3 data-i18n="p3n">SaaS online</h3>
+        <div class="precio">USD 15 <small data-i18n="pormes">por mes</small></div>
+        <ul>
+          <li data-i18n="p3a">Sin instalar nada — listo en 1 minuto</li>
+          <li data-i18n="p3b">14 días de prueba gratis, sin tarjeta</li>
+          <li data-i18n="p3c">Datos privados y aislados, desde cualquier lado</li>
+        </ul>
+        <a class="p-verde" href="/app/#/cuenta" data-i18n="p3cta">Probar 14 días gratis →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CIERRE ================= -->
+<section class="cierre">
+  <div class="glow"></div>
+  <h2 class="rev" data-i18n="cieH">Instalalo hoy. En un minuto está cotizando por vos.</h2>
+  <p class="rev d1" data-i18n="cieP">3 días gratis con todo habilitado. Sin tarjeta. Si no te sirve, no pagás nada.</p>
+  <div class="botones rev d2">
+    <a class="b1" href="/instalar.html" data-i18n="cieB1">📲 Instalar gratis →</a>
+    <a class="b2" href="/" data-i18n="cieB2">Ver la versión clásica de la web</a>
+  </div>
+</section>
+
+<footer data-i18n-html="pie">MV Agendate IA · Turnos y presupuestos con IA para cualquier profesión de LATAM · <a href="/">Inicio</a> · <a href="/demo.html">Demo</a> · <a href="/comprar.html">Comprar</a></footer>
+
+<script>
+window.MV_PT = {
+  nComo:'Como funciona', nVideo:'Vídeo', nPlanes:'Planos', nDemo:'Demo', nCta:'Testar grátis',
+  kicker:'WhatsApp · Telefone · Agenda com IA',
+  h1:'Enquanto você trabalha,<br><em>seu assistente vende por você</em>',
+  lead:'Atende WhatsApp e ligações a qualquer hora, orça com a SUA tabela de preços e agenda otimizando os deslocamentos reais entre visitas. Para médicos, advogados, eletricistas e qualquer profissão da América Latina.',
+  b1:'Teste grátis por 3 dias →', b2:'▶ Ver a demo ao vivo',
+  mini:'Sem cartão · App Android + PC · Também online por assinatura',
+  s1:'profissões pré-carregadas', s2:'resposta imediata', s3:'países da América Latina (es/pt)', s4:'sem mensalidades do software',
+  chatH:'Seu cliente escreve.<br>O MV orça, agenda e confirma.',
+  chatP:'O assistente entende o pedido, monta o orçamento com os seus preços (nunca inventa um número), propõe horários que respeitam deslocamentos e descansos, e avisa você se algo atrasar. Você só aprova o preço com um toque.',
+  chatNombre:'Assistente do Marcelo — Eletricista', chatLinea:'● online',
+  m1:'Oi! Quanto custa trocar uma tomada dupla e quando você pode vir?',
+  m2:'<b>MV:</b> Olá! A troca da tomada dupla fica <b>R$ 180</b> (mão de obra + materiais + deslocamento). Tenho horário <b>amanhã às 14:30</b>. Confirmamos?',
+  m3:'Sim, pode confirmar 👍',
+  m4:'<b>MV:</b> Agendado ✅ Se o Marcelo atrasar, eu mesmo te aviso por aqui.',
+  pasosH:'Da consulta ao pagamento, sem você atender o telefone', pasosP:'Um mesmo fluxo de ponta a ponta, 24 horas.',
+  pa1h:'Escreve ou liga para você', pa1p:'WhatsApp, telefone ou o chat do seu site. O assistente responde na hora, no seu nome e no idioma do seu país.',
+  pa2h:'Orça com os seus preços', pa2p:'Orçamento detalhado com mão de obra, materiais e deslocamento — sempre dentro da sua própria tabela.',
+  pa3h:'Agenda inteligente', pa3p:'Propõe horários calculando a viagem real entre visitas e respeitando seu almoço e dias de folga.',
+  pa4h:'Você vê tudo', pa4p:'Painel, CRM e dashboards com exportação para Excel/PDF. Se houver atraso, o assistente já avisou o próximo cliente.',
+  vidH:'Veja funcionando', vidP:'Orçamento com IA, agenda otimizada, CRM e dashboards — em 1 minuto.',
+  feaH:'Tudo o que um profissional autônomo precisa',
+  f1h:'Chatbot com IA de verdade', f1p:'Claude, ChatGPT ou Gemini — você escolhe o motor. Entende, orça e encaminha a um humano quando preciso.',
+  f2h:'Atende o telefone', f2p:'ChatVoice com voz natural que orça e agenda por ligação.',
+  f3h:'O preço é aprovado por você', f3p:'O assistente sugere; o cliente não vê valor até o seu OK no painel.',
+  f4h:'Deslocamentos reais', f4p:'Calcula distância e tempo de viagem antes de oferecer um horário.',
+  f5h:'Aviso de atraso sozinho', f5p:'Se um serviço se estende, escreve ao próximo cliente pelo WhatsApp.',
+  f6h:'APK Android + PC', f6p:'App nativo para o celular e programa de desktop, mesmos dados.',
+  plaH:'Pagamento único para instalar — ou conta online', plaP:'Sem fidelidade. O mesmo motor, como você preferir.',
+  p1n:'Básico', unico:'pagamento único', unico2:'pagamento único', pormes:'por mês',
+  p1a:'Agenda otimizada + orçamentos multi-profissão', p1b:'CRM + dashboards + exportação Excel/PDF', p1c:'App PC + APK Android', p1cta:'Comprar Básico →',
+  p2n:'Full (com IA)', p2a:'Tudo do Básico', p2b:'Chatbot + ChatVoice com IA (WhatsApp e voz)', p2c:'Aviso automático de atraso', p2d:'Suas próprias contas de IA/WhatsApp/Twilio', p2cta:'Comprar Full →',
+  p3n:'SaaS online', p3a:'Sem instalar nada — pronto em 1 minuto', p3b:'14 dias de teste grátis, sem cartão', p3c:'Dados privados e isolados, de qualquer lugar', p3cta:'Testar 14 dias grátis →',
+  cieH:'Instale hoje. Em um minuto está orçando por você.', cieP:'3 dias grátis com tudo habilitado. Sem cartão. Se não servir, não paga nada.',
+  cieB1:'📲 Instalar grátis →', cieB2:'Ver a versão clássica do site',
+  pie:'MV Agendate IA · Agendamentos e orçamentos com IA para qualquer profissão da América Latina · <a href="/">Início</a> · <a href="/demo.html">Demo</a> · <a href="/comprar.html">Comprar</a>'
+};
+</script>
+<script src="/js/i18n.js"></script>
+<script>
+(function () {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- Fondo del hero: aros brillantes flotando (canvas liviano) ----------
+  const cv = document.getElementById('lienzo');
+  const ctx = cv.getContext('2d');
+  let W, H, aros = [];
+  function medir() {
+    W = cv.width = cv.offsetWidth * devicePixelRatio;
+    H = cv.height = cv.offsetHeight * devicePixelRatio;
+  }
+  function crearAros() {
+    const n = innerWidth < 700 ? 5 : 8;
+    aros = Array.from({ length: n }, (_, i) => ({
+      x: Math.random() * W, y: Math.random() * H * .8,
+      r: (40 + Math.random() * 110) * devicePixelRatio,
+      vx: (Math.random() - .5) * .18 * devicePixelRatio,
+      vy: (Math.random() - .5) * .12 * devicePixelRatio,
+      rot: Math.random() * Math.PI, vr: (Math.random() - .5) * .004,
+      hue: i % 3 === 0 ? 38 : 208, // dorado u celeste, paleta MV
+      alfa: .10 + Math.random() * .16,
+    }));
+  }
+  function dibujar() {
+    ctx.clearRect(0, 0, W, H);
+    for (const a of aros) {
+      a.x += a.vx; a.y += a.vy; a.rot += a.vr;
+      if (a.x < -a.r) a.x = W + a.r; if (a.x > W + a.r) a.x = -a.r;
+      if (a.y < -a.r) a.y = H + a.r; if (a.y > H + a.r) a.y = -a.r;
+      ctx.save();
+      ctx.translate(a.x, a.y); ctx.rotate(a.rot); ctx.scale(1, .42); // elipse: sensación 3D
+      const g = ctx.createLinearGradient(-a.r, 0, a.r, 0);
+      g.addColorStop(0, `hsla(${a.hue}, 90%, 62%, 0)`);
+      g.addColorStop(.5, `hsla(${a.hue}, 90%, 62%, ${a.alfa})`);
+      g.addColorStop(1, `hsla(${a.hue}, 90%, 62%, 0)`);
+      ctx.strokeStyle = g;
+      ctx.lineWidth = 2.2 * devicePixelRatio;
+      ctx.beginPath(); ctx.arc(0, 0, a.r, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    }
+  }
+  let corriendo = true;
+  function loop() { if (corriendo && !reduce) { dibujar(); } requestAnimationFrame(loop); }
+  medir(); crearAros(); if (!reduce) loop(); else dibujar();
+  addEventListener('resize', () => { medir(); crearAros(); if (reduce) dibujar(); });
+  // Pausar cuando el hero no se ve (batería del celular)
+  new IntersectionObserver((e) => { corriendo = e[0].isIntersecting; }).observe(cv);
+
+  // ---------- Aparición al scroll ----------
+  const io = new IntersectionObserver((entradas) => {
+    for (const e of entradas) if (e.isIntersecting) { e.target.classList.add('on'); io.unobserve(e.target); }
+  }, { threshold: .18 });
+  document.querySelectorAll('.rev').forEach((el) => io.observe(el));
+
+  // ---------- Contadores ----------
+  const ioNum = new IntersectionObserver((entradas) => {
+    for (const e of entradas) {
+      if (!e.isIntersecting) continue;
+      ioNum.unobserve(e.target);
+      const fin = Number(e.target.dataset.cuenta);
+      const suf = e.target.dataset.sufijo || '';
+      const ini = performance.now();
+      (function tick(t) {
+        const p = Math.min(1, (t - ini) / 1200);
+        e.target.textContent = Math.round(fin * (1 - Math.pow(1 - p, 3))) + suf;
+        if (p < 1) requestAnimationFrame(tick);
+      })(ini);
+    }
+  }, { threshold: .5 });
+  document.querySelectorAll('[data-cuenta]').forEach((el) => ioNum.observe(el));
+
+  // ---------- Chat que se escribe solo al entrar en pantalla ----------
+  const msgs = document.querySelectorAll('#msgs .m');
+  const ioChat = new IntersectionObserver((e) => {
+    if (!e[0].isIntersecting) return;
+    ioChat.disconnect();
+    msgs.forEach((m, i) => setTimeout(() => m.classList.add('on'), 500 + i * 950));
+  }, { threshold: .4 });
+  if (msgs.length) ioChat.observe(document.getElementById('msgs'));
+})();
+</script>
+<script src="/js/pwa.js" defer></script>
+</body>
+</html>
