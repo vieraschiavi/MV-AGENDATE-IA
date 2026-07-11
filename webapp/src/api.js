@@ -27,22 +27,14 @@ const conAuth = (headers = {}) => {
 };
 
 /**
- * fetch con X-Admin-Key (y el token de la cuenta SaaS si hay sesión); ante un
- * 401 pide la clave una vez y reintenta (mismo comportamiento que la versión
- * clásica del panel). Con sesión SaaS el token ya autoriza, así que la clave
- * admin no suele hacer falta.
+ * fetch con X-Admin-Key (y el token de la cuenta SaaS si hay sesión).
+ * NUNCA interrumpe con un prompt: ante un 401 simplemente devuelve la
+ * respuesta y la UI decide (el workspace invita a iniciar sesión; la clave
+ * admin del vendedor se carga a mano desde el menú → "Clave admin").
  */
 export async function fetchAdmin(url, opts = {}) {
   opts.headers = conAuth({ ...(opts.headers || {}), 'X-Admin-Key': claveAdmin() });
-  let r = await fetch(url, opts);
-  if (r.status === 401 && !tokenSesion()) {
-    const k = prompt('Clave de administración:');
-    if (k == null) return r;
-    localStorage.setItem('mvAdminKey', k);
-    opts.headers['X-Admin-Key'] = k;
-    r = await fetch(url, opts);
-  }
-  return r;
+  return fetch(url, opts);
 }
 
 export const getJSON = (url) => fetch(url, { headers: conAuth() }).then((r) => r.json());

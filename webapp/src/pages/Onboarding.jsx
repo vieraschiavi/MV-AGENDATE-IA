@@ -25,15 +25,30 @@ export default function Onboarding() {
   const [precios, setPrecios] = useState({ estado: '', detalle: '' });
 
   useEffect(() => {
-    if (localStorage.getItem('mvOnboardingListo')) return;
-    // Solo con config accesible y virgen (primer arranque / cuenta recién creada).
+    // "Forzado": /config.html → "Abrir el asistente guiado" lo reabre aunque
+    // ya haya configuración cargada (para retocar los básicos con guía).
+    const forzado = sessionStorage.getItem('mvAsistenteForzar') === '1';
+    if (!forzado && localStorage.getItem('mvOnboardingListo')) return;
     fetchAdmin('/api/config').then(async (r) => {
       if (!r.ok) return;
       const cfg = await r.json();
-      if (cfg.nombreProfesional) return; // ya configurado: nunca molestar
+      if (!forzado && cfg.nombreProfesional) return; // ya configurado: nunca molestar
+      sessionStorage.removeItem('mvAsistenteForzar');
       const [ps, ofs] = await Promise.all([getJSON('/api/paises'), getJSON('/api/oficios')]);
       setPaises(ps);
       setOficios(ofs);
+      // Precargamos lo que ya haya para que "reabrir" no borre nada.
+      setForm((f) => ({
+        ...f,
+        nombreProfesional: cfg.nombreProfesional || f.nombreProfesional,
+        pais: cfg.pais || f.pais,
+        oficioProfesional: cfg.oficioProfesional || f.oficioProfesional,
+        horarioInicio: cfg.horarioInicio || f.horarioInicio,
+        horarioFin: cfg.horarioFin || f.horarioFin,
+        almuerzoInicio: cfg.almuerzoInicio || f.almuerzoInicio,
+        almuerzoFin: cfg.almuerzoFin || f.almuerzoFin,
+        diasLibres: cfg.diasLibres ? String(cfg.diasLibres).split(',') : f.diasLibres,
+      }));
       setVisible(true);
     }).catch(() => {});
   }, []);

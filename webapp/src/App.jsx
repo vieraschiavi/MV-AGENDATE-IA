@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Routes, Route, NavLink, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import Panel from './pages/Panel.jsx';
 import Agenda from './pages/Agenda.jsx';
 import Clientes from './pages/Clientes.jsx';
@@ -25,10 +25,25 @@ export default function App() {
   const [abierto, setAbierto] = useState(false);
   const cerrar = () => setAbierto(false);
   const cuenta = cuentaSesion();
+  const nav = useNavigate();
+  const ruta = useLocation().pathname;
+
+  // Portero amable: si el servidor exige autenticación (hosted con clave
+  // admin) y no hay sesión ni clave cargada, invitamos a crear la cuenta en
+  // vez de interrumpir con un prompt. En la copia local/descargable el
+  // sondeo devuelve 200 y no pasa nada.
+  useEffect(() => {
+    if (cuenta || claveAdmin() || ruta === '/cuenta') return;
+    fetch('/api/panel', { headers: { 'X-Admin-Key': '' } })
+      .then((r) => { if (r.status === 401) nav('/cuenta', { replace: true }); })
+      .catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const pedirClave = () => {
     const k = prompt(t('Clave de administración:'), claveAdmin());
-    if (k != null) localStorage.setItem('mvAdminKey', k);
+    if (k == null) return;
+    localStorage.setItem('mvAdminKey', k);
+    window.location.reload(); // recarga para que todo el workspace use la clave
   };
 
   return (

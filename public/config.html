@@ -54,7 +54,7 @@
     <img src="/logo-mv.svg" alt="MV" style="width:44px;height:44px;border-radius:10px;flex:0 0 auto;">
     <div>
       <h1>Configuración — MV Agendate IA</h1>
-      <p>Elegí tu IA (Claude, ChatGPT o Gemini) y pegá tu API key, tu oficio y tu jornada laboral. Se aplican al instante, sin reiniciar.</p>
+      <p>Solo 3 datos para arrancar: quién sos, tu país y tu horario. Todo lo demás es opcional y vive en "Avanzado". ¿Preferís que te guíe paso a paso? <a href="#" id="btnAsistente" style="color:#e3a72f;font-weight:700;">🪄 Abrir el asistente guiado</a></p>
     </div>
   </div>
 </header>
@@ -67,9 +67,9 @@
     <div class="badges" id="badges"><span class="badge off">cargando…</span></div>
   </div>
 
-  <div class="card">
+  <div class="card" id="cardAdmin" style="display:none;">
     <h2>Clave de administración</h2>
-    <div class="sub">Si configuraste una clave de admin, pegala acá para poder ver y guardar. En el primer uso dejala vacía.</div>
+    <div class="sub">Este servidor tiene clave de administración: pegala para ver y guardar la configuración.</div>
     <input id="adminKey" type="password" placeholder="X-Admin-Key (opcional)" autocomplete="off">
     <div class="hint">Podés definir una clave nueva abajo, en "Seguridad".</div>
     <button class="btn gold" id="btnCargar">Cargar configuración actual</button>
@@ -85,8 +85,57 @@
   </div>
 
   <form id="form" class="card">
-    <h2>🔑 Inteligencia artificial</h2>
-    <div class="sub">Elegí tu proveedor de IA y pegá TU propia API key. Es lo que hace funcionar el chatbot, el ChatVoice y las cotizaciones con IA. Podés usar el que ya tengas.</div>
+    <h2>👷 Vos y tu negocio</h2>
+    <div class="sub">Con esto el asistente ya se presenta con tu nombre y cotiza en tu moneda.</div>
+    <div class="row">
+      <div><label>Tu nombre (o el de tu negocio)</label><input id="nombreProfesional" placeholder="Juan Pérez"></div>
+      <div><label>Profesión / oficio</label>
+        <select id="oficioProfesional"></select>
+      </div>
+    </div>
+    <div class="hint">¿Tu profesión no está en la lista? Creala más abajo en "Mi profesión / precios de mercado" — sirve para cualquier rubro con agenda: médicos, abogados, escribanos, psicólogos, talleres, etc.</div>
+    <div class="row">
+      <div><label>Nombre comercial (fichas/exportaciones)</label><input id="agenciaNombre" placeholder="Electricidad Pérez"></div>
+      <div><label>Teléfono de contacto</label><input id="agenciaTelefono" placeholder="+598 99 123 456"></div>
+    </div>
+    <label>Logo (aparece en fichas y exportaciones)</label>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <input id="logoUrl" placeholder="URL del logo o subilo →" style="flex:1;">
+      <input id="logoFile" type="file" accept="image/*" style="width:auto;padding:6px;">
+      <img id="logoPrev" style="width:40px;height:40px;border-radius:8px;object-fit:contain;display:none;">
+    </div>
+    <div class="hint">Podés pegar una URL o subir una imagen (se guarda embebida). Si lo dejás vacío, usa el logo MV.</div>
+
+    <h2 style="margin-top:22px;">🌎 Tu país</h2>
+    <div class="sub">Elegí tu país: la moneda de cotización y facturación se ajusta sola (o facturá en USD si preferís). El estimador de impuestos y el sugeridor de precios de mercado también usan esto.</div>
+    <div class="row">
+      <div><label>País</label><select id="pais"></select></div>
+      <div><label>Moneda de cotización</label>
+        <select id="moneda">
+          <option value="">Moneda local del país</option>
+          <option value="USD">USD (dólares)</option>
+        </select>
+      </div>
+    </div>
+
+    <h2 style="margin-top:22px;">🗓️ Jornada y descansos</h2>
+    <div class="sub">El motor de agenda usa esto para no ofrecer horarios fuera de tu jornada, respetar tu almuerzo y no agendar en tus días libres.</div>
+    <div class="row">
+      <div><label>Inicio de jornada</label><input id="horarioInicio" type="time" value="08:00"></div>
+      <div><label>Fin de jornada</label><input id="horarioFin" type="time" value="19:00"></div>
+    </div>
+    <div class="row">
+      <div><label>Inicio de almuerzo/descanso</label><input id="almuerzoInicio" type="time" value="12:30"></div>
+      <div><label>Fin de almuerzo/descanso</label><input id="almuerzoFin" type="time" value="13:30"></div>
+    </div>
+    <label>Días libres (no se agenda)</label>
+    <div class="badges" id="diasLibresBox"></div>
+    <input type="hidden" id="diasLibres">
+
+    <details>
+      <summary>⚙️ Avanzado — IA propia, créditos y modo de cotización</summary>
+    <h3 style="margin:0 0 4px;">🔑 Usar mi propia clave de IA (opcional)</h3>
+    <div class="sub">La cuenta online ya viene con IA incluida (créditos) — esto es solo si preferís usar tu propia clave de Claude, ChatGPT o Gemini, o si instalaste la versión descargable.</div>
     <label>Proveedor de IA</label>
     <select id="proveedorIA">
       <option value="claude">Claude (Anthropic) — recomendado</option>
@@ -110,7 +159,7 @@
     </div>
     <div class="hint">Se guarda en tu servidor, nunca se expone al cliente. Al guardar con una key válida, el chatbot pasa de "modo demo" a IA real automáticamente. <strong>Copilot</strong> no ofrece una API general para este uso; si trabajás con modelos de Microsoft/Azure, usá la opción OpenAI con tu endpoint.</div>
 
-    <h2 style="margin-top:22px;">💳 Créditos de IA (para vender cuentas online)</h2>
+    <h3 style="margin:14px 0 4px;">💳 Créditos de IA (solo para el vendedor)</h3>
     <div class="sub">Si vendés cuentas SaaS, con TU key le vendés "créditos" a cada cuenta: usan tu IA y cada mensaje descuenta su saldo. Cuando se agota, la IA se corta hasta que recarguen por MercadoPago. (Si preferís que cada cuenta traiga su propia key, desactivalo.)</div>
     <div class="row">
       <div><label>Modo créditos</label><select id="creditosSaas"><option value="">Activado (vendés créditos)</option><option value="0">Desactivado (cada cuenta trae su key)</option></select></div>
@@ -120,19 +169,7 @@
     <input id="creditosBono" type="number" step="1" placeholder="3">
     <div class="hint">El saldo se descuenta al costo real de la IA × el margen. Ej: con margen 2.5, US$ 10 de recarga ≈ US$ 4 de costo real = cientos de mensajes. Ajustá según tu estrategia.</div>
 
-    <h2 style="margin-top:22px;">🌎 País y moneda</h2>
-    <div class="sub">Elegí tu país: la moneda de cotización y facturación se ajusta sola (o facturá en USD si preferís). El estimador de impuestos y el sugeridor de precios de mercado también usan esto.</div>
-    <div class="row">
-      <div><label>País</label><select id="pais"></select></div>
-      <div><label>Moneda de cotización</label>
-        <select id="moneda">
-          <option value="">Moneda local del país</option>
-          <option value="USD">USD (dólares)</option>
-        </select>
-      </div>
-    </div>
-
-    <h2 style="margin-top:22px;">✅ Aprobación de cotizaciones</h2>
+    <h3 style="margin:14px 0 4px;">✅ Aprobación de cotizaciones</h3>
     <div class="sub">El precio que calcula el asistente es un sugerido: por defecto NO se lo dice al cliente hasta que vos lo apruebes (o ajustes) desde el Panel. Te llega un aviso por WhatsApp con cada cotización pendiente.</div>
     <label>Modo de cotización del chatbot</label>
     <select id="aprobarCotizaciones">
@@ -140,39 +177,7 @@
       <option value="0">Precio directo al cliente (sin aprobación)</option>
     </select>
 
-    <h2 style="margin-top:22px;">👷 Datos del profesional</h2>
-    <div class="row">
-      <div><label>Tu nombre (o el de tu negocio)</label><input id="nombreProfesional" placeholder="Juan Pérez"></div>
-      <div><label>Profesión / oficio</label>
-        <select id="oficioProfesional"></select>
-      </div>
-    </div>
-    <div class="hint">¿Tu profesión no está en la lista? Creala más abajo en "Mi profesión / precios de mercado" — sirve para cualquier rubro con agenda: médicos, abogados, escribanos, psicólogos, talleres, etc.</div>
-    <div class="row">
-      <div><label>Nombre comercial (fichas/exportaciones)</label><input id="agenciaNombre" placeholder="Electricidad Pérez"></div>
-      <div><label>Teléfono de contacto</label><input id="agenciaTelefono" placeholder="+598 99 123 456"></div>
-    </div>
-    <label>Logo (aparece en fichas y exportaciones)</label>
-    <div style="display:flex;gap:10px;align-items:center;">
-      <input id="logoUrl" placeholder="URL del logo o subilo →" style="flex:1;">
-      <input id="logoFile" type="file" accept="image/*" style="width:auto;padding:6px;">
-      <img id="logoPrev" style="width:40px;height:40px;border-radius:8px;object-fit:contain;display:none;">
-    </div>
-    <div class="hint">Podés pegar una URL o subir una imagen (se guarda embebida). Si lo dejás vacío, usa el logo MV.</div>
-
-    <h2 style="margin-top:22px;">🗓️ Jornada y descansos</h2>
-    <div class="sub">El motor de agenda usa esto para no ofrecer horarios fuera de tu jornada, respetar tu almuerzo y no agendar en tus días libres.</div>
-    <div class="row">
-      <div><label>Inicio de jornada</label><input id="horarioInicio" type="time" value="08:00"></div>
-      <div><label>Fin de jornada</label><input id="horarioFin" type="time" value="19:00"></div>
-    </div>
-    <div class="row">
-      <div><label>Inicio de almuerzo/descanso</label><input id="almuerzoInicio" type="time" value="12:30"></div>
-      <div><label>Fin de almuerzo/descanso</label><input id="almuerzoFin" type="time" value="13:30"></div>
-    </div>
-    <label>Días libres (no se agenda)</label>
-    <div class="badges" id="diasLibresBox"></div>
-    <input type="hidden" id="diasLibres">
+    </details>
 
     <details>
       <summary>📲 Canales avanzados (WhatsApp, teléfono, voz)</summary>
@@ -537,7 +542,10 @@ function pintarBadges(estado) {
 async function cargar() {
   try {
     const r = await fetch('/api/config', { headers: headers() });
-    if (r.status === 401) return aviso('Clave de administración inválida.', false);
+    if (r.status === 401) {
+      document.getElementById('cardAdmin').style.display = '';
+      return aviso('Este servidor pide la clave de administración (tarjeta de arriba).', false);
+    }
     const c = await r.json();
     for (const campo of CAMPOS) {
       const el = $('#'+campo); if (!el) continue;
@@ -587,6 +595,14 @@ $('#btnTest').onclick = async () => {
 };
 
 cargar();
+
+// Reabrir el asistente guiado del primer uso (wizard del workspace).
+document.getElementById('btnAsistente').onclick = (e) => {
+  e.preventDefault();
+  localStorage.removeItem('mvOnboardingListo');
+  sessionStorage.setItem('mvAsistenteForzar', '1'); // reabre aunque ya haya config
+  location.href = '/app/';
+};
 
 // ---------- Prueba gratis / licencia (copia descargada) ----------
 async function cargarPrueba() {
