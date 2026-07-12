@@ -47,3 +47,22 @@
     });
   });
 })();
+
+// Video promocional según idioma: el inglés usa /video/mv-agendate-ia-en.mp4.
+(function () {
+  function ajustarVideo() {
+    const idi = (window.mvIdioma && window.mvIdioma()) || 'es';
+    const base = '/video/mv-agendate-ia';
+    const src = idi === 'en' ? base + '-en.mp4' : base + '.mp4';
+    document.querySelectorAll('video.mv-video').forEach((v) => {
+      const fuente = v.querySelector('source');
+      if (!fuente || fuente.getAttribute('src') === src) return;
+      const estaba = !v.paused;
+      fuente.setAttribute('src', src);
+      v.load();
+      if (estaba) v.play().catch(() => {});
+    });
+  }
+  ajustarVideo();
+  document.addEventListener('mv:idioma', ajustarVideo);
+})();

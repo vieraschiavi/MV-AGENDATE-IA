@@ -114,8 +114,50 @@ const EscenaPanel = ({ len, archivo, ratio, width, titulo, texto }) => {
   );
 };
 
+// ---------- Textos por idioma (es | en) ----------
+export const STR = {
+  es: {
+    hookKicker: 'WhatsApp · Teléfono · Agenda',
+    hookA: 'El asistente que', hookB: 'atiende, cotiza', hookC: 'y agenda por vos',
+    waNombre: 'Electricista Juan', waEstado: 'en línea · responde al instante',
+    chat: [
+      { de: 'cliente', texto: 'Hola! ¿Cuánto sale instalar 2 tomacorrientes?', delay: 18 },
+      { de: 'bot', texto: 'Hola 👋 Instalación de 2 tomas: $1.500 (mano de obra + materiales + traslado). ¿Te queda bien mañana 10:00 o 14:30?', delay: 90 },
+      { de: 'cliente', texto: 'Mañana 10:00 👍', delay: 180 },
+      { de: 'bot', texto: '✅ Agendado para mañana a las 10:00. Juan te visita en Av. Brasil 2450.', delay: 235 },
+    ],
+    waTit: 'La IA atiende por WhatsApp, 24/7', waSub: 'Cotiza, ofrece horarios y confirma la cita sola — vos seguís trabajando',
+    cotTit: 'Cotiza con IA según tu mercado', cotSub: 'Mano de obra + materiales + traslado, por tipo de trabajo y precios de tu país — nunca inventa un número',
+    agTit: 'Agenda optimizada de verdad', agSub: 'Propone horarios según distancia, tipo de trabajo y tu disponibilidad — sin cruces ni tiempos muertos',
+    fiTit: 'Ficha de trabajo automática', fiSub: 'Cliente, presupuesto desglosado y datos de la cita — lista para imprimir o mandar en PDF',
+    dbTit: 'Tableros de gestión completos', dbSub: 'Clientes por día, semana y mes · evolución 12 meses · facturación y ticket promedio · exportá a Excel',
+    crmTit: 'CRM de clientes', crmSub: 'Ficha, dirección confirmada e historial completo de trabajos de cada cliente',
+    ciSub1: 'Pago único desde USD 129 · MercadoPago', ciSub2: 'PC y Android · cualquier profesión u oficio · 24/7', ciCta: 'Probá la demo gratis →',
+    narSuffix: '',
+  },
+  en: {
+    hookKicker: 'WhatsApp · Phone · Scheduling',
+    hookA: 'The assistant that', hookB: 'answers, quotes', hookC: 'and books for you',
+    waNombre: 'Electrician John', waEstado: 'online · replies instantly',
+    chat: [
+      { de: 'cliente', texto: 'Hi! How much to install 2 outlets?', delay: 18 },
+      { de: 'bot', texto: 'Hi 👋 Installing 2 outlets: $60 (labor + materials + travel). Does tomorrow 10:00 or 2:30 pm work?', delay: 90 },
+      { de: 'cliente', texto: 'Tomorrow 10:00 👍', delay: 180 },
+      { de: 'bot', texto: '✅ Booked for tomorrow at 10:00. John visits you at 2450 Main St.', delay: 235 },
+    ],
+    waTit: 'AI answers WhatsApp, 24/7', waSub: 'It quotes, offers times and confirms the appointment on its own — you keep working',
+    cotTit: 'Quotes with AI for your market', cotSub: 'Labor + materials + travel, by job type and your country\'s prices — never a made-up number',
+    agTit: 'Truly optimized scheduling', agSub: 'Proposes times by distance, job type and your availability — no clashes, no dead time',
+    fiTit: 'Automatic job sheet', fiSub: 'Client, itemized quote and appointment details — ready to print or send as PDF',
+    dbTit: 'Complete management dashboards', dbSub: 'Clients by day, week and month · 12-month trend · revenue and average ticket · export to Excel',
+    crmTit: 'Client CRM', crmSub: 'Profile, confirmed address and full job history for every client',
+    ciSub1: 'One-time payment from USD 129 · MercadoPago', ciSub2: 'PC and Android · any trade · 24/7', ciCta: 'Try the demo free →',
+    narSuffix: '-en',
+  },
+};
+
 // ---------- Escena 1: hook ----------
-const EscenaHook = () => {
+const EscenaHook = ({ S }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const { opacity } = useEscena(LEN.hook);
@@ -125,14 +167,14 @@ const EscenaHook = () => {
       <div style={{ opacity, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Img src={staticFile('logo-mv.png')} style={{ width: 150, height: 150, borderRadius: '22%', marginBottom: 40, transform: `scale(${scale})` }} />
         <div style={{ color: GOLD, fontSize: 32, fontWeight: 700, letterSpacing: 4, textTransform: 'uppercase', marginBottom: 28 }}>
-          WhatsApp · Teléfono · Agenda
+          {S.hookKicker}
         </div>
         <div style={{ color: '#fff', fontSize: 86, fontWeight: 800, lineHeight: 1.12, textAlign: 'center', transform: `scale(${scale})` }}>
-          El asistente que
+          {S.hookA}
           <br />
-          <span style={{ color: GOLD }}>atiende, cotiza</span>
+          <span style={{ color: GOLD }}>{S.hookB}</span>
           <br />
-          y agenda por vos
+          {S.hookC}
         </div>
       </div>
     </AbsoluteFill>
@@ -140,13 +182,6 @@ const EscenaHook = () => {
 };
 
 // ---------- Escena 2: chat de WhatsApp animado ----------
-const CHAT = [
-  { de: 'cliente', texto: 'Hola! ¿Cuánto sale instalar 2 tomacorrientes?', delay: 18 },
-  { de: 'bot', texto: 'Hola 👋 Instalación de 2 tomas: $1.500 (mano de obra + materiales + traslado). ¿Te queda bien mañana 10:00 o 14:30?', delay: 90 },
-  { de: 'cliente', texto: 'Mañana 10:00 👍', delay: 180 },
-  { de: 'bot', texto: '✅ Agendado para mañana a las 10:00. Juan te visita en Av. Brasil 2450.', delay: 235 },
-];
-
 const Burbuja = ({ msg }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -177,7 +212,7 @@ const Burbuja = ({ msg }) => {
   );
 };
 
-const EscenaWhatsapp = () => {
+const EscenaWhatsapp = ({ S }) => {
   const { opacity, opacityTxt, rise } = useEscena(LEN.whatsapp);
   return (
     <AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center' }}>
@@ -188,23 +223,23 @@ const EscenaWhatsapp = () => {
           <div style={{ background: '#1f2c34', padding: '20px 22px', display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{ width: 52, height: 52, borderRadius: '50%', background: `linear-gradient(135deg, ${CEL}, ${NAVY2})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26 }}>⚡</div>
             <div>
-              <div style={{ color: '#e9edef', fontSize: 27, fontWeight: 700 }}>Electricista Juan</div>
-              <div style={{ color: '#8696a0', fontSize: 20 }}>en línea · responde al instante</div>
+              <div style={{ color: '#e9edef', fontSize: 27, fontWeight: 700 }}>{S.waNombre}</div>
+              <div style={{ color: '#8696a0', fontSize: 20 }}>{S.waEstado}</div>
             </div>
           </div>
           {/* Conversación */}
           <div style={{ background: '#0b141a', padding: '26px 20px 30px', display: 'flex', flexDirection: 'column', gap: 16, minHeight: 640 }}>
-            {CHAT.map((m) => <Burbuja key={m.delay} msg={m} />)}
+            {S.chat.map((m) => <Burbuja key={m.delay} msg={m} />)}
           </div>
         </div>
-        <Caption titulo="La IA atiende por WhatsApp, 24/7" texto="Cotiza, ofrece horarios y confirma la cita sola — vos seguís trabajando" opacity={opacityTxt} />
+        <Caption titulo={S.waTit} texto={S.waSub} opacity={opacityTxt} />
       </div>
     </AbsoluteFill>
   );
 };
 
 // ---------- Escena 8: cierre ----------
-const EscenaCierre = () => {
+const EscenaCierre = ({ S }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const { opacity } = useEscena(LEN.cierre, { inLen: 14 });
@@ -218,12 +253,12 @@ const EscenaCierre = () => {
           MV <span style={{ color: GREEN }}>Agendate</span> IA
         </div>
         <div style={{ color: '#cfe0f0', fontSize: 33, marginTop: 18, textAlign: 'center', maxWidth: 860 }}>
-          Pago único desde USD 129 · MercadoPago
+          {S.ciSub1}
           <br />
-          PC y Android · cualquier profesión u oficio · 24/7
+          {S.ciSub2}
         </div>
         <div style={{ transform: `scale(${pulse})`, marginTop: 54, background: GOLD, color: NAVY, fontSize: 40, fontWeight: 800, padding: '26px 56px', borderRadius: 20 }}>
-          Probá la demo gratis →
+          {S.ciCta}
         </div>
       </div>
     </AbsoluteFill>
@@ -236,42 +271,47 @@ const NARRACION = {
   ficha: 'nar5.wav', tableros: 'nar6.wav', crm: 'nar7.wav', cierre: 'nar8.wav',
 };
 
-export const Launch = () => (
+export const Launch = ({ lang = 'es' }) => {
+  const S = STR[lang] || STR.es;
+  // La narración inglesa vive con sufijo -en (nar1-en.wav …).
+  const narFile = (wav) => (S.narSuffix ? wav.replace('.wav', `${S.narSuffix}.wav`) : wav);
+  return (
   <AbsoluteFill style={{ backgroundColor: NAVY, fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
     <Background />
 
-    <Sequence from={START.hook} durationInFrames={LEN.hook}><EscenaHook /></Sequence>
-    <Sequence from={START.whatsapp} durationInFrames={LEN.whatsapp}><EscenaWhatsapp /></Sequence>
+    <Sequence from={START.hook} durationInFrames={LEN.hook}><EscenaHook S={S} /></Sequence>
+    <Sequence from={START.whatsapp} durationInFrames={LEN.whatsapp}><EscenaWhatsapp S={S} /></Sequence>
     <Sequence from={START.cotizador} durationInFrames={LEN.cotizador}>
       <EscenaPanel len={LEN.cotizador} archivo="panel-cotizador.png" ratio={1044 / 1224} width={640}
-        titulo="Cotiza con IA según tu mercado" texto="Mano de obra + materiales + traslado, por tipo de trabajo y precios de tu país — nunca inventa un número" />
+        titulo={S.cotTit} texto={S.cotSub} />
     </Sequence>
     <Sequence from={START.agenda} durationInFrames={LEN.agenda}>
       <EscenaPanel len={LEN.agenda} archivo="panel-agenda.png" ratio={1700 / 936} width={960}
-        titulo="Agenda optimizada de verdad" texto="Propone horarios según distancia, tipo de trabajo y tu disponibilidad — sin cruces ni tiempos muertos" />
+        titulo={S.agTit} texto={S.agSub} />
     </Sequence>
     <Sequence from={START.ficha} durationInFrames={LEN.ficha}>
       <EscenaPanel len={LEN.ficha} archivo="panel-ficha.png" ratio={1700 / 1131} width={920}
-        titulo="Ficha de trabajo automática" texto="Cliente, presupuesto desglosado y datos de la cita — lista para imprimir o mandar en PDF" />
+        titulo={S.fiTit} texto={S.fiSub} />
     </Sequence>
     <Sequence from={START.tableros} durationInFrames={LEN.tableros}>
       <EscenaPanel len={LEN.tableros} archivo="panel-dashboards.png" ratio={1700 / 1171} width={900}
-        titulo="Tableros de gestión completos" texto="Clientes por día, semana y mes · evolución 12 meses · facturación y ticket promedio · exportá a Excel" />
+        titulo={S.dbTit} texto={S.dbSub} />
     </Sequence>
     <Sequence from={START.crm} durationInFrames={LEN.crm}>
       <EscenaPanel len={LEN.crm} archivo="panel-clientes.png" ratio={1700 / 820} width={960}
-        titulo="CRM de clientes" texto="Ficha, dirección confirmada e historial completo de trabajos de cada cliente" />
+        titulo={S.crmTit} texto={S.crmSub} />
     </Sequence>
-    <Sequence from={START.cierre} durationInFrames={LEN.cierre}><EscenaCierre /></Sequence>
+    <Sequence from={START.cierre} durationInFrames={LEN.cierre}><EscenaCierre S={S} /></Sequence>
 
     {/* Música de fondo original, leve (drone cálido) durante todo el video */}
     <Audio src={staticFile('audio/musica.wav')} volume={0.9} />
 
-    {/* Narración — voz rioplatense Piper es_AR-daniela, una frase corta por escena */}
+    {/* Narración — Piper (es_AR-daniela / en_US-amy), una frase corta por escena */}
     {ESCENAS.map((e) => (
       <Sequence key={e.key} from={START[e.key] + 10} durationInFrames={LEN[e.key] - 10}>
-        <Audio src={staticFile(`audio/${NARRACION[e.key]}`)} />
+        <Audio src={staticFile(`audio/${narFile(NARRACION[e.key])}`)} />
       </Sequence>
     ))}
   </AbsoluteFill>
-);
+  );
+};
