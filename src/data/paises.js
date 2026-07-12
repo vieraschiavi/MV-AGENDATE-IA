@@ -38,6 +38,7 @@ export function idiomaDePais(paisClave) {
 export const NOMBRE_IDIOMA = {
   es: 'español (rioplatense vos/tenés si es Uruguay o Argentina; neutro en el resto de LATAM)',
   pt: 'portugués de Brasil (português do Brasil)',
+  en: 'English (natural, friendly US English)',
 };
 
 /**

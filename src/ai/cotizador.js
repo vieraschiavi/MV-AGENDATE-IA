@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { get as cfg } from '../store/config.js';
 import { parametrosMoneda, idiomaDePais } from '../data/paises.js';
+import { idiomaDemoActivo } from '../store/contextoCuenta.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const oficiosBase = JSON.parse(
@@ -36,9 +37,10 @@ export function monedaActiva() {
   return parametrosMoneda(cfg('pais') || 'uy', cfg('moneda'));
 }
 
-/** Idioma activo del negocio según el país configurado ('es' | 'pt'). */
+/** Idioma activo del negocio ('es' | 'pt' | 'en'). La demo puede forzar el
+ *  idioma (inglés no tiene país LATAM); si no, se deriva del país configurado. */
 export function idiomaActivo() {
-  return idiomaDePais(cfg('pais') || 'uy');
+  return idiomaDemoActivo() || idiomaDePais(cfg('pais') || 'uy');
 }
 
 // Factor de mercado: ajusta el precio base según franja horaria / urgencia.

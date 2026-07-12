@@ -42,3 +42,16 @@ export function runConDemoPais(pais, fn) {
 export function paisDemoActivo() {
   return als.getStore()?.paisDemo || null;
 }
+
+/**
+ * Ejecuta fn forzando el IDIOMA de la demo pública (para inglés, que no tiene
+ * país en LATAM). No cambia moneda ni país — solo el idioma de las respuestas.
+ */
+export function runConDemoIdioma(idi, fn) {
+  return als.run({ cuentaId: 'default', overrides: {}, idiomaDemo: idi }, fn);
+}
+
+/** Idioma forzado por la demo pública (null si no hay ninguno). */
+export function idiomaDemoActivo() {
+  return als.getStore()?.idiomaDemo || null;
+}

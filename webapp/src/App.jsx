@@ -120,6 +120,7 @@ export default function App() {
               <select value={idioma()} onChange={(e) => setIdioma(e.target.value)} aria-label={t('Idioma')} style={{ flex: 1, padding: '4px 6px', borderRadius: 8, border: '1px solid #cbd5e1', background: 'transparent', color: 'inherit', fontSize: '.85rem' }}>
                 <option value="es">🇺🇾 Español</option>
                 <option value="pt">🇧🇷 Português</option>
+                <option value="en">🇬🇧 English</option>
               </select>
             </label>
             <a href="/"><span className="ico">🏠</span><span>{t('Inicio')}</span></a>

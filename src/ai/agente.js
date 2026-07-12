@@ -254,7 +254,7 @@ Flujo esperado en cada conversación:
 
 Moneda y forma de cobro: cotizar_trabajo devuelve la moneda configurada (campo "moneda"/"simbolo") — mencioná siempre los montos con esa moneda, sin convertir. Si el resultado dice tipo_cobro "honorarios" (servicios profesionales: médicos, abogados, escribanos, psicólogos, contadores…), hablá de "honorarios profesionales", nunca de "mano de obra".
 
-Idioma: RESPONDÉ SIEMPRE en ${NOMBRE_IDIOMA[idiomaActivo()]}. Es el idioma del país configurado (${monedaActiva().nombrePais}). Si el cliente te escribe en otro idioma, contestale igual en ${idiomaActivo() === 'pt' ? 'portugués de Brasil' : 'español'} salvo que insista en otro. Traducí también los nombres de trabajos y las frases hechas a ese idioma con naturalidad.
+Idioma: RESPONDÉ SIEMPRE en ${NOMBRE_IDIOMA[idiomaActivo()]}. Es el idioma configurado (${monedaActiva().nombrePais}). Si el cliente te escribe en otro idioma, contestale igual en ${idiomaActivo() === 'pt' ? 'portugués de Brasil' : idiomaActivo() === 'en' ? 'English' : 'español'} salvo que insista en otro. Traducí también los nombres de trabajos y las frases hechas a ese idioma con naturalidad.
 
 Tono y estilo: profesional pero cercano, claro y sin exclamaciones exageradas${idiomaActivo() === 'es' ? ' (en Uruguay/Argentina usá vos/tenés)' : ''}. Emojis con moderación (uno como máximo, o ninguno). Respuestas cortas tipo chat: 2-5 oraciones. En WhatsApp y voz, aún más breve. Si el trabajo no encaja en ningún tipo predefinido, decilo con honestidad y ofrecé una visita de diagnóstico. Si preguntan algo fuera del rubro, redirigí con amabilidad y ofrecé el teléfono ${telefonoProfesional()} para casos urgentes.`;
 }
@@ -297,13 +297,13 @@ const norm = (s) => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-
 
 // Sinónimos coloquiales → clave de trabajo (por oficio, solo si esa clave existe).
 const SINONIMOS = {
-  instalacion_toma: ['toma', 'tomacorriente', 'tomacorrientes', 'enchufe', 'enchufes', 'zocalo', 'tomada', 'tomadas'],
-  instalacion_luminaria: ['luz', 'luces', 'lampara', 'foco', 'luminaria', 'artefacto', 'plafon', 'spot', 'aplique', 'dicroica', 'lampada', 'luminaria', 'luminarias', 'lustre'],
-  cambio_tablero: ['tablero', 'termica', 'llave termica', 'disyuntor', 'breaker', 'diferencial', 'quadro', 'disjuntor'],
-  cortocircuito: ['corto', 'cortocircuito', 'chispa', 'se corta la luz', 'salta la llave', 'no hay luz', 'huele a quemado', 'curto', 'curto-circuito', 'faisca', 'sem luz', 'cheiro de queimado'],
-  diagnostico: ['diagnostico', 'revisar', 'revision', 'ver que pasa', 'presupuesto general', 'diagnostico', 'revisao', 'orcamento geral'],
-  destape: ['destap', 'tapado', 'tapada', 'canaleta', 'entupido', 'entupida', 'desentupir'],
-  perdida: ['perdida', 'gotea', 'gotera', 'fuga', 'pierde agua', 'vazamento', 'goteira', 'pinga', 'vaza agua'],
+  instalacion_toma: ['toma', 'tomacorriente', 'tomacorrientes', 'enchufe', 'enchufes', 'zocalo', 'tomada', 'tomadas', 'outlet', 'socket', 'power point', 'receptacle'],
+  instalacion_luminaria: ['luz', 'luces', 'lampara', 'foco', 'luminaria', 'artefacto', 'plafon', 'spot', 'aplique', 'dicroica', 'lampada', 'luminaria', 'luminarias', 'lustre', 'light', 'lights', 'lamp', 'fixture', 'ceiling light'],
+  cambio_tablero: ['tablero', 'termica', 'llave termica', 'disyuntor', 'breaker', 'diferencial', 'quadro', 'disjuntor', 'panel', 'breaker box', 'fuse box', 'switchboard'],
+  cortocircuito: ['corto', 'cortocircuito', 'chispa', 'se corta la luz', 'salta la llave', 'no hay luz', 'huele a quemado', 'curto', 'curto-circuito', 'faisca', 'sem luz', 'cheiro de queimado', 'short circuit', 'spark', 'no power', 'power out', 'burning smell', 'tripped'],
+  diagnostico: ['diagnostico', 'revisar', 'revision', 'ver que pasa', 'presupuesto general', 'diagnostico', 'revisao', 'orcamento geral', 'diagnosis', 'inspection', 'check', 'assessment'],
+  destape: ['destap', 'tapado', 'tapada', 'canaleta', 'entupido', 'entupida', 'desentupir', 'clogged', 'blocked', 'unclog', 'drain'],
+  perdida: ['perdida', 'gotea', 'gotera', 'fuga', 'pierde agua', 'vazamento', 'goteira', 'pinga', 'vaza agua', 'leak', 'leaking', 'dripping', 'water leak'],
 };
 
 /** Detecta el trabajo pedido dentro del catálogo del oficio (sinónimos + tokens del nombre). */
@@ -319,10 +319,10 @@ function detectarTrabajo(oficio, texto) {
   return null;
 }
 
-const tieneDireccion = (t) => /\d{2,}/.test(t) && /[a-záéíóúãõç]{3,}/i.test(t) && !/(cuanto|precio|cuesta|sale|quanto|preco|custa)/i.test(t);
-const quiereHorario = (t) => /(turno|horario|agend|cita|cuando|dispon|manana|mañana|semana|lunes|martes|miercoles|jueves|viernes|sabado|hoy|tarde|horario|marcar|quando|disponivel|amanha|segunda|terca|quarta|quinta|sexta|sabado|hoje)/.test(norm(t));
-const confirma = (t) => /(^| )(si|dale|listo|confirm|de una|perfecto|va|ok|okey|sim|isso|fechado|combinado|beleza|pode ser)( |$|\.|,|!)/.test(norm(t));
-const saluda = (t) => /(hola|buenas|buen dia|buenos dias|buenas tardes|buenas noches|que tal|ola|oi|bom dia|boa tarde|boa noite|tudo bem)/.test(norm(t));
+const tieneDireccion = (t) => /\d{2,}/.test(t) && /[a-záéíóúãõç]{3,}/i.test(t) && !/(cuanto|precio|cuesta|sale|quanto|preco|custa|how much|price|cost)/i.test(t);
+const quiereHorario = (t) => /(turno|horario|agend|cita|cuando|dispon|manana|mañana|semana|lunes|martes|miercoles|jueves|viernes|sabado|hoy|tarde|horario|marcar|quando|disponivel|amanha|segunda|terca|quarta|quinta|sexta|sabado|hoje|appointment|schedule|book|slot|available|when|today|tomorrow|this week|monday|tuesday|wednesday|thursday|friday|saturday)/.test(norm(t));
+const confirma = (t) => /(^| )(si|dale|listo|confirm|de una|perfecto|va|ok|okey|sim|isso|fechado|combinado|beleza|pode ser|yes|yeah|sure|go ahead|sounds good|perfect|confirmed)( |$|\.|,|!)/.test(norm(t));
+const saluda = (t) => /(hola|buenas|buen dia|buenos dias|buenas tardes|buenas noches|que tal|ola|oi|bom dia|boa tarde|boa noite|tudo bem|hi|hello|hey|good morning|good afternoon|good evening)/.test(norm(t));
 
 function responderDemo(sessionId, texto, canal) {
   const prof = listarProfesionales()[0];
@@ -330,9 +330,11 @@ function responderDemo(sessionId, texto, canal) {
   const propio = oficios.find((o) => o.clave === prof.oficio) || oficios[0];
   const st = demoSesiones.get(sessionId) || {};
   const t = norm(texto);
-  const pt = idiomaActivo() === 'pt';
-  const L = (es, ptt) => (pt ? ptt : es); // elige la frase según el idioma del país configurado
-  const nombreServicio = (clave) => propio.trabajos.find((x) => x.clave === clave)?.nombre || L('el trabajo', 'o serviço');
+  const idi = idiomaActivo();
+  // Elige la frase según el idioma activo (es | pt | en). El 3º arg es opcional:
+  // si no hay inglés, cae al español.
+  const L = (es, ptt, en) => (idi === 'pt' ? ptt : idi === 'en' ? (en ?? es) : es);
+  const nombreServicio = (clave) => propio.trabajos.find((x) => x.clave === clave)?.nombre || L('el trabajo', 'o serviço', 'the job');
   const cotizarDe = (clave) => cotizar({ oficio: propio.clave, trabajo: clave, distanciaKm: 5 });
   const guardar = () => demoSesiones.set(sessionId, st);
 
@@ -346,10 +348,11 @@ function responderDemo(sessionId, texto, canal) {
   // Helper: proponer horarios (cuando ya sabemos el trabajo).
   const proponerSlots = () => {
     st.propuso = true; guardar();
-    const dir = st.direccion ? L(` en ${st.direccion}`, ` em ${st.direccion}`) : '';
+    const dir = st.direccion ? L(` en ${st.direccion}`, ` em ${st.direccion}`, ` at ${st.direccion}`) : '';
     return L(
       `${BADGE}Genial. Para "${nombreServicio(st.trabajo)}"${dir} tengo estos horarios: mañana 9:30–10:30, mañana 15:00–16:00 o pasado 11:00–12:00. ¿Cuál te queda mejor? (Los calculamos considerando el traslado hasta tu zona.)`,
-      `${BADGE}Ótimo. Para "${nombreServicio(st.trabajo)}"${dir} tenho estes horários: amanhã 9:30–10:30, amanhã 15:00–16:00 ou depois de amanhã 11:00–12:00. Qual fica melhor? (Calculamos considerando o deslocamento até a sua região.)`
+      `${BADGE}Ótimo. Para "${nombreServicio(st.trabajo)}"${dir} tenho estes horários: amanhã 9:30–10:30, amanhã 15:00–16:00 ou depois de amanhã 11:00–12:00. Qual fica melhor? (Calculamos considerando o deslocamento até a sua região.)`,
+      `${BADGE}Great. For "${nombreServicio(st.trabajo)}"${dir} I have these slots: tomorrow 9:30–10:30 am, tomorrow 3:00–4:00 pm, or the day after 11:00 am–12:00 pm. Which works best? (We calculate them factoring travel to your area.)`
     );
   };
 
@@ -358,20 +361,22 @@ function responderDemo(sessionId, texto, canal) {
     demoSesiones.delete(sessionId);
     return L(
       `${BADGE}¡Listo! Quedó agendado ✅ Te llega la confirmación por WhatsApp y, si el profesional se demora, te avisamos antes. ¡Gracias! (Demo — en la versión real esto queda cargado en la agenda y el CRM.)`,
-      `${BADGE}Pronto! Ficou agendado ✅ Você recebe a confirmação pelo WhatsApp e, se o profissional atrasar, avisamos antes. Obrigado! (Demo — na versão real isto fica registrado na agenda e no CRM.)`
+      `${BADGE}Pronto! Ficou agendado ✅ Você recebe a confirmação pelo WhatsApp e, se o profissional atrasar, avisamos antes. Obrigado! (Demo — na versão real isto fica registrado na agenda e no CRM.)`,
+      `${BADGE}Done! You're booked ✅ You'll get the confirmation on WhatsApp and, if the pro runs late, we'll let you know ahead. Thanks! (Demo — in the real version this is saved to the calendar and CRM.)`
     );
   }
 
   // Pidió/mencionó un trabajo → cotizamos y encaminamos hacia el horario.
-  if (trabajo || (st.trabajo && /(cuanto|precio|presupuesto|cotiz|cuesta|sale|quanto|preco|orcamento|custa)/.test(t))) {
+  if (trabajo || (st.trabajo && /(cuanto|precio|presupuesto|cotiz|cuesta|sale|quanto|preco|orcamento|custa|how much|price|quote|cost)/.test(t))) {
     const r = cotizarDe(st.trabajo);
     st.cotizado = true; guardar();
     const sig = st.direccion
-      ? L(' ¿Te propongo horarios?', ' Quer que eu proponha horários?')
-      : L(' Pasame tu dirección y qué día te viene bien, y te doy 2-3 horarios.', ' Me passe seu endereço e que dia fica bom, e te dou 2-3 horários.');
+      ? L(' ¿Te propongo horarios?', ' Quer que eu proponha horários?', ' Want me to propose times?')
+      : L(' Pasame tu dirección y qué día te viene bien, y te doy 2-3 horarios.', ' Me passe seu endereço e que dia fica bom, e te dou 2-3 horários.', ' Send me your address and what day works, and I\'ll give you 2-3 slots.');
     return L(
       `${BADGE}"${r.trabajo}" ronda los ${r.simbolo || '$'}${r.total} (${r.moneda}), con una duración estimada de ${r.duracion_estimada_min} min. El precio final lo confirma ${prof.nombre}.${sig}`,
-      `${BADGE}"${r.trabajo}" fica em torno de ${r.simbolo || '$'}${r.total} (${r.moneda}), com duração estimada de ${r.duracion_estimada_min} min. O preço final é confirmado por ${prof.nombre}.${sig}`
+      `${BADGE}"${r.trabajo}" fica em torno de ${r.simbolo || '$'}${r.total} (${r.moneda}), com duração estimada de ${r.duracion_estimada_min} min. O preço final é confirmado por ${prof.nombre}.${sig}`,
+      `${BADGE}"${r.trabajo}" is around ${r.simbolo || '$'}${r.total} (${r.moneda}), with an estimated duration of ${r.duracion_estimada_min} min. ${prof.nombre} confirms the final price.${sig}`
     );
   }
 
@@ -381,7 +386,8 @@ function responderDemo(sessionId, texto, canal) {
     guardar();
     return L(
       `${BADGE}Con gusto coordino. ¿Qué trabajo necesitás? (por ejemplo: instalar un tomacorriente, colocar una luminaria, revisar el tablero). Con eso y tu dirección te propongo horarios.`,
-      `${BADGE}Com prazer coordeno. Qual serviço você precisa? (por exemplo: instalar uma tomada, colocar uma luminária, revisar o quadro). Com isso e seu endereço te proponho horários.`
+      `${BADGE}Com prazer coordeno. Qual serviço você precisa? (por exemplo: instalar uma tomada, colocar uma luminária, revisar o quadro). Com isso e seu endereço te proponho horários.`,
+      `${BADGE}Happy to coordinate. What job do you need? (for example: install an outlet, fit a light fixture, check the panel). With that and your address I'll propose times.`
     );
   }
 
@@ -390,14 +396,16 @@ function responderDemo(sessionId, texto, canal) {
     guardar();
     return L(
       `${BADGE}¡Anotada la dirección! ¿Qué necesitás que haga ${prof.nombre}? Contame el trabajo y te paso presupuesto y horarios.`,
-      `${BADGE}Endereço anotado! O que você precisa que ${prof.nombre} faça? Me conte o serviço e te passo orçamento e horários.`
+      `${BADGE}Endereço anotado! O que você precisa que ${prof.nombre} faça? Me conte o serviço e te passo orçamento e horários.`,
+      `${BADGE}Address saved! What do you need ${prof.nombre} to do? Tell me the job and I'll give you a quote and times.`
     );
   }
 
   if (saluda(texto) || !texto.trim()) {
     return L(
       `${BADGE}¡Hola! Soy el asistente de ${prof.nombre} (${propio?.nombre || prof.oficio}). Contame qué necesitás —por ejemplo "instalar un tomacorriente"— y te paso presupuesto y horarios. 😊`,
-      `${BADGE}Olá! Sou o assistente de ${prof.nombre} (${propio?.nombre || prof.oficio}). Me conte o que você precisa —por exemplo "instalar uma tomada"— e te passo orçamento e horários. 😊`
+      `${BADGE}Olá! Sou o assistente de ${prof.nombre} (${propio?.nombre || prof.oficio}). Me conte o que você precisa —por exemplo "instalar uma tomada"— e te passo orçamento e horários. 😊`,
+      `${BADGE}Hi! I'm ${prof.nombre}'s assistant (${propio?.nombre || prof.oficio}). Tell me what you need —for example "install an outlet"— and I'll give you a quote and times. 😊`
     );
   }
 
@@ -406,7 +414,8 @@ function responderDemo(sessionId, texto, canal) {
   guardar();
   return L(
     `${BADGE}Puedo ayudarte con trabajos como ${ejemplos}. Decime cuál necesitás (o contame el problema) y te paso presupuesto y horarios.`,
-    `${BADGE}Posso te ajudar com serviços como ${ejemplos}. Me diga qual você precisa (ou conte o problema) e te passo orçamento e horários.`
+    `${BADGE}Posso te ajudar com serviços como ${ejemplos}. Me diga qual você precisa (ou conte o problema) e te passo orçamento e horários.`,
+    `${BADGE}I can help with jobs like ${ejemplos}. Tell me which one you need (or describe the problem) and I'll give you a quote and times.`
   );
 }
 

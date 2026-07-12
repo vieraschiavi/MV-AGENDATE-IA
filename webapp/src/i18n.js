@@ -1,17 +1,20 @@
-// Multiidioma del workspace (es/pt).
-// Patrón: t('texto en español') devuelve la traducción al portugués si el
-// idioma activo es 'pt'; si la clave no está en el diccionario (o el idioma
-// es 'es') devuelve el texto tal cual — nunca rompe la UI.
-// El idioma se comparte con las páginas públicas vía localStorage ('mvIdioma').
+// Multiidioma del workspace (es/pt/en).
+// Patrón: t('texto en español') devuelve la traducción al idioma activo; si la
+// clave no está en el diccionario (o el idioma es 'es') devuelve el texto tal
+// cual — nunca rompe la UI. El idioma se comparte con las páginas públicas vía
+// localStorage ('mvIdioma') y se autodetecta del navegador la primera vez.
 
 export function idioma() {
-  const guardado = localStorage.getItem('mvIdioma');
-  if (guardado === 'pt' || guardado === 'es') return guardado;
-  return (navigator.language || '').toLowerCase().startsWith('pt') ? 'pt' : 'es';
+  const g = localStorage.getItem('mvIdioma');
+  if (g === 'pt' || g === 'es' || g === 'en') return g;
+  const nav = (navigator.language || '').toLowerCase();
+  if (nav.startsWith('pt')) return 'pt';
+  if (nav.startsWith('en')) return 'en';
+  return 'es';
 }
 
 export function setIdioma(idi) {
-  localStorage.setItem('mvIdioma', idi === 'pt' ? 'pt' : 'es');
+  localStorage.setItem('mvIdioma', ['es', 'pt', 'en'].includes(idi) ? idi : 'es');
   window.location.reload(); // recarga simple: toda la UI re-lee t()
 }
 
@@ -270,8 +273,139 @@ const PT = {
   'Después conectá tu WhatsApp y tu teléfono desde Configuración — el webchat de la demo ya funciona.': 'Depois conecte seu WhatsApp e seu telefone em Configuração — o webchat da demo já funciona.',
 };
 
+const EN = {
+  // Navegación
+  'Panel del día': 'Today\'s panel', 'Agenda': 'Calendar', 'Clientes': 'Clients',
+  'Dashboards': 'Dashboards', 'Ayuda': 'Help', 'Espacio de trabajo': 'Workspace',
+  'Mi cuenta': 'My account', 'Cuenta online': 'Online account', 'Cuentas SaaS': 'SaaS accounts',
+  'Inicio': 'Home', 'Configuración': 'Settings', 'Clave admin': 'Admin key',
+  'Clave de administración:': 'Administration key:', 'Abrir menú': 'Open menu', 'Idioma': 'Language',
+  // Estados de cita
+  'pendiente': 'pending', 'confirmada': 'confirmed', 'en_curso': 'in progress',
+  'completada': 'completed', 'cancelada': 'cancelled',
+  // Panel
+  'Citas de hoy': 'Today\'s appointments', 'En curso': 'In progress', 'Visitas a la demo': 'Demo visits',
+  'Cotizaciones por aprobar': 'Quotes to approve',
+  'El asistente nunca le dice un precio al cliente sin tu OK: acá aprobás cada cotización tal cual (o ajustás el monto) y recién ahí se le confirma. Si la charla fue por WhatsApp, el cliente recibe el precio al instante.':
+    'The assistant never tells a client a price without your OK: here you approve each quote as-is (or adjust the amount) and only then is it confirmed. If the chat was on WhatsApp, the client gets the price instantly.',
+  'No hay cotizaciones esperando tu aprobación.': 'No quotes waiting for your approval.',
+  'Trabajo': 'Job', 'Cliente': 'Client', 'Canal': 'Channel', 'Sugerido': 'Suggested',
+  'Precio a confirmar': 'Price to confirm', 'Aprobar': 'Approve', 'Rechazar': 'Reject',
+  'No se pudo resolver.': 'Could not resolve.', 'Precio confirmado': 'Price confirmed',
+  ' — el cliente ya recibió el aviso por WhatsApp.': ' — the client already got the notice on WhatsApp.',
+  ' — el asistente se lo informa al cliente en cuanto retome la charla.': ' — the assistant tells the client as soon as the chat resumes.',
+  'Cotización rechazada: el asistente le dirá al cliente que lo contactás directamente.': 'Quote rejected: the assistant will tell the client you\'ll contact them directly.',
+  'Aviso automático de retrasos': 'Automatic delay notices',
+  'Si marcás un trabajo "en curso" y se estima que vas a llegar 30+ min tarde a la siguiente cita, se le avisa solo por WhatsApp al próximo cliente. En el servidor local esto corre cada 5 min; podés forzarlo ahora:':
+    'If you mark a job "in progress" and you\'re estimated to arrive 30+ min late to the next appointment, the next client is notified automatically on WhatsApp. On the local server this runs every 5 min; you can force it now:',
+  'Revisar retrasos ahora': 'Check delays now', 'Revisando…': 'Checking…',
+  'aviso(s) de retraso enviados.': 'delay notice(s) sent.', 'Sin retrasos detectados por ahora.': 'No delays detected for now.',
+  'Agenda de hoy': 'Today\'s calendar', 'Sin citas para hoy.': 'No appointments for today.',
+  'Hora': 'Time', 'Dirección': 'Address', 'Estado': 'Status', 'Presupuesto': 'Quote', 'Profesional': 'Professional',
+  // Agenda
+  'Tabla': 'Table', 'Tablero': 'Board', 'Oficio': 'Trade', 'Fecha': 'Date', 'Precio': 'Price',
+  '+ Nueva cita': '+ New appointment', 'Nueva cita': 'New appointment',
+  'Sin citas con ese filtro.': 'No appointments with that filter.', 'Cambiar estado…': 'Change status…',
+  'Vacío': 'Empty', 'Teléfono': 'Phone', '(el primero)': '(the first one)',
+  'Hora inicio': 'Start time', 'Hora fin': 'End time', 'Distancia estimada (km)': 'Estimated distance (km)',
+  'Quién atiende (si no es el titular)': 'Who receives you (if not the account holder)',
+  'Guardar cita': 'Save appointment', 'Cancelar': 'Cancel',
+  'Completá al menos cliente, fecha y hora.': 'Fill in at least client, date and time.',
+  'Presupuesto estimado:': 'Estimated quote:', '· atiende': '· received by', 'Error': 'Error',
+  // Clientes
+  '+ Nuevo cliente': '+ New client', 'Sin fichas aún.': 'No records yet.', 'Nombre': 'Name',
+  'Contacto': 'Contact', 'Receptor habitual': 'Usual receiver', 'sin dirección cargada': 'no address saved',
+  'Notas': 'Notes', 'Atendido por': 'Handled by', 'Sin asignar': 'Unassigned', 'Confirmar': 'Confirm',
+  'Dirección confirmada.': 'Address confirmed.', 'Dirección actualizada (no coincidía con la base).': 'Address updated (didn\'t match the record).',
+  'Trabajos': 'Jobs', 'Sin trabajos registrados todavía.': 'No jobs recorded yet.', 'Ver ficha': 'View record',
+  '➕ Nueva ficha de cliente': '➕ New client record', 'Quién suele atender (si no es el titular)': 'Who usually receives you (if not the holder)',
+  'Dirección de la base': 'Base address', 'Guardar ficha': 'Save record', 'Poné al menos el nombre.': 'Enter at least the name.',
+  // Dashboards
+  'Año': 'Year', 'Mes': 'Month', 'Todos': 'All', 'Agenda CSV': 'Calendar CSV', 'Agenda Excel': 'Calendar Excel',
+  'Clientes Excel': 'Clients Excel', 'Trabajos totales': 'Total jobs', 'Completados': 'Completed',
+  'Cancelados': 'Cancelled', 'Sueldo total (completados)': 'Total earnings (completed)', 'Ticket promedio': 'Average ticket',
+  'Trabajos (12m)': 'Jobs (12m)', 'Facturado (12m)': 'Revenue (12m)', 'vs mes ant.': 'vs prev. month',
+  '📈 Evolución mensual — trabajos y facturación (12 meses)': '📈 Monthly trend — jobs and revenue (12 months)',
+  'Facturación (escala propia)': 'Revenue (own scale)', 'Trabajos por oficio': 'Jobs by trade',
+  'Trabajos por estado': 'Jobs by status', 'Trabajos por día de la semana': 'Jobs by weekday',
+  'Comparativa año contra año': 'Year-over-year comparison', 'Sin datos': 'No data', 'Cargando…': 'Loading…',
+  '🧾 Neto estimado según los impuestos de tu país': '🧾 Estimated net after your country\'s taxes',
+  'La IA estima tu carga impositiva (régimen simplificado, aportes) según la ley de tu país configurado y calcula cuánto te queda neto. Orientativo — no reemplaza a tu contador.':
+    'AI estimates your tax burden (simplified regime, contributions) per your configured country\'s law and calculates your net. Indicative — it doesn\'t replace your accountant.',
+  'Facturación mensual': 'Monthly revenue', 'sugerido:': 'suggested:', 'Estimar impuestos': 'Estimate taxes',
+  'Estimando…': 'Estimating…', 'Régimen sugerido:': 'Suggested regime:', '· calculado con IA': '· calculated with AI',
+  '· guía local aproximada': '· approximate local guide', 'Facturación bruta': 'Gross revenue',
+  'Neto estimado': 'Estimated net', 'Error de red.': 'Network error.',
+  // Cuenta
+  'Créditos de IA': 'AI credits', 'Saldo:': 'Balance:',
+  'Con esto funciona el chatbot y el ChatVoice con IA. Cuando se agota, el asistente sigue respondiendo con lógica básica hasta que recargues.':
+    'This powers the chatbot and ChatVoice with AI. When it runs out, the assistant keeps replying with basic logic until you top up.',
+  ' Te queda poco saldo.': ' You\'re low on balance.', 'Recargar US$': 'Top up US$',
+  'Esta semana:': 'This week:', 'consultas con IA': 'AI conversations', 'Bonificado acumulado:': 'Bonus accumulated:',
+  'gratis': 'free', 'créditos IA': 'AI credits', 'Recargar →': 'Top up →',
+  'Conectando con MercadoPago…': 'Connecting to MercadoPago…', 'No se pudo iniciar la recarga.': 'Could not start the top-up.',
+  'Prueba gratis': 'Free trial', 'días restantes': 'days left', 'Suscripción activa': 'Active subscription',
+  'Activar suscripción (USD 15/mes)': 'Activate subscription (USD 15/mo)', 'Cerrar sesión': 'Sign out', 'Estado:': 'Status:',
+  'Usá MV desde el navegador, sin instalar nada': 'Use MV from your browser, nothing to install',
+  '14 días de prueba gratis, después USD 15/mes por MercadoPago. Tus datos y tu configuración (profesión, país, precios, horarios, equipo, canales) quedan privados y aislados, disponibles desde cualquier dispositivo.':
+    '14-day free trial, then USD 15/mo via MercadoPago. Your data and settings (trade, country, prices, hours, team, channels) stay private and isolated, available from any device.',
+  'Iniciar sesión': 'Sign in', 'Crear cuenta': 'Create account', 'Nombre o empresa': 'Name or business',
+  'Ej: Estudio Jurídico Pérez': 'e.g. Pérez Law Firm', 'Contraseña': 'Password', '(mínimo 8 caracteres)': '(min. 8 characters)',
+  'Un momento…': 'One moment…', 'Crear cuenta (14 días gratis)': 'Create account (14 days free)', 'Entrar': 'Sign in',
+  'No se pudo iniciar sesión.': 'Could not sign in.', 'Error de conexión. Probá de nuevo.': 'Connection error. Try again.',
+  '¿Preferís tenerlo instalado en tu PC o Android con pago único? Esta pantalla es solo para el modo online — la versión descargable no necesita cuenta.':
+    'Prefer it installed on your PC or Android with a one-time payment? This screen is only for online mode — the downloadable version needs no account.',
+  // Candado de prueba
+  'Activando…': 'Activating…', '✅ ¡Licencia activada! Gracias por tu compra.': '✅ License activated! Thanks for your purchase.',
+  'No se pudo activar el código. Revisá que sea el que te llegó al comprar.': 'Could not activate the code. Check it\'s the one you got at purchase.',
+  'te queda 1 día': '1 day left', 'te quedan': 'you have', 'días': 'days left',
+  'Comprá tu licencia →': 'Buy your license →', 'Tu prueba gratis terminó': 'Your free trial ended',
+  'Gracias por probar MV Agendate IA. Para seguir usándolo, comprá tu licencia (pago único) y activala acá con el código que te llega al pagar.':
+    'Thanks for trying MV Agendate IA. To keep using it, buy your license (one-time) and activate it here with the code you get on payment.',
+  'Comprar licencia →': 'Buy license →', 'Código de licencia (te llegó al comprar)': 'License code (you got it at purchase)',
+  'Ya compré — activar licencia': 'Already bought — activate license',
+  // Ayuda
+  '🚀 Tutorial — primeros pasos': '🚀 Tutorial — getting started', '📖 Guía por tema': '📖 Guide by topic',
+  '🤖 Preguntale a la IA sobre el programa': '🤖 Ask the AI about the program',
+  'Respuestas al instante sobre configuración, canales, agenda, planes y todo lo demás. Sin API key cargada responde desde la guía local.':
+    'Instant answers about setup, channels, calendar, plans and everything else. Without an API key it answers from the local guide.',
+  'Enviar': 'Send', 'Ej: ¿cómo conecto WhatsApp?': 'e.g. how do I connect WhatsApp?', 'Pensando…': 'Thinking…',
+  'No pude responder, probá de nuevo.': 'Couldn\'t answer, try again.',
+  'Error de conexión — revisá que el servidor esté corriendo y probá de nuevo.': 'Connection error — check the server is running and try again.',
+  'Hola 👋 Soy el asistente de ayuda de MV Agendate IA. Preguntame lo que quieras sobre el programa: cómo configurarlo, conectar WhatsApp, los planes, la agenda…':
+    'Hi 👋 I\'m the MV Agendate IA help assistant. Ask me anything about the program: how to set it up, connect WhatsApp, plans, the calendar…',
+  '¿Cómo conecto WhatsApp?': 'How do I connect WhatsApp?', '¿Qué incluye cada plan?': 'What\'s in each plan?',
+  '¿Cómo cargo mis precios?': 'How do I load my prices?', '¿Funciona sin internet la voz?': 'Does voice work offline?',
+  '¿Cómo agrego otro profesional?': 'How do I add another professional?',
+  // Cuentas SaaS
+  'Cuentas SaaS registradas': 'Registered SaaS accounts',
+  // Onboarding
+  '¡Bienvenido a MV Agendate IA!': 'Welcome to MV Agendate IA!',
+  'En 4 pasos cortos dejamos tu asistente listo para cotizar y agendar.': 'In 4 short steps we get your assistant ready to quote and book.',
+  'Vos y tu país': 'You and your country', 'Tu nombre (así te presenta el asistente)': 'Your name (how the assistant introduces you)',
+  'Ej: Marcelo Techera': 'e.g. Marcus Taylor', 'País (define moneda, idioma y precios de mercado)': 'Country (sets currency, language and market prices)',
+  'Siguiente →': 'Next →', 'Configurar después': 'Set up later', 'Tu profesión u oficio': 'Your profession or trade',
+  'Elegí la tuya — el catálogo de trabajos y precios se arma solo': 'Pick yours — the jobs and prices catalog builds itself',
+  '¿No está la tuya? Elegí la más parecida y después creá la propia en Configuración → Profesiones (1 minuto).': 'Not there? Pick the closest one and later create your own in Settings → Professions (1 minute).',
+  '← Atrás': '← Back', 'Tu jornada': 'Your workday', 'Empezás': 'Start', 'Terminás': 'End',
+  'Almuerzo desde': 'Lunch from', 'Almuerzo hasta': 'Lunch until', 'Días libres (la agenda nunca ofrece turnos ahí):': 'Days off (the calendar never offers slots there):',
+  'Lun': 'Mon', 'Mar': 'Tue', 'Mié': 'Wed', 'Jue': 'Thu', 'Vie': 'Fri', 'Sáb': 'Sat', 'Dom': 'Sun',
+  'Guardando…': 'Saving…', 'Guardar y seguir →': 'Save and continue →', 'Precios de tu mercado (opcional)': 'Your market prices (optional)',
+  'La IA investiga qué se cobra hoy en tu país por cada trabajo de tu profesión y deja tu catálogo con esos valores de referencia. Podés saltearlo y cargar los tuyos a mano.':
+    'AI researches what your country charges today for each job in your trade and sets your catalog with those reference values. You can skip it and load yours manually.',
+  '🔎 Sugerir precios con IA': '🔎 Suggest prices with AI', 'Investigando…': 'Researching…',
+  '🔎 Investigando precios de tu mercado con IA… (unos segundos)': '🔎 Researching your market prices with AI… (a few seconds)',
+  'No se pudo investigar.': 'Could not research.', 'No se pudo aplicar.': 'Could not apply.',
+  'Listo: tu catálogo quedó con precios de mercado de': 'Done: your catalog now has market prices for',
+  'Los afinás cuando quieras en Configuración → Precios.': 'Fine-tune them anytime in Settings → Prices.',
+  '¡Listo, a trabajar! →': 'Done, let\'s work! →', 'Saltear y terminar': 'Skip and finish',
+  'Después conectá tu WhatsApp y tu teléfono desde Configuración — el webchat de la demo ya funciona.': 'Later connect your WhatsApp and phone from Settings — the demo webchat already works.',
+};
+
 /** Traduce un texto de UI al idioma activo (fallback: el texto tal cual). */
 export function t(texto) {
-  if (idioma() !== 'pt') return texto;
-  return PT[texto] ?? texto;
+  const idi = idioma();
+  if (idi === 'pt') return PT[texto] ?? texto;
+  if (idi === 'en') return EN[texto] ?? texto;
+  return texto;
 }
