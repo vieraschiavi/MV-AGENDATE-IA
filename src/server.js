@@ -50,6 +50,11 @@ async function esBot(req) {
   const origin = req.headers.origin;
   const propio = `${req.protocol}://${req.headers.host}`;
   if (origin && origin !== propio) return false;
+  // CLAVE: solo verificamos si la página cargó el SDK de BotID (manda el
+  // header 'x-is-human'). Sin él, checkBotId marcaría "bot" a CUALQUIER
+  // usuario real (p. ej. el registro desde la app o una reseña desde la
+  // landing, páginas sin el SDK). Fail-open para no bloquear gente de verdad.
+  if (!req.headers['x-is-human']) return false;
   try {
     const v = await checkBotId();
     return v.isBot === true;
