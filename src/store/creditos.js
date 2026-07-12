@@ -32,10 +32,18 @@ async function cargar(cuentaId) {
   return inicial;
 }
 
-/** Estado de créditos de la cuenta (saldo en USD, etc.). */
+/** Estado de créditos de la cuenta (saldo en USD, resumen semanal, etc.). */
 export async function estadoCreditos(cuentaId) {
   const c = await cargar(cuentaId);
-  return { habilitado: creditosHabilitado(), saldo: Math.round(c.saldo * 100) / 100, recargado: c.recargado || 0, consumido: Math.round((c.consumido || 0) * 100) / 100, margen: margen() };
+  return {
+    habilitado: creditosHabilitado(),
+    saldo: Math.round(c.saldo * 100) / 100,
+    recargado: c.recargado || 0,
+    bonificado: c.bonificado || 0,
+    consumido: Math.round((c.consumido || 0) * 100) / 100,
+    semana: resumenSemana(c),
+    margen: margen(),
+  };
 }
 
 /** true si la cuenta tiene saldo para seguir usando IA. */
@@ -60,21 +68,58 @@ export async function consumir(cuentaId, usage) {
   const cobro = costoDeLlamada(usage) * margen();
   c.saldo = Math.round((c.saldo - cobro) * 1e6) / 1e6;
   c.consumido = (c.consumido || 0) + cobro;
+  // Historial diario (últimos 30 días) para mostrar "esta semana usaste X".
+  const dia = new Date().toISOString().slice(0, 10);
+  c.historial = c.historial || {};
+  const h = c.historial[dia] || { usd: 0, llamadas: 0 };
+  c.historial[dia] = { usd: Math.round((h.usd + cobro) * 1e6) / 1e6, llamadas: h.llamadas + 1 };
+  const dias = Object.keys(c.historial).sort();
+  for (const d of dias.slice(0, Math.max(0, dias.length - 30))) delete c.historial[d];
   await kvSet(clave(cuentaId), c);
   return { saldo: c.saldo, cruzoUmbral: antes > UMBRAL_BAJO && c.saldo <= UMBRAL_BAJO };
 }
 
-/** Acredita una recarga (USD) — desde el webhook de MercadoPago. */
+/** Consumo de los últimos 7 días: { usd, llamadas } (para la UI de la cuenta). */
+function resumenSemana(c) {
+  const desde = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+  let usd = 0, llamadas = 0;
+  for (const [dia, h] of Object.entries(c.historial || {})) {
+    if (dia >= desde) { usd += h.usd; llamadas += h.llamadas; }
+  }
+  return { usd: Math.round(usd * 100) / 100, llamadas };
+}
+
+/**
+ * Acredita una recarga (USD) — desde el webhook de MercadoPago.
+ * Si el monto coincide con un pack, suma su bonificación automáticamente.
+ */
 export async function acreditar(cuentaId, montoUsd) {
   const monto = Number(montoUsd) || 0;
   if (monto <= 0) return { ok: false, error: 'Monto inválido.' };
+  const bonif = bonoDePack(monto);
   const c = await cargar(cuentaId);
-  c.saldo = Math.round((c.saldo + monto) * 1e6) / 1e6;
+  c.saldo = Math.round((c.saldo + monto + bonif) * 1e6) / 1e6;
   c.recargado = (c.recargado || 0) + monto;
+  c.bonificado = Math.round(((c.bonificado || 0) + bonif) * 100) / 100;
   await kvSet(clave(cuentaId), c);
-  return { ok: true, saldo: Math.round(c.saldo * 100) / 100 };
+  return { ok: true, saldo: Math.round(c.saldo * 100) / 100, bonificado: bonif };
 }
 
-// Packs de recarga sugeridos (USD) — editables. El saldo se descuenta al costo
-// real × margen, así que "rinde" mucho más que el número en mensajes.
-export const PACKS = [5, 10, 20, 50];
+// Packs de recarga (USD) con bonificación creciente: el grande regala +15%
+// de saldo extra — el clásico para empujar el ticket alto. El saldo se
+// descuenta al costo real × margen, así que rinde mucho más que el número.
+export const PACKS = [
+  { monto: 5, bonoPct: 0 },
+  { monto: 10, bonoPct: 0.05 },
+  { monto: 20, bonoPct: 0.10 },
+  { monto: 50, bonoPct: 0.15 },
+];
+
+/** Bono de bienvenida vigente (0 si el modo créditos está apagado) — para mostrarlo en el email de alta. */
+export function bonoBienvenida() { return creditosHabilitado() ? bono() : 0; }
+
+/** Bonificación (USD) que corresponde a una recarga según el pack. */
+export function bonoDePack(montoUsd) {
+  const pack = PACKS.find((p) => p.monto === Number(montoUsd));
+  return pack ? Math.round(pack.monto * pack.bonoPct * 100) / 100 : 0;
+}

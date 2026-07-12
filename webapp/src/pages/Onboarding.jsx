@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { fetchAdmin, getJSON } from '../api.js';
+import { useLocation } from 'react-router-dom';
+import { fetchAdmin, getJSON, cuentaSesion } from '../api.js';
 import { t } from '../i18n.js';
 
 // Wizard de primer uso: guía al profesional nuevo en 4 pasos —
@@ -12,6 +13,7 @@ const DIAS = [
 ];
 
 export default function Onboarding() {
+  const ruta = useLocation().pathname;
   const [visible, setVisible] = useState(false);
   const [paso, setPaso] = useState(1);
   const [paises, setPaises] = useState([]);
@@ -53,7 +55,9 @@ export default function Onboarding() {
     }).catch(() => {});
   }, []);
 
-  if (!visible) return null;
+  // Nunca tapar la pantalla de login/registro: ahí el usuario todavía no
+  // tiene cuenta — el wizard lo recibe DESPUÉS, ya adentro del workspace.
+  if (!visible || (ruta === '/cuenta' && !cuentaSesion())) return null;
 
   const cerrar = () => { localStorage.setItem('mvOnboardingListo', '1'); setVisible(false); };
   const upd = (campo, valor) => setForm((f) => ({ ...f, [campo]: valor }));

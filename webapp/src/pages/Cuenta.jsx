@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { cuentaSesion, guardarSesion, cerrarSesion, fetchAdmin } from '../api.js';
 import { t } from '../i18n.js';
 
-// Tarjeta de créditos de IA: saldo + recarga por MercadoPago.
+// Tarjeta de créditos de IA: saldo, consumo semanal y recarga por MercadoPago
+// (los packs grandes traen bonificación de saldo extra).
 function Creditos() {
   const [c, setC] = useState(null);
   const [msg, setMsg] = useState('');
@@ -17,16 +18,34 @@ function Creditos() {
     setMsg(d.error || t('No se pudo iniciar la recarga.'));
   };
   const bajo = c.saldo <= 1;
+  // Compatibilidad: packs viejos eran números pelados; ahora traen bonificación.
+  const packs = (c.packs || []).map((p) => (typeof p === 'number' ? { monto: p, bonoPct: 0 } : p));
   return (
     <div className="card" style={{ maxWidth: 520, marginTop: 16, borderLeft: bajo ? '4px solid #e3a72f' : undefined }}>
       <h2 className="mv-h">🤖 {t('Créditos de IA')}</h2>
-      <p style={{ margin: '0 0 6px' }}>{t('Saldo:')} <strong style={{ color: bajo ? '#b45309' : '#166534' }}>US$ {c.saldo.toFixed(2)}</strong></p>
-      <p style={{ fontSize: '.85rem', color: 'var(--muted)', margin: '0 0 12px' }}>
+      <p style={{ margin: '0 0 4px' }}>{t('Saldo:')} <strong style={{ color: bajo ? '#b45309' : '#166534' }}>US$ {c.saldo.toFixed(2)}</strong></p>
+      {c.semana && (
+        <p style={{ fontSize: '.83rem', color: 'var(--muted)', margin: '0 0 4px' }}>
+          📊 {t('Esta semana:')} <strong>{c.semana.llamadas}</strong> {t('consultas con IA')} · US$ {c.semana.usd.toFixed(2)}
+        </p>
+      )}
+      {c.bonificado > 0 && (
+        <p style={{ fontSize: '.83rem', color: '#166534', margin: '0 0 4px' }}>🎁 {t('Bonificado acumulado:')} US$ {c.bonificado.toFixed(2)}</p>
+      )}
+      <p style={{ fontSize: '.85rem', color: 'var(--muted)', margin: '6px 0 14px' }}>
         {t('Con esto funciona el chatbot y el ChatVoice con IA. Cuando se agota, el asistente sigue respondiendo con lógica básica hasta que recargues.')}{bajo ? t(' Te queda poco saldo.') : ''}
       </p>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {(c.packs || [5, 10, 20]).map((p) => (
-          <button key={p} className="btn cel" onClick={() => recargar(p)}>{t('Recargar US$')} {p}</button>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        {packs.map((p) => (
+          <button key={p.monto} className="btn cel" onClick={() => recargar(p.monto)} style={{ position: 'relative', marginTop: 6 }}>
+            {t('Recargar US$')} {p.monto}
+            {p.bonoPct > 0 && (
+              <span style={{
+                position: 'absolute', top: -10, right: -6, background: '#e3a72f', color: '#241a05',
+                fontSize: '.62rem', fontWeight: 800, borderRadius: 999, padding: '2px 7px', whiteSpace: 'nowrap',
+              }}>+{Math.round(p.bonoPct * 100)}% {t('gratis')}</span>
+            )}
+          </button>
         ))}
       </div>
       {msg && <div style={{ fontSize: '.85rem', marginTop: 8, color: '#44535f' }}>{msg}</div>}

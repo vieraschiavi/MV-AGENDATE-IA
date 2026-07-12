@@ -60,10 +60,11 @@ const marco = (cuerpo) => `<!doctype html><html><body style="margin:0;background
 const btn = (url, texto) => `<a href="${url}" style="display:inline-block;background:#1f7ae0;color:#fff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:10px;margin:10px 0;">${texto}</a>`;
 
 export const PLANTILLAS = {
-  bienvenida: (idioma, { nombre, url }) => idioma === 'pt' ? {
+  bienvenida: (idioma, { nombre, url, bonoCreditos }) => idioma === 'pt' ? {
     asunto: 'Bem-vindo ao MV Agendate IA — seus 14 dias grátis começaram',
     html: marco(`<h2 style="margin:0 0 8px;color:#0f2a43;">Olá${nombre ? ` ${nombre}` : ''}! 👋</h2>
       <p>Sua conta está pronta e você tem <strong>14 dias grátis</strong> com tudo habilitado: orçamentos com IA, agenda otimizada, CRM e dashboards.</p>
+      ${bonoCreditos ? `<p>🎁 De presente, sua conta já vem com <strong>US$ ${bonoCreditos} em créditos de IA</strong>: é o que faz o chatbot e o ChatVoice funcionarem. Cada conversa desconta centavos do saldo; quando acabar, você recarrega em um toque (os packs maiores dão bônus).</p>` : ''}
       <p>Primeiro passo: entre e complete o assistente de configuração (2 minutos).</p>
       ${btn(url, 'Entrar na minha conta →')}
       <p style="font-size:13px;color:#5a6b7c;">Depois, se quiser continuar, a assinatura custa USD 15/mês pelo MercadoPago. Cancele quando quiser.</p>`),
@@ -71,6 +72,7 @@ export const PLANTILLAS = {
     asunto: 'Bienvenido a MV Agendate IA — arrancaron tus 14 días gratis',
     html: marco(`<h2 style="margin:0 0 8px;color:#0f2a43;">¡Hola${nombre ? ` ${nombre}` : ''}! 👋</h2>
       <p>Tu cuenta ya está lista y tenés <strong>14 días gratis</strong> con todo habilitado: cotizaciones con IA, agenda optimizada, CRM y dashboards.</p>
+      ${bonoCreditos ? `<p>🎁 De regalo, tu cuenta ya viene con <strong>US$ ${bonoCreditos} en créditos de IA</strong>: es lo que hace funcionar el chatbot y el ChatVoice. Cada conversación descuenta centavos del saldo; cuando se acaba, recargás en un toque (los packs grandes traen bonificación).</p>` : ''}
       <p>Primer paso: entrá y completá el asistente de configuración (2 minutos).</p>
       ${btn(url, 'Entrar a mi cuenta →')}
       <p style="font-size:13px;color:#5a6b7c;">Después, si querés seguir, la suscripción sale USD 15/mes por MercadoPago. Cancelás cuando quieras.</p>`),

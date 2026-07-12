@@ -21,7 +21,7 @@ import * as trabajos from './store/trabajos.js';
 import * as cuentas from './store/cuentas.js';
 import * as cotizaciones from './store/cotizaciones.js';
 import { estadoPrueba, pruebaBloqueada, activarLicencia } from './store/prueba.js';
-import { estadoCreditos, acreditar, PACKS as PACKS_CREDITOS } from './store/creditos.js';
+import { estadoCreditos, acreditar, bonoBienvenida, PACKS as PACKS_CREDITOS } from './store/creditos.js';
 import * as emails from './store/emails.js';
 import { runConCuenta, runConDemoPais } from './store/contextoCuenta.js';
 import { obtenerOverrides, guardarOverrides, configPublicaCuenta } from './store/configCuentas.js';
@@ -366,8 +366,10 @@ app.post('/api/auth/registro', async (req, res) => {
   const r = await cuentas.registrar(req.body ?? {});
   if (r.ok && r.cuenta?.email) {
     // Bienvenida (no bloquea la respuesta; no-op si los emails no están configurados)
-    emails.enviarPlantilla('bienvenida', 'es', r.cuenta.email,
-      { nombre: r.cuenta.nombre, url: `${req.protocol}://${req.get('host')}/app/#/cuenta` });
+    emails.enviarPlantilla('bienvenida', 'es', r.cuenta.email, {
+      nombre: r.cuenta.nombre, url: `${req.protocol}://${req.get('host')}/app/#/cuenta`,
+      bonoCreditos: bonoBienvenida() || undefined, // explica los créditos de regalo
+    });
   }
   res.status(r.ok ? 200 : 400).json(r);
 });
@@ -690,7 +692,7 @@ app.get('/api/creditos', adminOCuenta, async (req, res) => {
 app.post('/api/creditos/recargar', adminOCuenta, async (req, res) => {
   if (req.cuentaId === 'default') return res.status(400).json({ ok: false, error: 'Solo cuentas online.' });
   const monto = Number(req.body?.monto);
-  if (!PACKS_CREDITOS.includes(monto)) return res.status(400).json({ ok: false, error: 'Monto de recarga inválido.' });
+  if (!PACKS_CREDITOS.some((p) => p.monto === monto)) return res.status(400).json({ ok: false, error: 'Monto de recarga inválido.' });
   if (!mercadopagoActivo()) return res.status(503).json({ ok: false, error: 'MercadoPago no está activo (falta configurar el token del vendedor).' });
   const base = `${req.protocol}://${req.get('host')}`;
   const pago = await crearPreferenciaCreditos({ cuentaId: req.cuentaId, monto, email: req.cuentaEmail }, base);
