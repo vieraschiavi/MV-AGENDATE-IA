@@ -66,3 +66,22 @@
   ajustarVideo();
   document.addEventListener('mv:idioma', ajustarVideo);
 })();
+
+// Precio de referencia en UYU (chico, al lado del USD). El cobro real por
+// MercadoPago Uruguay es en UYU; este es un valor orientativo. Tipo de cambio
+// de referencia — se puede sobreescribir con window.MV_TIPO_CAMBIO_UYU.
+window.mvUYU = function (usd) {
+  const tc = window.MV_TIPO_CAMBIO_UYU || 42;
+  return '≈ $' + Math.round(Number(usd) * tc).toLocaleString('es-UY') + ' UYU';
+};
+(function () {
+  // Decora cada elemento con data-usd="129" agregando el equivalente en UYU.
+  document.querySelectorAll('[data-usd]').forEach((el) => {
+    if (el.querySelector('.uyu-ref')) return;
+    const s = document.createElement('small');
+    s.className = 'uyu-ref';
+    s.style.cssText = 'display:block;font-size:.7em;font-weight:600;opacity:.6;margin-top:2px;';
+    s.textContent = window.mvUYU(el.dataset.usd);
+    el.appendChild(s);
+  });
+})();

@@ -142,11 +142,12 @@ let PLANES = {}, plan = 'basico', medio = 'mercadopago', recurrente = false, ped
 const _planUrl = new URLSearchParams(location.search).get('plan');
 fetch('/api/planes').then(r=>r.json()).then(d=>{ PLANES=d.planes; if(_planUrl && PLANES[_planUrl]) plan=_planUrl; render(); });
 function render() {
-  $('#planes').innerHTML = Object.entries(PLANES).map(([k,p])=>`<div class="plan ${k===plan?'on':''}" data-k="${k}"><div><strong>${p.nombre}</strong><small>${p.incluye}</small></div><div class="p">USD ${p.precio}${p.mensual?'/mes':''}</div></div>`).join('');
+  $('#planes').innerHTML = Object.entries(PLANES).map(([k,p])=>`<div class="plan ${k===plan?'on':''}" data-k="${k}"><div><strong>${p.nombre}</strong><small>${p.incluye}</small></div><div class="p">USD ${p.precio}${p.mensual?'/mes':''}${window.mvUYU?`<small style="display:block;font-weight:600;opacity:.6;font-size:.68em;">${window.mvUYU(p.precio)}${p.mensual?'/mes':''}</small>`:''}</div></div>`).join('');
   document.querySelectorAll('.plan').forEach(el=>el.onclick=()=>{ plan=el.dataset.k; if(plan!=='full') recurrente=false; render(); });
   const p = PLANES[plan]||{};
   const sufijo = (p.mensual || (medio === 'mercadopago' && recurrente)) ? TX().mes : '';
-  $('#rPlan').textContent = p.nombre||'—'; $('#rPrecio').textContent = 'USD '+(p.precio||0)+sufijo; $('#rTot').textContent='USD '+(p.precio||0)+sufijo;
+  const uyu = window.mvUYU ? ' <small style="font-weight:600;opacity:.6;font-size:.72em;">'+window.mvUYU(p.precio||0)+(p.mensual||recurrente?'/mes':'')+'</small>' : '';
+  $('#rPlan').textContent = p.nombre||'—'; $('#rPrecio').innerHTML = 'USD '+(p.precio||0)+sufijo+uyu; $('#rTot').innerHTML='USD '+(p.precio||0)+sufijo+uyu;
   // El plan SaaS es online: no hay versión para descargar.
   $('#versionCard').style.display = p.mensual ? 'none' : '';
   $('#rVer').textContent = p.mensual ? TX().online : $('#version').options[$('#version').selectedIndex].text;
