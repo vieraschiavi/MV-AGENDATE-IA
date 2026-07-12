@@ -1,2 +1,4 @@
 node_modules/
 out/
+public/audio/*.onnx
+public/audio/*.onnx.json
