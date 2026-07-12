@@ -92,27 +92,50 @@ window.MV_PT = {
   btnPagar:'Ir pagar com MercadoPago →',
   hRes:'Resumo', lVer:'Versão', hPago:'4. Pagamento'
 };
+window.MV_EN = {
+  titulo:'Buy MV Agendate IA', inicio:'Home',
+  h1:'1. Choose your plan', h2:'2. Version to download', h3:'3. Your details',
+  vPc:'💻 PC / Server (full)', vApk:'📱 Android (APK)', vIos:'🍏 iOS (coming soon)', vTodas:'📦 All versions',
+  notaVer:'The mobile versions are light clients that connect to the PC server (that\'s why they cost less).',
+  lNombre:'Name / Business',
+  medioMp:'🟦 You pay with <b>MercadoPago</b><br><small>card, debit or balance — secure MercadoPago checkout</small>',
+  btnPagar:'Go to pay with MercadoPago →',
+  hRes:'Summary', lVer:'Version', hPago:'4. Payment'
+};
 </script>
 <script src="/js/i18n.js"></script>
 <script>
 const $ = (s) => document.querySelector(s);
 // Textos dinámicos (JS) según el idioma elegido en el selector.
 const _pt = () => (window.mvIdioma && window.mvIdioma() === 'pt');
-const TX = () => _pt() ? {
-  online:'Online (sem download)', mes:'/mês',
-  recurrente:'Cobrado pelo MercadoPago todo mês até você cancelar. Cancele quando quiser.',
-  unico:'Pagamento único pelo MercadoPago; sem renovação automática.',
-  email:'Coloque seu email.', conectando:'Conectando com o MercadoPago…',
-  err:'Não foi possível iniciar o pagamento com o MercadoPago. Tente de novo em alguns minutos.',
-  errConn:'Erro de conexão. Tente de novo.', btn:'Ir pagar com MercadoPago →'
-} : {
-  online:'Online (sin descarga)', mes:'/mes',
-  recurrente:'Se cobra por MercadoPago cada mes hasta que canceles. Cancelás cuando quieras.',
-  unico:'Pago único por MercadoPago; sin renovación automática.',
-  email:'Poné tu email.', conectando:'Conectando con MercadoPago…',
-  err:'No se pudo iniciar el pago con MercadoPago. Probá de nuevo en unos minutos.',
-  errConn:'Error de conexión. Probá de nuevo.', btn:'Ir a pagar con MercadoPago →'
+const _en = () => (window.mvIdioma && window.mvIdioma() === 'en');
+const TX_ALL = {
+  pt: {
+    online:'Online (sem download)', mes:'/mês',
+    recurrente:'Cobrado pelo MercadoPago todo mês até você cancelar. Cancele quando quiser.',
+    unico:'Pagamento único pelo MercadoPago; sem renovação automática.',
+    email:'Coloque seu email.', conectando:'Conectando com o MercadoPago…',
+    err:'Não foi possível iniciar o pagamento com o MercadoPago. Tente de novo em alguns minutos.',
+    errConn:'Erro de conexão. Tente de novo.', btn:'Ir pagar com MercadoPago →'
+  },
+  en: {
+    online:'Online (no download)', mes:'/mo',
+    recurrente:'Charged via MercadoPago every month until you cancel. Cancel anytime.',
+    unico:'One-time payment via MercadoPago; no auto-renewal.',
+    email:'Enter your email.', conectando:'Connecting to MercadoPago…',
+    err:'Could not start the MercadoPago payment. Try again in a few minutes.',
+    errConn:'Connection error. Try again.', btn:'Go to pay with MercadoPago →'
+  },
+  es: {
+    online:'Online (sin descarga)', mes:'/mes',
+    recurrente:'Se cobra por MercadoPago cada mes hasta que canceles. Cancelás cuando quieras.',
+    unico:'Pago único por MercadoPago; sin renovación automática.',
+    email:'Poné tu email.', conectando:'Conectando con MercadoPago…',
+    err:'No se pudo iniciar el pago con MercadoPago. Probá de nuevo en unos minutos.',
+    errConn:'Error de conexión. Probá de nuevo.', btn:'Ir a pagar con MercadoPago →'
+  }
 };
+const TX = () => TX_ALL[_pt() ? 'pt' : _en() ? 'en' : 'es'];
 document.addEventListener('mv:idioma', () => { if (Object.keys(PLANES).length) render(); });
 let PLANES = {}, plan = 'basico', medio = 'mercadopago', recurrente = false, pedidoId = null;
 // Plan preseleccionado desde la landing (?plan=basico|full)

@@ -111,16 +111,27 @@ const I18N = {
     errconn: 'Não consegui conectar ao servidor.',
     chips: ['Quanto custa instalar uma tomada?', 'Preciso de um eletricista para amanhã', 'Tem horários esta semana?'],
     duracion: 'Duração estimada', minutos: 'minutos', propuestos: 'Horários propostos para amanhã:', traslado: 'deslocamento'
+  },
+  en: {
+    titulo: 'MV Agendate IA — Live demo', volver: '← Back',
+    chat: '💬 Chat with the pro\'s assistant', cot: '💰 Instant quoter',
+    oficio: 'Trade', trabajo: 'Job', distancia: 'Estimated distance (km)',
+    urgencia: 'Urgency', horario: 'Time', cotizar: 'Quote', enviar: 'Send',
+    placeholder: 'Type your message...', escribiendo: 'Typing…',
+    saludo: 'Hi! I\'m the professional\'s virtual assistant 👋 Tell me what you need and I\'ll give you a quote and available times.',
+    errconn: 'Could not connect to the server.',
+    chips: ['How much to install an outlet?', 'I need an electrician for tomorrow', 'Any slots this week?'],
+    duracion: 'Estimated duration', minutos: 'minutes', propuestos: 'Proposed times for tomorrow:', traslado: 'travel'
   }
 };
 let idioma = localStorage.getItem('mvIdioma')
-  || ((navigator.language || '').toLowerCase().startsWith('pt') ? 'pt' : 'es');
+  || (() => { const n = (navigator.language || '').toLowerCase(); return n.startsWith('pt') ? 'pt' : n.startsWith('en') ? 'en' : 'es'; })();
 if (!I18N[idioma]) idioma = 'es';
 const T = () => I18N[idioma];
 
 function aplicarIdioma() {
   const t = T();
-  document.documentElement.lang = idioma === 'pt' ? 'pt-BR' : 'es';
+  document.documentElement.lang = idioma === 'pt' ? 'pt-BR' : idioma === 'en' ? 'en' : 'es';
   $('#hTitulo').textContent = t.titulo;
   $('#hVolver').textContent = t.volver;
   $('#hChat').textContent = t.chat;
@@ -214,7 +225,7 @@ $('#formCot').addEventListener('submit', async (e) => {
   const sim = d.simbolo || '$';
   const etiqueta = d.etiqueta_mano_obra || 'Mano de obra';
   caja.innerHTML =
-    '<div class="rango">' + sim + ' ' + d.total.toLocaleString(idioma === 'pt' ? 'pt-BR' : 'es-UY') + ' <span style="font-size:.9rem;color:#5a6b7c;">' + (d.moneda || '') + '</span></div>' +
+    '<div class="rango">' + sim + ' ' + d.total.toLocaleString(idioma === 'pt' ? 'pt-BR' : idioma === 'en' ? 'en-US' : 'es-UY') + ' <span style="font-size:.9rem;color:#5a6b7c;">' + (d.moneda || '') + '</span></div>' +
     T().duracion + ': <strong>' + d.duracion_estimada_min + ' ' + T().minutos + '</strong>' +
     '<small>' + etiqueta + ': ' + sim + d.desglose.mano_obra +
       (d.tipo_cobro === 'honorarios' && !d.desglose.materiales ? '' : ' · Materiales: ' + sim + d.desglose.materiales) +
