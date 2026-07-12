@@ -275,6 +275,8 @@ export const Launch = ({ lang = 'es' }) => {
   const S = STR[lang] || STR.es;
   // La narración inglesa vive con sufijo -en (nar1-en.wav …).
   const narFile = (wav) => (S.narSuffix ? wav.replace('.wav', `${S.narSuffix}.wav`) : wav);
+  // Las capturas de los paneles también tienen versión inglesa (panel-*-en.png).
+  const panel = (png) => (lang === 'en' ? png.replace('.png', '-en.png') : png);
   return (
   <AbsoluteFill style={{ backgroundColor: NAVY, fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
     <Background />
@@ -282,23 +284,23 @@ export const Launch = ({ lang = 'es' }) => {
     <Sequence from={START.hook} durationInFrames={LEN.hook}><EscenaHook S={S} /></Sequence>
     <Sequence from={START.whatsapp} durationInFrames={LEN.whatsapp}><EscenaWhatsapp S={S} /></Sequence>
     <Sequence from={START.cotizador} durationInFrames={LEN.cotizador}>
-      <EscenaPanel len={LEN.cotizador} archivo="panel-cotizador.png" ratio={1044 / 1224} width={640}
+      <EscenaPanel len={LEN.cotizador} archivo={panel("panel-cotizador.png")} ratio={lang === 'en' ? 1044 / 1144 : 1044 / 1224} width={640}
         titulo={S.cotTit} texto={S.cotSub} />
     </Sequence>
     <Sequence from={START.agenda} durationInFrames={LEN.agenda}>
-      <EscenaPanel len={LEN.agenda} archivo="panel-agenda.png" ratio={1700 / 936} width={960}
+      <EscenaPanel len={LEN.agenda} archivo={panel("panel-agenda.png")} ratio={1700 / 936} width={960}
         titulo={S.agTit} texto={S.agSub} />
     </Sequence>
     <Sequence from={START.ficha} durationInFrames={LEN.ficha}>
-      <EscenaPanel len={LEN.ficha} archivo="panel-ficha.png" ratio={1700 / 1131} width={920}
+      <EscenaPanel len={LEN.ficha} archivo={panel("panel-ficha.png")} ratio={lang === 'en' ? 1200 / 734 : 1700 / 1131} width={920}
         titulo={S.fiTit} texto={S.fiSub} />
     </Sequence>
     <Sequence from={START.tableros} durationInFrames={LEN.tableros}>
-      <EscenaPanel len={LEN.tableros} archivo="panel-dashboards.png" ratio={1700 / 1171} width={900}
+      <EscenaPanel len={LEN.tableros} archivo={panel("panel-dashboards.png")} ratio={1700 / 1171} width={900}
         titulo={S.dbTit} texto={S.dbSub} />
     </Sequence>
     <Sequence from={START.crm} durationInFrames={LEN.crm}>
-      <EscenaPanel len={LEN.crm} archivo="panel-clientes.png" ratio={1700 / 820} width={960}
+      <EscenaPanel len={LEN.crm} archivo={panel("panel-clientes.png")} ratio={1700 / 820} width={960}
         titulo={S.crmTit} texto={S.crmSub} />
     </Sequence>
     <Sequence from={START.cierre} durationInFrames={LEN.cierre}><EscenaCierre S={S} /></Sequence>

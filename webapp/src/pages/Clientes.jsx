@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchAdmin, getJSON, dinero } from '../api.js';
-import { t } from '../i18n.js';
+import { t, idioma } from '../i18n.js';
 
 const FORM_VACIO = { nombre: '', telefono: '', email: '', direccion: '', receptorHabitual: '', notas: '' };
 
@@ -127,12 +127,12 @@ export default function Clientes() {
                   <thead><tr><th>{t('Trabajo')}</th><th>{t('Fecha')}</th><th>{t('Precio')}</th><th>{t('Estado')}</th><th></th></tr></thead>
                   <tbody>
                     {citas.map((ci) => (
-                      <tr key={ci.id} className="row" onClick={() => window.open(`/api/citas/${ci.id}/ficha`, '_blank')}>
+                      <tr key={ci.id} className="row" onClick={() => window.open(`/api/citas/${ci.id}/ficha?idi=${idioma()}`, '_blank')}>
                         <td>{ci.trabajoNombre}</td>
                         <td>{ci.fecha} {ci.inicio}</td>
                         <td><strong style={{ color: 'var(--cel)' }}>{ci.cotizacion?.total ? dinero(ci.cotizacion.total) : '—'}</strong></td>
                         <td><span className={`pill ${ci.estado}`}><i />{t(ci.estado)}</span></td>
-                        <td><a href={`/api/citas/${ci.id}/ficha`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>{t('Ver ficha')}</a></td>
+                        <td><a href={`/api/citas/${ci.id}/ficha?idi=${idioma()}`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>{t('Ver ficha')}</a></td>
                       </tr>
                     ))}
                   </tbody>

@@ -507,7 +507,8 @@ app.post('/api/citas/:id/estado', adminOCuenta, async (req, res) => { const r = 
 app.post('/api/citas/:id/receptor', adminOCuenta, async (req, res) => { const r = await trabajos.registrarReceptor(req.params.id, req.body?.nombreReceptor, req.cuentaId); res.status(r.ok ? 200 : 400).json(r); });
 app.get('/api/citas/:id/ficha', async (req, res) => {
   const c = await trabajos.obtenerCita(req.params.id, req.cuentaId); if (!c) return res.status(404).send('No encontrada');
-  res.type('html').send(fichaCitaHTML(c, profesionalOpts()));
+  const idi = ['es', 'pt', 'en'].includes(req.query.idi) ? req.query.idi : 'es';
+  res.type('html').send(fichaCitaHTML(c, { ...profesionalOpts(), idi }));
 });
 
 // Cotizaciones sugeridas: el chatbot NUNCA le dice un precio al cliente sin que

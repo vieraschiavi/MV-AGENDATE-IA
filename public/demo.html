@@ -99,7 +99,10 @@ const I18N = {
     saludo: '¡Hola! Soy el asistente virtual del profesional 👋 Contame qué necesitás y te paso presupuesto y horarios disponibles.',
     errconn: 'No pude conectar con el servidor.',
     chips: ['¿Cuánto sale instalar un tomacorriente?', 'Necesito un electricista para mañana', '¿Tenés horarios esta semana?'],
-    duracion: 'Duración estimada', minutos: 'minutos', propuestos: 'Horarios propuestos para mañana:', traslado: 'traslado'
+    duracion: 'Duración estimada', minutos: 'minutos', propuestos: 'Horarios propuestos para mañana:', traslado: 'traslado',
+    labMano: 'Mano de obra', labMat: 'Materiales', labTras: 'Traslado', labHon: 'Honorarios',
+    urg: { normal: 'Normal (agendado)', mismo_dia: 'Mismo día', urgente: 'Urgente' },
+    hor: { habil: 'Horario hábil', nocturno: 'Nocturno (después de 20h)', feriado: 'Feriado' }
   },
   pt: {
     titulo: 'MV Agendate IA — Demo ao vivo', volver: '← Voltar',
@@ -110,7 +113,10 @@ const I18N = {
     saludo: 'Olá! Sou o assistente virtual do profissional 👋 Me conte o que você precisa e te passo orçamento e horários disponíveis.',
     errconn: 'Não consegui conectar ao servidor.',
     chips: ['Quanto custa instalar uma tomada?', 'Preciso de um eletricista para amanhã', 'Tem horários esta semana?'],
-    duracion: 'Duração estimada', minutos: 'minutos', propuestos: 'Horários propostos para amanhã:', traslado: 'deslocamento'
+    duracion: 'Duração estimada', minutos: 'minutos', propuestos: 'Horários propostos para amanhã:', traslado: 'deslocamento',
+    labMano: 'Mão de obra', labMat: 'Materiais', labTras: 'Deslocamento', labHon: 'Honorários',
+    urg: { normal: 'Normal (agendado)', mismo_dia: 'Mesmo dia', urgente: 'Urgente' },
+    hor: { habil: 'Horário comercial', nocturno: 'Noturno (após 20h)', feriado: 'Feriado' }
   },
   en: {
     titulo: 'MV Agendate IA — Live demo', volver: '← Back',
@@ -121,7 +127,10 @@ const I18N = {
     saludo: 'Hi! I\'m the professional\'s virtual assistant 👋 Tell me what you need and I\'ll give you a quote and available times.',
     errconn: 'Could not connect to the server.',
     chips: ['How much to install an outlet?', 'I need an electrician for tomorrow', 'Any slots this week?'],
-    duracion: 'Estimated duration', minutos: 'minutes', propuestos: 'Proposed times for tomorrow:', traslado: 'travel'
+    duracion: 'Estimated duration', minutos: 'minutes', propuestos: 'Proposed times for tomorrow:', traslado: 'travel',
+    labMano: 'Labor', labMat: 'Materials', labTras: 'Travel', labHon: 'Fee',
+    urg: { normal: 'Normal (scheduled)', mismo_dia: 'Same day', urgente: 'Urgent' },
+    hor: { habil: 'Business hours', nocturno: 'After hours (after 8pm)', feriado: 'Holiday' }
   }
 };
 let idioma = localStorage.getItem('mvIdioma')
@@ -146,6 +155,9 @@ function aplicarIdioma() {
   $('#entrada').placeholder = t.placeholder;
   const chips = document.querySelectorAll('#chips span');
   t.chips.forEach((c, i) => { if (chips[i]) chips[i].textContent = c; });
+  // Opciones de los select de urgencia y horario (traducidas por valor)
+  document.querySelectorAll('select[name="urgencia"] option').forEach((o) => { if (t.urg && t.urg[o.value]) o.textContent = t.urg[o.value]; });
+  document.querySelectorAll('select[name="horario"] option').forEach((o) => { if (t.hor && t.hor[o.value]) o.textContent = t.hor[o.value]; });
   $('#selIdioma').value = idioma;
 }
 
@@ -223,13 +235,13 @@ $('#formCot').addEventListener('submit', async (e) => {
   caja.style.display = 'block';
   if (d.error) { caja.innerHTML = '⚠️ ' + d.error; return; }
   const sim = d.simbolo || '$';
-  const etiqueta = d.etiqueta_mano_obra || 'Mano de obra';
+  const etiqueta = d.tipo_cobro === 'honorarios' ? T().labHon : T().labMano;
   caja.innerHTML =
     '<div class="rango">' + sim + ' ' + d.total.toLocaleString(idioma === 'pt' ? 'pt-BR' : idioma === 'en' ? 'en-US' : 'es-UY') + ' <span style="font-size:.9rem;color:#5a6b7c;">' + (d.moneda || '') + '</span></div>' +
     T().duracion + ': <strong>' + d.duracion_estimada_min + ' ' + T().minutos + '</strong>' +
     '<small>' + etiqueta + ': ' + sim + d.desglose.mano_obra +
-      (d.tipo_cobro === 'honorarios' && !d.desglose.materiales ? '' : ' · Materiales: ' + sim + d.desglose.materiales) +
-      ' · Traslado: ' + sim + d.desglose.traslado + '</small>' +
+      (d.tipo_cobro === 'honorarios' && !d.desglose.materiales ? '' : ' · ' + T().labMat + ': ' + sim + d.desglose.materiales) +
+      ' · ' + T().labTras + ': ' + sim + d.desglose.traslado + '</small>' +
     '<small>' + d.trabajo + ' (' + d.oficio + ')</small>';
 
   // Horarios de ejemplo, para mostrar el motor de agenda con traslados.

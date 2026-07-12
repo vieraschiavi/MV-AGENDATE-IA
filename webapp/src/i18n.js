@@ -42,6 +42,9 @@ const PT = {
   'en_curso': 'em andamento',
   'completada': 'concluída',
   'cancelada': 'cancelada',
+  // ---- Días de la semana (dashboards) ----
+  'Domingo': 'Domingo', 'Lunes': 'Segunda', 'Martes': 'Terça', 'Miércoles': 'Quarta',
+  'Jueves': 'Quinta', 'Viernes': 'Sexta', 'Sábado': 'Sábado',
 
   // ---- Panel del día ----
   'Citas de hoy': 'Atendimentos de hoje',
@@ -283,6 +286,9 @@ const EN = {
   // Estados de cita
   'pendiente': 'pending', 'confirmada': 'confirmed', 'en_curso': 'in progress',
   'completada': 'completed', 'cancelada': 'cancelled',
+  // Días de la semana (dashboards)
+  'Domingo': 'Sunday', 'Lunes': 'Monday', 'Martes': 'Tuesday', 'Miércoles': 'Wednesday',
+  'Jueves': 'Thursday', 'Viernes': 'Friday', 'Sábado': 'Saturday',
   // Panel
   'Citas de hoy': 'Today\'s appointments', 'En curso': 'In progress', 'Visitas a la demo': 'Demo visits',
   'Cotizaciones por aprobar': 'Quotes to approve',

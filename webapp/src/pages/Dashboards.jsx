@@ -4,13 +4,13 @@ import { t } from '../i18n.js';
 
 const COL = ['#1f7ae0', '#2ea043', '#e0b25c', '#8e44ad', '#e67e22', '#16a085', '#c0392b'];
 
-const Barras = ({ obj, money }) => {
+const Barras = ({ obj, money, traducir }) => {
   const ents = Object.entries(obj || {}).sort((a, b) => b[1] - a[1]);
   const max = Math.max(...ents.map((e) => e[1]), 1);
   if (!ents.length) return <span style={{ color: '#999' }}>{t('Sin datos')}</span>;
   return ents.map(([k, v], i) => (
     <div key={k}>
-      <span className="lab">{k}</span>
+      <span className="lab">{traducir ? t(k) : k}</span>
       <span className="b" style={{ width: Math.max(6, (v / max) * 130), background: COL[i % COL.length] }} />
       <span className="val">{money ? dinero(v) : v}</span>
     </div>
@@ -177,8 +177,8 @@ export default function Dashboards() {
 
         <div className="grid2" style={{ marginTop: 16 }}>
           <div className="card"><h2 className="mv-h">{t('Trabajos por oficio')}</h2><div className="barlist"><Barras obj={d.por_oficio} /></div></div>
-          <div className="card"><h2 className="mv-h">{t('Trabajos por estado')}</h2><div className="barlist"><Barras obj={d.por_estado} /></div></div>
-          <div className="card"><h2 className="mv-h">{t('Trabajos por día de la semana')}</h2><div className="barlist"><Barras obj={Object.fromEntries(d.por_dia_semana.map((x) => [x.dia, x.cantidad]))} /></div></div>
+          <div className="card"><h2 className="mv-h">{t('Trabajos por estado')}</h2><div className="barlist"><Barras obj={d.por_estado} traducir /></div></div>
+          <div className="card"><h2 className="mv-h">{t('Trabajos por día de la semana')}</h2><div className="barlist"><Barras obj={Object.fromEntries(d.por_dia_semana.map((x) => [x.dia, x.cantidad]))} traducir /></div></div>
           <div className="card"><h2 className="mv-h">{t('Comparativa año contra año')}</h2><div className="barlist"><Barras obj={Object.fromEntries(anual.map((a) => [a.anio, a.trabajos]))} /></div></div>
         </div>
 

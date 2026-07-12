@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { fetchAdmin, getJSON, dinero } from '../api.js';
-import { t } from '../i18n.js';
+import { t, idioma } from '../i18n.js';
 
 const ESTADOS = ['pendiente', 'confirmada', 'en_curso', 'completada', 'cancelada'];
 
@@ -81,7 +81,7 @@ export default function Agenda() {
   const oficioSel = oficios.find((o) => o.clave === form.oficio);
   const multi = profesionales.length > 1;
   const nombreProf = (id) => profesionales.find((p) => p.id === id)?.nombre || '—';
-  const ficha = (id) => window.open(`/api/citas/${id}/ficha`, '_blank');
+  const ficha = (id) => window.open(`/api/citas/${id}/ficha?idi=${idioma()}`, '_blank');
 
   return (
     <>
