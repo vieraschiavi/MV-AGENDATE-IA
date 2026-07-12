@@ -145,6 +145,7 @@
     <a href="#como" data-i18n="nComo">Cómo funciona</a>
     <a href="#video" data-i18n="nVideo">Video</a>
     <a href="#planes" data-i18n="nPlanes">Planes</a>
+    <a href="#resenas" data-i18n="nResenas">Reseñas</a>
     <a href="/demo.html" data-i18n="nDemo">Demo</a>
     <select class="mv-sel-idioma" aria-label="Idioma">
       <option value="es">🇺🇾 ES</option>
@@ -293,6 +294,36 @@
   </div>
 </section>
 
+<!-- ================= RESEÑAS ================= -->
+<section id="resenas">
+  <div class="centro">
+    <div class="cabeza rev">
+      <h2 data-i18n="resH">Lo que dicen los profesionales</h2>
+      <p data-i18n="resP" id="resSub">Opiniones reales de quienes usan MV Agendate IA.</p>
+    </div>
+    <div id="resVacio" class="rev" style="display:none; text-align:center; color:var(--sub); border:1px dashed var(--line); border-radius:16px; padding:34px 20px; max-width:640px; margin:0 auto 26px;">
+      <div style="font-size:1.8rem;">⭐</div>
+      <p style="margin:8px 0 0;" data-i18n="resVacio">Todavía no hay reseñas publicadas. Si probaste MV, sé el primero en dejar la tuya.</p>
+    </div>
+    <div id="resLista" class="grid rev d1" style="margin-bottom:26px;"></div>
+
+    <div class="card rev d2" style="max-width:640px; margin:0 auto; background:var(--card);">
+      <h3 style="margin:0 0 4px;" data-i18n="resFormH">Dejá tu opinión</h3>
+      <p style="color:var(--sub); font-size:.86rem; margin:0 0 14px;" data-i18n="resFormP">Tu reseña se publica una vez revisada. Gracias por ayudar a otros profesionales a decidir.</p>
+      <form id="resForm" style="display:grid; gap:12px;">
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <input name="nombre" required maxlength="60" placeholder="Tu nombre" data-ph="phNombre" style="flex:1; min-width:160px; padding:12px 14px; border-radius:10px; border:1px solid var(--line); background:rgba(255,255,255,.03); color:var(--tinta); font-size:16px;">
+          <input name="oficio" maxlength="40" placeholder="Tu oficio (opcional)" data-ph="phOficio" style="flex:1; min-width:160px; padding:12px 14px; border-radius:10px; border:1px solid var(--line); background:rgba(255,255,255,.03); color:var(--tinta); font-size:16px;">
+        </div>
+        <div id="estrellasIn" role="radiogroup" aria-label="Puntuación" style="display:flex; gap:4px; font-size:1.9rem; line-height:1; cursor:pointer;"></div>
+        <textarea name="comentario" required maxlength="600" rows="3" placeholder="¿Cómo te fue con MV Agendate IA?" data-ph="phComentario" style="padding:12px 14px; border-radius:10px; border:1px solid var(--line); background:rgba(255,255,255,.03); color:var(--tinta); font-size:16px; resize:vertical;"></textarea>
+        <button class="b1" type="submit" style="border:0; cursor:pointer;" data-i18n="resEnviar">Publicar mi reseña</button>
+        <div id="resMsg" style="font-size:.86rem; color:var(--sub);"></div>
+      </form>
+    </div>
+  </div>
+</section>
+
 <!-- ================= CIERRE ================= -->
 <section class="cierre">
   <div class="glow"></div>
@@ -308,7 +339,15 @@
 
 <script>
 window.MV_PT = {
-  nComo:'Como funciona', nVideo:'Vídeo', nPlanes:'Planos', nDemo:'Demo', nCta:'Testar grátis',
+  nComo:'Como funciona', nVideo:'Vídeo', nPlanes:'Planos', nResenas:'Avaliações', nDemo:'Demo', nCta:'Testar grátis',
+  resH:'O que dizem os profissionais', resP:'Avaliações reais de quem usa o MV Agendate IA.',
+  resVacio:'Ainda não há avaliações publicadas. Se você testou o MV, seja o primeiro a deixar a sua.',
+  resFormH:'Deixe sua opinião', resFormP:'Sua avaliação é publicada após revisão. Obrigado por ajudar outros profissionais a decidir.',
+  phNombre:'Seu nome', phOficio:'Sua profissão (opcional)', phComentario:'Como foi sua experiência com o MV Agendate IA?',
+  resEnviar:'Publicar minha avaliação',
+  resOk:'Obrigado! Sua avaliação foi enviada e aparece após a revisão.',
+  resErr:'Não foi possível enviar. Verifique nome, estrelas e comentário.',
+  resEstrellas:'Toque para pontuar',
   kicker:'WhatsApp · Telefone · Agenda com IA',
   h1:'Enquanto você trabalha,<br><em>seu assistente vende por você</em>',
   lead:'Atende WhatsApp e ligações a qualquer hora, orça com a SUA tabela de preços e agenda otimizando os deslocamentos reais entre visitas. Para médicos, advogados, eletricistas e qualquer profissão da América Latina.',
@@ -426,6 +465,70 @@ window.MV_PT = {
     msgs.forEach((m, i) => setTimeout(() => m.classList.add('on'), 500 + i * 950));
   }, { threshold: .4 });
   if (msgs.length) ioChat.observe(document.getElementById('msgs'));
+})();
+</script>
+<script>
+// ---------- Reseñas: carga las aprobadas y envía nuevas (quedan pendientes) ----------
+(function () {
+  const T = (k, es) => (window.MV_PT && window.mvIdioma && window.mvIdioma() === 'pt' && window.MV_PT[k]) || es;
+  const estrellasHTML = (n) => '★★★★★☆☆☆☆☆'.slice(5 - n, 10 - n);
+  const fmtFecha = (iso) => { try { return new Date(iso).toLocaleDateString(window.mvIdioma && window.mvIdioma() === 'pt' ? 'pt-BR' : 'es', { year: 'numeric', month: 'short' }); } catch { return ''; } };
+
+  async function cargar() {
+    let d; try { d = await (await fetch('/api/resenas')).json(); } catch { return; }
+    const lista = document.getElementById('resLista');
+    const vacio = document.getElementById('resVacio');
+    const sub = document.getElementById('resSub');
+    if (!d.resenas || !d.resenas.length) { vacio.style.display = 'block'; lista.innerHTML = ''; return; }
+    vacio.style.display = 'none';
+    if (d.total) sub.textContent = `★ ${d.promedio} · ${d.total} ${d.total === 1 ? (T('resUna', 'reseña') ) : (T('resVarias','reseñas'))}`;
+    lista.innerHTML = d.resenas.map((r) => `
+      <div class="card">
+        <div style="color:#e3a72f; font-size:1.05rem; letter-spacing:2px;">${estrellasHTML(r.estrellas)}</div>
+        <p style="margin:8px 0 12px; color:var(--tinta); font-size:.92rem;">"${escapar(r.comentario)}"</p>
+        <div style="font-weight:700; font-size:.9rem;">${escapar(r.nombre)}</div>
+        <div style="color:var(--sub); font-size:.8rem;">${escapar(r.oficio || '')}${r.oficio ? ' · ' : ''}${fmtFecha(r.fecha)}</div>
+      </div>`).join('');
+  }
+  function escapar(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  // Selector de estrellas
+  let puntaje = 5;
+  const cont = document.getElementById('estrellasIn');
+  function pintarEstrellas() {
+    cont.innerHTML = [1, 2, 3, 4, 5].map((i) =>
+      `<span data-v="${i}" role="radio" aria-checked="${i === puntaje}" tabindex="0" style="color:${i <= puntaje ? '#e3a72f' : 'var(--line)'};">★</span>`).join('');
+  }
+  cont.title = T('resEstrellas', 'Tocá para puntuar');
+  cont.addEventListener('click', (e) => { const v = e.target.dataset.v; if (v) { puntaje = +v; pintarEstrellas(); } });
+  cont.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.dataset.v) { puntaje = +e.target.dataset.v; pintarEstrellas(); e.preventDefault(); } });
+  pintarEstrellas();
+
+  document.getElementById('resForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const msg = document.getElementById('resMsg');
+    const body = { nombre: fd.get('nombre'), oficio: fd.get('oficio'), comentario: fd.get('comentario'), estrellas: puntaje, idioma: (window.mvIdioma && window.mvIdioma()) || 'es' };
+    msg.textContent = '…';
+    try {
+      const r = await (await fetch('/api/resenas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json();
+      if (r.ok) { msg.style.color = 'var(--verde)'; msg.textContent = T('resOk', '¡Gracias! Tu reseña se envió y aparece una vez revisada.'); e.target.reset(); puntaje = 5; pintarEstrellas(); }
+      else { msg.style.color = '#e3a72f'; msg.textContent = r.error || T('resErr', 'No se pudo enviar. Revisá nombre, estrellas y comentario.'); }
+    } catch { msg.style.color = '#e3a72f'; msg.textContent = T('resErr', 'No se pudo enviar. Revisá nombre, estrellas y comentario.'); }
+  });
+
+  // Placeholders del form según idioma (i18n.js solo traduce texto, no atributos)
+  const phES = {};
+  document.querySelectorAll('#resForm [data-ph]').forEach((el) => { phES[el.dataset.ph] = el.placeholder; });
+  function aplicarPlaceholders() {
+    const pt = window.mvIdioma && window.mvIdioma() === 'pt';
+    document.querySelectorAll('#resForm [data-ph]').forEach((el) => {
+      el.placeholder = (pt && window.MV_PT[el.dataset.ph]) || phES[el.dataset.ph];
+    });
+  }
+
+  cargar(); aplicarPlaceholders();
+  document.addEventListener('mv:idioma', () => { cargar(); aplicarPlaceholders(); }); // re-render con el idioma nuevo
 })();
 </script>
 <script src="/js/pwa.js" defer></script>

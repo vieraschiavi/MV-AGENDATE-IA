@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Moderar reseñas — MV Agendate IA</title>
+<link rel="icon" href="/logo-mv.svg" type="image/svg+xml">
+<meta name="robots" content="noindex">
+<style>
+  :root{ --azul:#0f2a43; --cel:#1f7ae0; --verde:#2ea043; --oro:#e3a72f; --line:#e6ebf1; --tinta:#22303e; --sub:#5a6b7c; --gris:#f4f6f9; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:system-ui,-apple-system,'Segoe UI',sans-serif; background:var(--gris); color:var(--tinta); }
+  header{ background:var(--azul); color:#fff; padding:16px 22px; display:flex; align-items:center; gap:12px; }
+  header img{ width:32px; height:32px; } header a{ margin-left:auto; color:var(--oro); text-decoration:none; }
+  .wrap{ max-width:820px; margin:26px auto; padding:0 16px; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  h1{ font-size:1.3rem; margin:0 0 4px; } .sub{ color:var(--sub); font-size:.9rem; margin-bottom:14px; }
+  label{ font-size:.82rem; color:var(--sub); display:block; margin-bottom:4px; }
+  input{ width:100%; padding:11px 13px; border:1px solid #cbd5e1; border-radius:9px; font-size:16px; }
+  .btn{ background:var(--cel); color:#fff; border:0; border-radius:9px; padding:11px 18px; font-weight:700; cursor:pointer; font-size:.92rem; }
+  .btn.sec{ background:#eef2f7; color:var(--azul); } .btn.ok{ background:var(--verde); } .btn.del{ background:#c0392b; }
+  .btn.mini{ padding:7px 12px; font-size:.82rem; }
+  .stars{ color:var(--oro); letter-spacing:2px; }
+  .res{ border:1px solid var(--line); border-radius:11px; padding:14px; margin-bottom:10px; }
+  .res.pend{ border-left:4px solid var(--oro); background:#fffdf6; }
+  .res.pub{ border-left:4px solid var(--verde); }
+  .res .top{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .res .quien{ font-weight:700; } .res .meta{ color:var(--sub); font-size:.8rem; }
+  .res .txt{ margin:8px 0 10px; font-size:.93rem; }
+  .res .acc{ display:flex; gap:8px; flex-wrap:wrap; }
+  .pill{ font-size:.72rem; font-weight:800; padding:3px 9px; border-radius:999px; }
+  .pill.pend{ background:#fff3d6; color:#8a5a00; } .pill.pub{ background:#e9f7ee; color:#1a7f37; }
+  .empty{ color:var(--sub); text-align:center; padding:24px; }
+  #aviso{ font-size:.86rem; margin-top:8px; min-height:1.2em; }
+</style>
+</head>
+<body>
+<header><img src="/logo-mv.svg" alt="MV"><strong>Moderar reseñas</strong><a href="/">← Inicio</a></header>
+<div class="wrap">
+  <div class="card">
+    <h1>Reseñas del producto</h1>
+    <div class="sub">Aprobá las que quieras mostrar en la web. Solo las aprobadas aparecen en la sección "Reseñas" de la página.</div>
+    <label>Clave de administración</label>
+    <div style="display:flex; gap:10px;">
+      <input id="admin" type="password" placeholder="X-Admin-Key" autocomplete="off">
+      <button class="btn" id="cargar">Cargar</button>
+    </div>
+    <div id="aviso"></div>
+  </div>
+  <div id="cont"></div>
+</div>
+<script>
+const $ = (s) => document.querySelector(s);
+const stars = (n) => '★★★★★☆☆☆☆☆'.slice(5 - n, 10 - n);
+const esc = (s) => { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; };
+function headers() { const h = { 'Content-Type': 'application/json' }; const k = $('#admin').value.trim(); if (k) h['X-Admin-Key'] = k; return h; }
+function aviso(m, ok) { const a = $('#aviso'); a.textContent = m; a.style.color = ok ? '#1a7f37' : '#c0392b'; }
+
+async function cargar() {
+  try {
+    const r = await fetch('/api/resenas/admin', { headers: headers() });
+    if (r.status === 401) return aviso('Clave inválida.', false);
+    const d = await r.json();
+    localStorage.setItem('mvAdminKey', $('#admin').value.trim());
+    render(d.resenas || []);
+    aviso(`${d.resenas.length} reseña(s).`, true);
+  } catch { aviso('No pude conectar.', false); }
+}
+function render(lista) {
+  const cont = $('#cont');
+  if (!lista.length) { cont.innerHTML = '<div class="card empty">Todavía no llegó ninguna reseña.</div>'; return; }
+  const pend = lista.filter((r) => !r.aprobada), pub = lista.filter((r) => r.aprobada);
+  cont.innerHTML =
+    (pend.length ? '<div class="card"><h1 style="font-size:1rem;">⏳ Pendientes de aprobar (' + pend.length + ')</h1>' + pend.map(fila).join('') + '</div>' : '') +
+    (pub.length ? '<div class="card"><h1 style="font-size:1rem;">✅ Publicadas (' + pub.length + ')</h1>' + pub.map(fila).join('') + '</div>' : '');
+  cont.querySelectorAll('[data-acc]').forEach((b) => b.onclick = () => moderar(b.dataset.id, b.dataset.acc));
+}
+function fila(r) {
+  const f = (() => { try { return new Date(r.fecha).toLocaleDateString('es'); } catch { return ''; } })();
+  return `<div class="res ${r.aprobada ? 'pub' : 'pend'}">
+    <div class="top">
+      <span class="stars">${stars(r.estrellas)}</span>
+      <span class="quien">${esc(r.nombre)}</span>
+      <span class="meta">${esc(r.oficio || '')}${r.oficio ? ' · ' : ''}${f} · ${r.idioma}</span>
+      <span class="pill ${r.aprobada ? 'pub' : 'pend'}" style="margin-left:auto;">${r.aprobada ? 'Publicada' : 'Pendiente'}</span>
+    </div>
+    <div class="txt">"${esc(r.comentario)}"</div>
+    <div class="acc">
+      ${r.aprobada
+        ? `<button class="btn sec mini" data-acc="ocultar" data-id="${r.id}">Ocultar</button>`
+        : `<button class="btn ok mini" data-acc="aprobar" data-id="${r.id}">Aprobar y publicar</button>`}
+      <button class="btn del mini" data-acc="eliminar" data-id="${r.id}">Eliminar</button>
+    </div>
+  </div>`;
+}
+async function moderar(id, accion) {
+  if (accion === 'eliminar' && !confirm('¿Eliminar esta reseña definitivamente?')) return;
+  try {
+    const r = await fetch(`/api/resenas/${id}/moderar`, { method: 'POST', headers: headers(), body: JSON.stringify({ accion }) });
+    if (r.ok) cargar(); else aviso('No se pudo. Revisá la clave.', false);
+  } catch { aviso('Error de red.', false); }
+}
+$('#cargar').onclick = cargar;
+$('#admin').value = localStorage.getItem('mvAdminKey') || '';
+if ($('#admin').value) cargar();
+</script>
+</body>
+</html>

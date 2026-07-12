@@ -23,6 +23,7 @@ import * as cotizaciones from './store/cotizaciones.js';
 import { estadoPrueba, pruebaBloqueada, activarLicencia } from './store/prueba.js';
 import { estadoCreditos, acreditar, bonoBienvenida, PACKS as PACKS_CREDITOS } from './store/creditos.js';
 import * as emails from './store/emails.js';
+import * as resenas from './store/resenas.js';
 import { runConCuenta, runConDemoPais } from './store/contextoCuenta.js';
 import { obtenerOverrides, guardarOverrides, configPublicaCuenta } from './store/configCuentas.js';
 import { fichaCitaHTML, agendaCSV, agendaExcelHTML, clientesCSV, clientesExcelHTML } from './exports/documentos.js';
@@ -698,6 +699,19 @@ app.post('/api/creditos/recargar', adminOCuenta, async (req, res) => {
   const pago = await crearPreferenciaCreditos({ cuentaId: req.cuentaId, monto, email: req.cuentaEmail }, base);
   if (!pago.ok || !pago.init_point) return res.status(502).json({ ok: false, error: pago.error || 'No pude iniciar la recarga.' });
   res.json({ ok: true, init_point: pago.init_point });
+});
+
+// --- Reseñas del producto (web pública): dejar, listar (aprobadas) y moderar ---
+app.get('/api/resenas', async (_req, res) => res.json(await resenas.resenasPublicas()));
+app.post('/api/resenas', async (req, res) => {
+  if (await esBot(req)) return res.status(403).json({ ok: false, error: 'Acceso denegado.' });
+  const r = await resenas.crearResena(req.body ?? {});
+  res.status(r.ok ? 200 : 400).json(r);
+});
+app.get('/api/resenas/admin', soloAdmin, async (_req, res) => res.json(await resenas.resenasTodas()));
+app.post('/api/resenas/:id/moderar', soloAdmin, async (req, res) => {
+  const r = await resenas.moderarResena(req.params.id, req.body?.accion);
+  res.status(r.ok ? 200 : 400).json(r);
 });
 
 // --- Cron diario: avisos de "tu prueba vence" por email (idempotente vía Redis).
