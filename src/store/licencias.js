@@ -135,7 +135,14 @@ export function verificarDescarga(token) {
   } catch { return null; }
 }
 
-// Qué archivo de descarga corresponde a cada versión.
+// Qué archivo de descarga corresponde a cada versión. Los paquetes reales
+// viven en public/descargas/ (servidos también como estáticos). La APK es un
+// .apk; el resto entrega el paquete PC (que incluye instrucciones y arranque).
 export function archivoDeVersion(version) {
-  return { pc: 'MV-PC.zip', apk: 'MV-APK.zip', ios: 'MV-PC.zip', todas: 'MV-PC.zip' }[version] || 'MV-PC.zip';
+  return {
+    pc: 'MV-Agendate-IA-PC.zip',
+    apk: 'MV-Agendate-IA.apk',
+    ios: 'MV-Agendate-IA-PC.zip',
+    todas: 'MV-Agendate-IA-PC.zip',
+  }[version] || 'MV-Agendate-IA-PC.zip';
 }

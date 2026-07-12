@@ -756,10 +756,16 @@ app.get('/descargar/:token', (req, res) => {
   const version = conEstado?.version || sinEstado?.version;
   if (!version) return res.status(403).send('Descarga no habilitada. Verificá que el pago esté confirmado.');
   const nombre = lic.archivoDeVersion(version);
-  const candidatos = [join(here, '../descargas', nombre), join(here, '../dist', nombre)];
+  // Los paquetes reales están en public/descargas/ (también servidos como
+  // estáticos). Buscamos ahí primero, luego en descargas/ y dist/ por compat.
+  const candidatos = [
+    join(here, '../public/descargas', nombre),
+    join(here, '../descargas', nombre),
+    join(here, '../dist', nombre),
+  ];
   const archivo = candidatos.find((f) => existsSync(f));
-  if (!archivo) return res.status(503).send('El paquete aún no está disponible. En el servidor: bash empaquetar.sh');
-  res.download(archivo, `MV-Agendate-IA-${version}.zip`);
+  if (!archivo) return res.status(503).send('El paquete aún no está disponible. En el servidor: npm run empaquetar-pc');
+  res.download(archivo, nombre);
 });
 
 // --- Canales externos ---
