@@ -159,6 +159,7 @@
     </div>
     <div class="hint">Se guarda en tu servidor, nunca se expone al cliente. Al guardar con una key válida, el chatbot pasa de "modo demo" a IA real automáticamente. <strong>Copilot</strong> no ofrece una API general para este uso; si trabajás con modelos de Microsoft/Azure, usá la opción OpenAI con tu endpoint.</div>
 
+    <div class="solo-vendedor">
     <h3 style="margin:14px 0 4px;">💳 Créditos de IA (solo para el vendedor)</h3>
     <div class="sub">Si vendés cuentas SaaS, con TU key le vendés "créditos" a cada cuenta: usan tu IA y cada mensaje descuenta su saldo. Cuando se agota, la IA se corta hasta que recarguen por MercadoPago. (Si preferís que cada cuenta traiga su propia key, desactivalo.)</div>
     <div class="row">
@@ -168,6 +169,7 @@
     <label>Bono gratis de bienvenida por cuenta (US$)</label>
     <input id="creditosBono" type="number" step="1" placeholder="3">
     <div class="hint">El saldo se descuenta al costo real de la IA × el margen. Ej: con margen 2.5, US$ 10 de recarga ≈ US$ 4 de costo real = cientos de mensajes. Ajustá según tu estrategia.</div>
+    </div>
 
     <h3 style="margin:14px 0 4px;">✅ Aprobación de cotizaciones</h3>
     <div class="sub">El precio que calcula el asistente es un sugerido: por defecto NO se lo dice al cliente hasta que vos lo apruebes (o ajustes) desde el Panel. Te llega un aviso por WhatsApp con cada cotización pendiente.</div>
@@ -227,7 +229,7 @@
       <div id="pruebaResultado" class="hint"></div>
     </details>
 
-    <details>
+    <details class="solo-vendedor">
       <summary>💳 Pagos (MercadoPago)</summary>
       <label>MercadoPago — Access Token</label>
       <input id="mercadopagoToken" type="password" placeholder="APP_USR-... (cobros → payout a tu banco)" autocomplete="off">
@@ -237,7 +239,7 @@
       <div class="hint">Sólo si elegiste la modalidad de <strong>suscripción mensual</strong> al comprar. Con esto, el programa chequea cada tanto que tu pago siga al día; si tu suscripción se cancela o falla un cobro, se desactiva el chat/voz con IA (el resto del programa sigue funcionando). Si compraste pago único, dejá esto vacío.</div>
     </details>
 
-    <details>
+    <details class="solo-vendedor">
       <summary>✉️ Emails automáticos (bienvenida, prueba por vencer, licencia)</summary>
       <label>Resend — API key</label>
       <input id="resendApiKey" type="password" placeholder="re_... (resend.com — tier gratis)" autocomplete="off">
@@ -246,7 +248,7 @@
       <div class="hint">Con la API key de <a href="https://resend.com" target="_blank" rel="noreferrer">resend.com</a> (gratis hasta 100 emails/día) el programa envía solo: bienvenida al registrarse, aviso de "tu prueba vence" (2 días y 1 día antes), la licencia al confirmarse un pago, recargas de créditos y aviso de créditos bajos. Sin key no se envía nada y todo funciona igual. El aviso de vencimiento corre con el Cron diario de Vercel (ya configurado) o un cron externo a <code>/api/cron/diario</code>.</div>
     </details>
 
-    <details>
+    <details class="solo-vendedor">
       <summary>🎁 Modo demostración (para mostrar el producto)</summary>
       <div class="row">
         <div><label>Instancia de demo con cupo</label><select id="demoLimite"><option value="">No (producto completo)</option><option value="1">Sí (limitar usos)</option></select></div>
@@ -255,7 +257,7 @@
       <div class="hint">Con "Sí", las funciones de IA (chat y análisis de fotos) son gratis pero limitadas a N usos por visitante, con todas las opciones. En el producto vendido dejá "No" (ilimitado).</div>
     </details>
 
-    <details>
+    <details class="solo-vendedor">
       <summary>🔒 Seguridad</summary>
       <label>Clave de administración (protege este panel y el importador)</label>
       <input id="adminKeyNew" type="password" placeholder="dejá vacío para no cambiarla" autocomplete="off">
@@ -529,6 +531,10 @@ function headers() {
   return h;
 }
 if (localStorage.getItem('mvToken')) {
+  // Cuenta SaaS: oculta las secciones que son del DUEÑO de la plataforma
+  // (créditos que vende, MercadoPago propio, emails del sistema, demo pública,
+  // clave admin) — no son de esta cuenta y no deben verse ni tocarse acá.
+  document.querySelectorAll('.solo-vendedor').forEach((el) => el.remove());
   try {
     const cta = JSON.parse(localStorage.getItem('mvCuenta') || 'null');
     if (cta) aviso(`Configurando la cuenta online de ${cta.nombre || cta.email} — los cambios solo afectan a esa cuenta.`, true);
@@ -568,10 +574,12 @@ $('#form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const body = {};
   for (const campo of CAMPOS) {
-    const v = $('#'+campo).value.trim();
+    const el = $('#'+campo); if (!el) continue;  // sección solo-vendedor removida del DOM (cuenta SaaS)
+    const v = el.value.trim();
     if (v) body[campo] = v;            // vacío = no cambiar (conserva la clave existente)
   }
-  const nuevaAdmin = $('#adminKeyNew').value.trim();
+  const elAdminNew = $('#adminKeyNew');
+  const nuevaAdmin = elAdminNew ? elAdminNew.value.trim() : '';
   if (nuevaAdmin) body.adminKey = nuevaAdmin;
   try {
     const r = await fetch('/api/config', { method:'POST', headers: headers(), body: JSON.stringify(body) });
