@@ -34,7 +34,7 @@
     "appId": "com.mv.agendateia",
     "productName": "MV Agendate IA",
     "directories": { "output": "dist-instalador" },
-    "asar": true,
+    "asar": false,
     "files": [
       "electron/**/*",
       "src/**/*",
