@@ -3,14 +3,14 @@
   "version": "0.1.0",
   "description": "MV Agendate IA — Chatbot/ChatVoice con IA que atiende clientes de cualquier oficio por WhatsApp o voz: cotiza trabajos predefinidos, agenda citas optimizando traslados y descansos, avisa retrasos automáticamente y ofrece un dashboard con CRM de clientes y facturación.",
   "type": "module",
-  "main": "src/server.js",
+  "main": "electron/main.cjs",
   "scripts": {
     "start": "node src/programa.js",
     "servidor": "node src/server.js",
     "configurar": "node src/setup/configurar.js",
     "embeber-clave": "node src/setup/embeber.js",
     "empaquetar-pc": "bash scripts/empaquetar-pc.sh",
-    "empaquetar-exe": "node scripts/empaquetar-exe.js",
+    "empaquetar-exe": "electron-builder --win --x64 --publish never",
     "dev": "node --watch src/server.js",
     "test": "node --test"
   },
@@ -27,8 +27,34 @@
   "license": "UNLICENSED",
   "private": true,
   "devDependencies": {
-    "archiver": "^8.0.0",
     "electron": "^43.1.0",
-    "electron-packager": "^17.1.2"
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.mv.agendateia",
+    "productName": "MV Agendate IA",
+    "directories": { "output": "dist-instalador" },
+    "asar": true,
+    "files": [
+      "electron/**/*",
+      "src/**/*",
+      "api/**/*",
+      "public/**/*",
+      "!public/video/**",
+      "!public/descargas/**",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/logo-mv.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "MV Agendate IA",
+      "artifactName": "MV-Agendate-IA-Setup.exe"
+    }
   }
 }

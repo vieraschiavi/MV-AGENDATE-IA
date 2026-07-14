@@ -25,9 +25,11 @@ descargas/*.zip
 android/build/
 webapp/node_modules/
 
-# Paquete de escritorio Electron (.exe): pesa 100-150+ MB (Chromium adentro),
-# supera el límite de 100 MB de GitHub — no se versiona. Se sube aparte
-# (GitHub Releases / Vercel Blob) y /descargar apunta a esa URL externa.
+# Instalador de escritorio (Electron/electron-builder → MV-Agendate-IA-Setup.exe):
+# pesa 100-150+ MB (Chromium adentro), supera el límite de 100 MB de GitHub —
+# no se versiona. Se publica aparte (GitHub Release, automático por
+# .github/workflows/build-windows-exe.yml) y /descargar redirige ahí.
 # Regenerarlo con: npm run empaquetar-exe
+dist-instalador/
+public/descargas/MV-Agendate-IA-Setup.exe
 public/descargas/MV-Agendate-IA-Windows.zip
-public/descargas/*-win32-x64/
