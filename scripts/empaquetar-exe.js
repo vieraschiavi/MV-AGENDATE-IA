@@ -70,8 +70,12 @@ execFileSync(process.platform === 'win32' ? 'npx.cmd' : 'npx', [
   `--app-version=${pkg.version}`,
   '--overwrite', '--quiet',
 ], {
+  // Sin forzar un mirror: usa la descarga oficial de GitHub, que funciona
+  // normal en GitHub Actions y en una PC con internet sin restricciones. Si
+  // hace falta un mirror (red restringida), definí ELECTRON_MIRROR antes de
+  // correr el script.
   stdio: 'inherit',
-  env: { ...process.env, ELECTRON_MIRROR: process.env.ELECTRON_MIRROR || 'https://npmmirror.com/mirrors/electron/' },
+  env: process.env,
 });
 
 const carpetaEmpaquetada = join(distDir, `${NOMBRE_APP}-win32-x64`);

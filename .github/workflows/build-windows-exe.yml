@@ -1,0 +1,53 @@
+# Arma el paquete de escritorio (Electron) para Windows en una máquina
+# Windows real de GitHub Actions — sin Wine, sin que nadie corra nada a mano
+# — y lo publica como asset de un Release fijo ("desktop-windows-latest").
+#
+# La web de venta apunta siempre a la misma URL estable:
+#   https://github.com/<owner>/<repo>/releases/latest/download/MV-Agendate-IA-Windows.zip
+# (configurada una sola vez en Vercel como DESCARGA_EXE_URL) — GitHub resuelve
+# ese link al asset del release más reciente automáticamente, así que no hay
+# que tocar nada en Vercel cada vez que se genera un build nuevo.
+name: Build Windows desktop app
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'api/**'
+      - 'electron/**'
+      - 'public/**'
+      - 'build/**'
+      - 'scripts/empaquetar-exe.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/build-windows-exe.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm ci
+
+      - run: npm run empaquetar-exe
+
+      - name: Publicar release (siempre "latest")
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: desktop-windows-latest
+          name: MV Agendate IA — Windows (build automático)
+          make_latest: true
+          body: Generado automáticamente por GitHub Actions desde el último commit de `main`. No editar a mano — se reemplaza en cada build.
+          files: public/descargas/MV-Agendate-IA-Windows.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
