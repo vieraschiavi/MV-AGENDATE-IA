@@ -257,7 +257,7 @@
       <div class="hint">Con "Sí", las funciones de IA (chat y análisis de fotos) son gratis pero limitadas a N usos por visitante, con todas las opciones. En el producto vendido dejá "No" (ilimitado).</div>
     </details>
 
-    <details class="solo-vendedor">
+    <details class="solo-vendedor" id="detSeguridad">
       <summary>🔒 Seguridad</summary>
       <label>Clave de administración (protege este panel y el importador)</label>
       <input id="adminKeyNew" type="password" placeholder="dejá vacío para no cambiarla" autocomplete="off">
@@ -562,6 +562,9 @@ async function cargar() {
     if (c.diasLibres) { diasLibresSet = new Set(c.diasLibres.split(',').map(Number)); pintarDiasLibres(); }
     toggleProveedorIA();
     pintarBadges(c.estado);
+    // App de escritorio: la clave de admin nunca se pide (server.js la
+    // desactiva siempre acá) — no tiene sentido mostrar el campo.
+    if (c.escritorio) document.getElementById('detSeguridad')?.remove();
   } catch { aviso('No pude conectar con el servidor.', false); }
 }
 function aviso(msg, ok) {

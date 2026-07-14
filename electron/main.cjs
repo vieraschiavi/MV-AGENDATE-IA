@@ -60,7 +60,7 @@ function iniciarServidor() {
   logStream = fs.createWriteStream(logArchivo() || path.join(RAIZ, 'servidor.log'), { flags: 'a' });
   procesoServidor = spawn(process.execPath, [SERVIDOR], {
     cwd: RAIZ,
-    env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', PORT: String(PORT) },
+    env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', PORT: String(PORT), MV_ESCRITORIO: '1' },
     stdio: ['ignore', 'pipe', 'pipe']
   });
   const capturar = (chunk) => {

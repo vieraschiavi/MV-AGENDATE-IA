@@ -315,6 +315,10 @@ app.get('/api/demo-estado', (req, res) => {
 // --- Zona admin: con una clave configurada exige X-Admin-Key; sin ella queda
 // abierta solo en local (primer arranque/demo). ---
 function soloAdmin(req, res, next) {
+  // App de escritorio (Electron): un solo usuario, en su propia computadora
+  // — no hay nadie de quien protegerse, así que la clave de administración
+  // nunca se pide acá (a diferencia del modo SaaS/hosteado en Vercel).
+  if (process.env.MV_ESCRITORIO) return next();
   const clave = cfg('adminKey');
   if (clave) {
     if (req.headers['x-admin-key'] === clave) return next();

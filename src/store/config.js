@@ -250,5 +250,8 @@ export function getConfigPublico() {
     vozPremium: !!(c.deepgramApiKey && c.elevenlabsApiKey && c.twilioAccountSid),
     crm: !!c.crmWebhookUrl
   };
+  // App de escritorio: la clave de admin nunca se pide (ver soloAdmin en
+  // server.js) — el panel usa esto para no mostrar un campo que no hace nada.
+  out.escritorio = !!process.env.MV_ESCRITORIO;
   return out;
 }
