@@ -10,7 +10,7 @@
     "configurar": "node src/setup/configurar.js",
     "embeber-clave": "node src/setup/embeber.js",
     "empaquetar-pc": "bash scripts/empaquetar-pc.sh",
-    "empaquetar-exe": "bash scripts/empaquetar-exe.sh",
+    "empaquetar-exe": "node scripts/empaquetar-exe.js",
     "dev": "node --watch src/server.js",
     "test": "node --test"
   },
@@ -27,6 +27,7 @@
   "license": "UNLICENSED",
   "private": true,
   "devDependencies": {
+    "archiver": "^8.0.0",
     "electron": "^43.1.0",
     "electron-packager": "^17.1.2"
   }
