@@ -70,6 +70,10 @@ const ENV = {
   creditosMargen: 'CREDITOS_MARGEN',    // margen sobre el costo crudo (default 2.5)
   creditosBono: 'CREDITOS_BONO',        // saldo gratis de bienvenida en USD (default 3)
   mercadopagoToken: 'MERCADOPAGO_TOKEN', // Access Token de MercadoPago (cobros → payout a tu banco)
+  // El paquete de escritorio (.exe, Electron) pesa 100+ MB — no vive en el
+  // repo/deploy, se aloja aparte (GitHub Releases, etc.) y /descargar
+  // redirige ahí cuando no encuentra el archivo local. Ver npm run empaquetar-exe.
+  descargaExeUrl: 'DESCARGA_EXE_URL',
   // Emails transaccionales (bienvenida, prueba por vencer, licencia, créditos):
   // API key de resend.com (tier gratis). Sin ella no se envía nada (no-op).
   resendApiKey: 'RESEND_API_KEY',
@@ -131,7 +135,7 @@ function cargar() {
  * el oficio, país, precios y credenciales de ESA cuenta sin cambios de código.
  * Los overrides no aplican a las claves del vendedor (admin, pagos, licencia).
  */
-const NUNCA_OVERRIDE = new Set(['adminKey', 'mercadopagoToken', 'jwtSecret', 'licenciaLocal', 'demoLimite', 'demoMaxUsos', 'sitioUrl', 'preapprovalPlanFull', 'preapprovalPlanSaas', 'resendApiKey', 'emailFrom']);
+const NUNCA_OVERRIDE = new Set(['adminKey', 'mercadopagoToken', 'jwtSecret', 'licenciaLocal', 'demoLimite', 'demoMaxUsos', 'sitioUrl', 'preapprovalPlanFull', 'preapprovalPlanSaas', 'resendApiKey', 'emailFrom', 'descargaExeUrl']);
 export function get(clave) {
   const ov = overridesActivos();
   if (ov && !NUNCA_OVERRIDE.has(clave) && ov[clave] !== undefined && ov[clave] !== '') return ov[clave];

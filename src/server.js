@@ -765,8 +765,12 @@ app.get('/descargar/:token', (req, res) => {
     join(here, '../dist', nombre),
   ];
   const archivo = candidatos.find((f) => existsSync(f));
-  if (!archivo) return res.status(503).send('El paquete aún no está disponible. En el servidor: npm run empaquetar-pc');
-  res.download(archivo, nombre);
+  if (archivo) return res.download(archivo, nombre);
+  // Paquetes grandes (ej. el .exe de escritorio, 100+ MB) no viven en el
+  // deploy — se alojan aparte (GitHub Releases) y acá solo redirigimos.
+  const urlExterna = cfg('descargaExeUrl');
+  if (version === 'pc_exe' && urlExterna) return res.redirect(302, urlExterna);
+  res.status(503).send('El paquete aún no está disponible. En el servidor: npm run empaquetar-pc' + (version === 'pc_exe' ? ' / empaquetar-exe' : ''));
 });
 
 // --- Canales externos ---

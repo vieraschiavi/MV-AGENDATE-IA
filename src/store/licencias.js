@@ -141,6 +141,7 @@ export function verificarDescarga(token) {
 export function archivoDeVersion(version) {
   return {
     pc: 'MV-Agendate-IA-PC.zip',
+    pc_exe: 'MV-Agendate-IA-Windows.zip',
     apk: 'MV-Agendate-IA.apk',
     ios: 'MV-Agendate-IA-PC.zip',
     todas: 'MV-Agendate-IA-PC.zip',
