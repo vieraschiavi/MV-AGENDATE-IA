@@ -24,3 +24,10 @@ descargas/*.zip
 # Artefactos de compilación de la APK (android/build-apk.sh los regenera).
 android/build/
 webapp/node_modules/
+
+# Paquete de escritorio Electron (.exe): pesa 100-150+ MB (Chromium adentro),
+# supera el límite de 100 MB de GitHub — no se versiona. Se sube aparte
+# (GitHub Releases / Vercel Blob) y /descargar apunta a esa URL externa.
+# Regenerarlo con: npm run empaquetar-exe
+public/descargas/MV-Agendate-IA-Windows.zip
+public/descargas/*-win32-x64/
