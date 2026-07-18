@@ -1,0 +1,52 @@
+{
+  "$comment": "Permisos + hooks de Claude Code para MV Agendate IA (Node.js ESM + Express + node --test). Permisos conservadores.",
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "Bash(git branch:*)",
+      "Bash(npm ci)",
+      "Bash(npm install)",
+      "Bash(npm install:*)",
+      "Bash(npm test)",
+      "Bash(npm run test:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run servidor:*)",
+      "Bash(npm start)",
+      "Bash(npm run configurar:*)",
+      "Bash(node --test:*)",
+      "Bash(node --version)",
+      "Read(*)",
+      "Grep(*)",
+      "Glob(*)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/secrets/**)",
+      "Read(**/*.pem)",
+      "Read(**/id_rsa*)",
+      "Read(**/*.keystore)",
+      "Read(src/clave-embebida.b64)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": ".claude/hooks/session-start.sh" }
+        ]
+      }
+    ]
+  }
+}
