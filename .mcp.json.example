@@ -1,0 +1,14 @@
+{
+  "$comment": "Ejemplo de configuración MCP para MV Agendate IA. Copiar como .mcp.json y activar solo los servers que uses. NUNCA pongas tokens reales acá: usá variables de entorno.",
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}" }
+    },
+    "$optional_filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "."]
+    }
+  }
+}
