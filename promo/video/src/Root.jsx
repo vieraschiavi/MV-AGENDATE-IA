@@ -22,6 +22,15 @@ export const RemotionRoot = () => {
         height={HEIGHT}
         defaultProps={{ lang: 'en' }}
       />
+      <Composition
+        id="LaunchPT"
+        component={Launch}
+        durationInFrames={DURATION_IN_FRAMES}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+        defaultProps={{ lang: 'pt' }}
+      />
     </>
   );
 };

@@ -133,7 +133,30 @@ export const STR = {
     dbTit: 'Tableros de gestión completos', dbSub: 'Clientes por día, semana y mes · evolución 12 meses · facturación y ticket promedio · exportá a Excel',
     crmTit: 'CRM de clientes', crmSub: 'Ficha, dirección confirmada e historial completo de trabajos de cada cliente',
     ciSub1: 'Pago único desde USD 129 · MercadoPago', ciSub2: 'PC y Android · cualquier profesión u oficio · 24/7', ciCta: 'Probá la demo gratis →',
+    // "Agendate" es imperativo del español: no significa nada en otros idiomas.
+    // En pt/en la marca usa "Agenda" (palabra real en los tres) — ver STR.pt/en.
+    marcaVerbo: 'Agendate', marcaIA: 'IA',
     narSuffix: '',
+  },
+  pt: {
+    hookKicker: 'WhatsApp · Telefone · Agenda',
+    hookA: 'O assistente que', hookB: 'atende, orça', hookC: 'e agenda por você',
+    waNombre: 'Eletricista João', waEstado: 'online · responde na hora',
+    chat: [
+      { de: 'cliente', texto: 'Oi! Quanto custa instalar 2 tomadas?', delay: 18 },
+      { de: 'bot', texto: 'Olá 👋 Instalação de 2 tomadas: R$ 320 (mão de obra + materiais + deslocamento). Amanhã às 10:00 ou 14:30 fica bom?', delay: 90 },
+      { de: 'cliente', texto: 'Amanhã 10:00 👍', delay: 180 },
+      { de: 'bot', texto: '✅ Agendado para amanhã às 10:00. O João te visita na Av. Paulista 2450.', delay: 235 },
+    ],
+    waTit: 'A IA atende pelo WhatsApp, 24/7', waSub: 'Orça, oferece horários e confirma a visita sozinha — você segue trabalhando',
+    cotTit: 'Orça com IA conforme o seu mercado', cotSub: 'Mão de obra + materiais + deslocamento, por tipo de serviço e preços do seu país — nunca inventa um número',
+    agTit: 'Agenda otimizada de verdade', agSub: 'Propõe horários pela distância, tipo de serviço e sua disponibilidade — sem conflitos nem tempo morto',
+    fiTit: 'Ficha de serviço automática', fiSub: 'Cliente, orçamento detalhado e dados do agendamento — pronta para imprimir ou enviar em PDF',
+    dbTit: 'Painéis de gestão completos', dbSub: 'Clientes por dia, semana e mês · evolução de 12 meses · faturamento e ticket médio · exporte para Excel',
+    crmTit: 'CRM de clientes', crmSub: 'Ficha, endereço confirmado e histórico completo de serviços de cada cliente',
+    ciSub1: 'Pagamento único a partir de USD 129 · MercadoPago', ciSub2: 'PC e Android · qualquer profissão ou ofício · 24/7', ciCta: 'Teste a demo grátis →',
+    marcaVerbo: 'Agenda', marcaIA: 'IA',
+    narSuffix: '-pt',
   },
   en: {
     hookKicker: 'WhatsApp · Phone · Scheduling',
@@ -152,6 +175,7 @@ export const STR = {
     dbTit: 'Complete management dashboards', dbSub: 'Clients by day, week and month · 12-month trend · revenue and average ticket · export to Excel',
     crmTit: 'Client CRM', crmSub: 'Profile, confirmed address and full job history for every client',
     ciSub1: 'One-time payment from USD 129 · MercadoPago', ciSub2: 'PC and Android · any trade · 24/7', ciCta: 'Try the demo free →',
+    marcaVerbo: 'Agenda', marcaIA: 'AI',
     narSuffix: '-en',
   },
 };
@@ -250,7 +274,7 @@ const EscenaCierre = ({ S }) => {
       <div style={{ opacity, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Img src={staticFile('logo-mv.png')} style={{ width: 220, height: 220, borderRadius: '22%', transform: `scale(${logoScale})`, marginBottom: 44 }} />
         <div style={{ color: '#fff', fontSize: 70, fontWeight: 800, textAlign: 'center' }}>
-          MV <span style={{ color: GREEN }}>Agendate</span> IA
+          MV <span style={{ color: GREEN }}>{S.marcaVerbo}</span> {S.marcaIA}
         </div>
         <div style={{ color: '#cfe0f0', fontSize: 33, marginTop: 18, textAlign: 'center', maxWidth: 860 }}>
           {S.ciSub1}
@@ -276,7 +300,9 @@ export const Launch = ({ lang = 'es' }) => {
   // La narración inglesa vive con sufijo -en (nar1-en.wav …).
   const narFile = (wav) => (S.narSuffix ? wav.replace('.wav', `${S.narSuffix}.wav`) : wav);
   // Las capturas de los paneles también tienen versión inglesa (panel-*-en.png).
-  const panel = (png) => (lang === 'en' ? png.replace('.png', '-en.png') : png);
+  // Las capturas de los paneles tienen versión por idioma (panel-*-en.png,
+  // panel-*-pt.png); el español usa el archivo base sin sufijo.
+  const panel = (png) => (lang === 'es' ? png : png.replace('.png', `-${lang}.png`));
   return (
   <AbsoluteFill style={{ backgroundColor: NAVY, fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
     <Background />
@@ -284,7 +310,7 @@ export const Launch = ({ lang = 'es' }) => {
     <Sequence from={START.hook} durationInFrames={LEN.hook}><EscenaHook S={S} /></Sequence>
     <Sequence from={START.whatsapp} durationInFrames={LEN.whatsapp}><EscenaWhatsapp S={S} /></Sequence>
     <Sequence from={START.cotizador} durationInFrames={LEN.cotizador}>
-      <EscenaPanel len={LEN.cotizador} archivo={panel("panel-cotizador.png")} ratio={lang === 'en' ? 1044 / 1144 : 1044 / 1224} width={640}
+      <EscenaPanel len={LEN.cotizador} archivo={panel("panel-cotizador.png")} ratio={lang === 'es' ? 1044 / 1224 : 1044 / 1144} width={640}
         titulo={S.cotTit} texto={S.cotSub} />
     </Sequence>
     <Sequence from={START.agenda} durationInFrames={LEN.agenda}>
@@ -292,7 +318,7 @@ export const Launch = ({ lang = 'es' }) => {
         titulo={S.agTit} texto={S.agSub} />
     </Sequence>
     <Sequence from={START.ficha} durationInFrames={LEN.ficha}>
-      <EscenaPanel len={LEN.ficha} archivo={panel("panel-ficha.png")} ratio={lang === 'en' ? 1200 / 734 : 1700 / 1131} width={920}
+      <EscenaPanel len={LEN.ficha} archivo={panel("panel-ficha.png")} ratio={lang === 'es' ? 1700 / 1131 : 1200 / 734} width={920}
         titulo={S.fiTit} texto={S.fiSub} />
     </Sequence>
     <Sequence from={START.tableros} durationInFrames={LEN.tableros}>

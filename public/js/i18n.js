@@ -48,12 +48,13 @@
   });
 })();
 
-// Video promocional según idioma: el inglés usa /video/mv-agendate-ia-en.mp4.
+// Video promocional según idioma: cada uno con su narración y capturas
+// (mv-agendate-ia.mp4 / -en.mp4 / -pt.mp4).
 (function () {
   function ajustarVideo() {
     const idi = (window.mvIdioma && window.mvIdioma()) || 'es';
     const base = '/video/mv-agendate-ia';
-    const src = idi === 'en' ? base + '-en.mp4' : base + '.mp4';
+    const src = idi === 'es' ? base + '.mp4' : `${base}-${idi}.mp4`;
     document.querySelectorAll('video.mv-video').forEach((v) => {
       const fuente = v.querySelector('source');
       if (!fuente || fuente.getAttribute('src') === src) return;
