@@ -175,7 +175,9 @@ export const STR = {
     dbTit: 'Complete management dashboards', dbSub: 'Clients by day, week and month · 12-month trend · revenue and average ticket · export to Excel',
     crmTit: 'Client CRM', crmSub: 'Profile, confirmed address and full job history for every client',
     ciSub1: 'One-time payment from USD 129 · MercadoPago', ciSub2: 'PC and Android · any trade · 24/7', ciCta: 'Try the demo free →',
-    marcaVerbo: 'Agenda', marcaIA: 'AI',
+    // En inglés "agenda" es el temario de una reunión, no el calendario de
+    // citas — la palabra correcta para lo que hace el programa es "Schedule".
+    marcaVerbo: 'Schedule', marcaIA: 'AI',
     narSuffix: '-en',
   },
 };
