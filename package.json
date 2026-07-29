@@ -4,6 +4,11 @@
   "description": "MV Agendate IA — Chatbot/ChatVoice con IA que atiende clientes de cualquier oficio por WhatsApp o voz: cotiza trabajos predefinidos, agenda citas optimizando traslados y descansos, avisa retrasos automáticamente y ofrece un dashboard con CRM de clientes y facturación.",
   "type": "module",
   "main": "electron/main.cjs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vieraschiavi/mv-agendate-ia.git"
+  },
+  "author": "MV Agendate IA",
   "scripts": {
     "start": "node src/programa.js",
     "servidor": "node src/server.js",
@@ -49,7 +54,8 @@
       "icon": "build/logo-mv.ico"
     },
     "nsis": {
-      "oneClick": true,
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
       "perMachine": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
