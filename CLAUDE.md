@@ -110,4 +110,7 @@ Repo mediano con mucho estático en `public/`. Para no saturar contexto:
 - Ignorá `package-lock.json`, `movil/android-apk/`, `promo/`, `voces/*.onnx` salvo que sea
   el objetivo directo.
 - Usá el subagente `explorer` para mapear a lo ancho sin volcar archivos enteros.
+- Antes de un cambio no trivial, `planificador`; para fan-out, `parallel-worker`; para dominio
+  sensible, `specialist`; antes de cerrar, `revisor` (review del diff) y `verificador`
+  (corre `npm test` y pega la salida real).
 - Compactá tras cerrar cada tarea (plan→test→ship) para arrancar la siguiente liviano.
