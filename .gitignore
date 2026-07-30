@@ -33,3 +33,8 @@ webapp/node_modules/
 dist-instalador/
 public/descargas/MV-Agendate-IA-Setup.exe
 public/descargas/MV-Agendate-IA-Windows.zip
+
+# Copia ofuscada de src/+electron/ (ver scripts/ofuscar.js) que se empaqueta
+# en el instalador en vez del código fuente real. Se regenera sola antes de
+# cada build (npm run empaquetar-exe corre "ofuscar" primero).
+dist-protegido/

@@ -15,6 +15,8 @@
     "configurar": "node src/setup/configurar.js",
     "embeber-clave": "node src/setup/embeber.js",
     "empaquetar-pc": "bash scripts/empaquetar-pc.sh",
+    "ofuscar": "node scripts/ofuscar.js",
+    "preempaquetar-exe": "node scripts/ofuscar.js",
     "empaquetar-exe": "electron-builder --win --x64 --publish never",
     "dev": "node --watch src/server.js",
     "test": "node --test"
@@ -33,17 +35,19 @@
   "private": true,
   "devDependencies": {
     "electron": "^43.1.0",
-    "electron-builder": "^26.15.3"
+    "electron-builder": "^26.15.3",
+    "javascript-obfuscator": "^5.5.0"
   },
   "build": {
     "appId": "com.mv.agendateia",
     "productName": "MV Agendate IA",
-    "directories": { "output": "dist-instalador" },
+    "directories": {
+      "output": "dist-instalador"
+    },
     "asar": false,
     "files": [
-      "electron/**/*",
-      "src/**/*",
-      "api/**/*",
+      { "from": "dist-protegido/src", "to": "src", "filter": ["**/*"] },
+      { "from": "dist-protegido/electron", "to": "electron", "filter": ["**/*"] },
       "public/**/*",
       "!public/video/**",
       "!public/descargas/**",
@@ -56,6 +60,7 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
+      "license": "public/legales/eula.txt",
       "perMachine": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,

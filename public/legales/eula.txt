@@ -1,0 +1,72 @@
+ACUERDO DE LICENCIA DE USUARIO FINAL (EULA) — MV AGENDATE IA
+
+Por favor, leé este acuerdo con atención antes de instalar el software.
+Al continuar con la instalación, aceptás quedar obligado por sus términos.
+Si no estás de acuerdo, no instales ni uses el software.
+
+1. LICENCIA
+
+MV Agendate IA ("el Titular") te otorga una licencia de uso personal,
+no exclusiva e intransferible sobre este software ("el Software"), para
+instalarlo y usarlo en los equipos autorizados por tu plan (prueba gratuita,
+licencia paga de un único pago o suscripción, según corresponda). El
+Software se licencia, no se vende: el Titular conserva todos los derechos
+de propiedad intelectual sobre el Software.
+
+2. RESTRICCIONES
+
+No podés, salvo autorización previa y por escrito del Titular:
+
+  a) Copiar, redistribuir, alquilar, prestar, sublicenciar o revender el
+     Software a terceros.
+  b) Descompilar, desensamblar o aplicar ingeniería inversa sobre el
+     Software, ni intentar extraer su código fuente.
+  c) Eliminar, ocultar o modificar avisos de copyright o de titularidad.
+  d) Compartir tu clave o credenciales de licencia con terceros, ni usar el
+     Software en más equipos o cuentas que los autorizados por tu plan.
+  e) Usar el Software, o cualquier información obtenida de él, para crear
+     un producto competidor.
+
+3. PRUEBA GRATUITA Y LICENCIA PAGA
+
+La versión de prueba puede tener funciones limitadas en el tiempo. Al
+vencer el período de prueba sin una licencia paga activa, el Software deja
+de operar hasta que se regularice el pago. La licencia paga (pago único o
+suscripción, según el plan contratado) se rige además por las condiciones
+comerciales publicadas en la web oficial al momento de la compra.
+
+4. PROPIEDAD DE LOS DATOS
+
+Los datos que cargues al Software (clientes, agenda, cotizaciones,
+facturación) son tuyos. El Titular no los usa ni los comparte con fines
+ajenos a la prestación del servicio, y no se hace responsable por pérdidas
+de datos derivadas de un uso indebido, desinstalación o falta de respaldo
+de tu parte.
+
+5. SIN GARANTÍA
+
+EL SOFTWARE SE PROPORCIONA "TAL CUAL", SIN GARANTÍA DE NINGÚN TIPO, EXPRESA
+O IMPLÍCITA. El Titular no garantiza que el Software esté libre de errores
+ni que su funcionamiento sea ininterrumpido.
+
+6. LIMITACIÓN DE RESPONSABILIDAD
+
+En la máxima medida permitida por la ley, el Titular no será responsable
+por daños indirectos, incidentales o derivados del uso o la imposibilidad
+de uso del Software, incluyendo pérdida de ganancias o de datos.
+
+7. TERMINACIÓN
+
+Esta licencia termina automáticamente si incumplís cualquiera de sus
+términos, en particular las restricciones de la cláusula 2. Ante el
+incumplimiento, el Titular puede desactivar remotamente las cuentas o
+licencias asociadas.
+
+8. LEY APLICABLE
+
+Este acuerdo se rige por las leyes de la República Oriental del Uruguay,
+sin perjuicio de las normas de protección al consumidor que resulten
+aplicables en tu país de residencia.
+
+Al hacer clic en "Acepto", confirmás que leíste, entendiste y aceptás
+este Acuerdo de Licencia de Usuario Final en su totalidad.
