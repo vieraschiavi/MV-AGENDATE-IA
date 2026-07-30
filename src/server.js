@@ -770,11 +770,12 @@ app.get('/descargar/:token', (req, res) => {
   ];
   const archivo = candidatos.find((f) => existsSync(f));
   if (archivo) return res.download(archivo, nombre);
-  // Paquetes grandes (ej. el .exe de escritorio, 100+ MB) no viven en el
-  // deploy — se alojan aparte (GitHub Releases) y acá solo redirigimos.
+  // Si el .exe no está commiteado en public/descargas/ (ver empaquetar-exe),
+  // como respaldo redirigimos al último build publicado en GitHub Releases.
   const urlExterna = cfg('descargaExeUrl');
-  if (version === 'pc_exe' && urlExterna) return res.redirect(302, urlExterna);
-  res.status(503).send('El paquete aún no está disponible. En el servidor: npm run empaquetar-pc' + (version === 'pc_exe' ? ' / empaquetar-exe' : ''));
+  const esDesktop = version === 'pc' || version === 'pc_exe' || version === 'todas';
+  if (esDesktop && urlExterna) return res.redirect(302, urlExterna);
+  res.status(503).send('El paquete aún no está disponible. En el servidor: npm run empaquetar-pc' + (esDesktop ? ' / empaquetar-exe' : ''));
 });
 
 // --- Canales externos ---

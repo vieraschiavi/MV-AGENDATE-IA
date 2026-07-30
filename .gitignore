@@ -25,13 +25,18 @@ descargas/*.zip
 android/build/
 webapp/node_modules/
 
-# Instalador de escritorio (Electron/electron-builder → MV-Agendate-IA-Setup.exe):
-# pesa 100-150+ MB (Chromium adentro), supera el límite de 100 MB de GitHub —
-# no se versiona. Se publica aparte (GitHub Release, automático por
-# .github/workflows/build-windows-exe.yml) y /descargar redirige ahí.
-# Regenerarlo con: npm run empaquetar-exe
+# Carpeta de trabajo de electron-builder (contiene también el .exe final
+# ANTES de copiarlo a public/descargas/ — ver npm run empaquetar-exe).
 dist-instalador/
-public/descargas/MV-Agendate-IA-Setup.exe
+
+# El instalador final SÍ se versiona en public/descargas/MV-Agendate-IA-Setup.exe
+# (~96 MB, entra bajo el límite de 100 MB de GitHub) porque el pipeline que lo
+# publicaba aparte (GitHub Release vía .github/workflows/build-windows-exe.yml)
+# viene fallando en los 8 intentos hechos hasta ahora — probablemente por un
+# gate de facturación de GitHub Actions para runners Windows, algo que solo
+# puede resolver el dueño de la cuenta desde Settings → Billing. Mientras tanto,
+# /descargar sirve el archivo commiteado directo, sin depender de esa CI.
+# Regenerarlo con: npm run empaquetar-exe && cp dist-instalador/MV-Agendate-IA-Setup.exe public/descargas/
 public/descargas/MV-Agendate-IA-Windows.zip
 
 # Copia ofuscada de src/+electron/ (ver scripts/ofuscar.js) que se empaqueta
