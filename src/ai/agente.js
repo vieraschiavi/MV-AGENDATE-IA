@@ -324,7 +324,10 @@ const quiereHorario = (t) => /(turno|horario|agend|cita|cuando|dispon|manana|maÃ
 const confirma = (t) => /(^| )(si|dale|listo|confirm|de una|perfecto|va|ok|okey|sim|isso|fechado|combinado|beleza|pode ser|yes|yeah|sure|go ahead|sounds good|perfect|confirmed)( |$|\.|,|!)/.test(norm(t));
 const saluda = (t) => /(hola|buenas|buen dia|buenos dias|buenas tardes|buenas noches|que tal|ola|oi|bom dia|boa tarde|boa noite|tudo bem|hi|hello|hey|good morning|good afternoon|good evening)/.test(norm(t));
 
-function responderDemo(sessionId, texto, canal) {
+// `_canal` se recibe por simetrÃ­a con conversar(), pero la respuesta de demo es
+// la misma para WhatsApp/voz/web. Se deja en la firma para no cambiar la aridad
+// en los 4 call sites.
+function responderDemo(sessionId, texto, _canal) {
   const prof = listarProfesionales()[0];
   const oficios = listarOficios();
   const propio = oficios.find((o) => o.clave === prof.oficio) || oficios[0];

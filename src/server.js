@@ -42,6 +42,7 @@ import vozPremium, { montarVozPremium } from './channels/voz-premium.js';
 import { piperDisponible, sintetizarWav } from './channels/tts-piper.js';
 import { checkBotId } from 'botid/server';
 import { iniciarChequeoLicencia, iaHabilitada, motivoSuspension } from './store/estadoLicencia.js';
+import { limitar } from './store/limites.js';
 
 // Protección antibots (Vercel BotID) para los endpoints públicos más caros/abusables
 // (Claude, checkout). Sólo funciona desplegado en Vercel; si falla la verificación
@@ -125,12 +126,19 @@ cotizaciones.setNotificador(enviarWhatsApp);
 const visitante = (req) => req.headers['x-visitor-id'] || req.body?.sessionId || req.ip || 'anon';
 
 // --- Canal webchat (usado por la landing y la demo) ---
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', limitar({ nombre: 'chat', max: 20, ventanaSeg: 60,
+  mensaje: 'Muchos mensajes seguidos.' }), async (req, res) => {
   if (await esBot(req)) return res.status(403).json({ error: 'Acceso denegado.' });
   if (!iaHabilitada()) return res.status(402).json({ error: motivoSuspension() });
   const { mensaje, sessionId } = req.body ?? {};
   if (!mensaje || typeof mensaje !== 'string') {
     return res.status(400).json({ error: 'Falta el campo "mensaje".' });
+  }
+  // Tope de largo acá mismo, donde se ejecuta: sin esto entra cualquier texto
+  // hasta el límite de 2 MB del body parser y se le factura al dueño como
+  // tokens de IA. 2000 caracteres es de sobra para un mensaje de chat.
+  if (mensaje.length > 2000) {
+    return res.status(400).json({ error: 'El mensaje es demasiado largo (máximo 2000 caracteres). Resumilo y probá de nuevo.' });
   }
   const sid = sessionId || `web:${randomUUID()}`;
   // El cupo de la demo pública no aplica a una cuenta SaaS autenticada
@@ -161,7 +169,8 @@ app.post('/api/chat', async (req, res) => {
 });
 
 // --- Asistente de ayuda (dudas sobre el programa — distinto del agente de negocio) ---
-app.post('/api/ayuda', async (req, res) => {
+app.post('/api/ayuda', limitar({ nombre: 'ayuda', max: 20, ventanaSeg: 60,
+  mensaje: 'Muchas consultas seguidas.' }), async (req, res) => {
   if (await esBot(req)) return res.status(403).json({ error: 'Acceso denegado.' });
   const { mensaje, sessionId } = req.body ?? {};
   if (!mensaje || typeof mensaje !== 'string') return res.status(400).json({ error: 'Falta el campo "mensaje".' });
@@ -207,11 +216,17 @@ app.post('/api/oficios', adminOCuenta, async (req, res) => {
   const b = req.body ?? {};
   const nombre = String(b.nombre || '').trim();
   if (!nombre) return res.status(400).json({ ok: false, error: 'Falta el nombre de la profesión/oficio.' });
+  // Tope de largo donde se ejecuta: `clave` se sanea abajo (se slugifica), pero
+  // `nombre` se guarda tal cual y después se muestra en el panel y en la demo.
+  // Sin tope entra un texto de megabytes que rompe la UI y engorda el storage.
+  if (nombre.length > 80) {
+    return res.status(400).json({ ok: false, error: 'El nombre de la profesión es demasiado largo (máximo 80 caracteres).' });
+  }
   const clave = String(b.clave || nombre).trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '') || 'oficio_custom';
   const trabajos = {};
   for (const t of Array.isArray(b.trabajos) ? b.trabajos : []) {
-    const tNombre = String(t.nombre || '').trim();
+    const tNombre = String(t.nombre || '').trim().slice(0, 80);
     if (!tNombre) continue;
     const tClave = String(t.clave || tNombre).trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
       .replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '');
@@ -251,7 +266,8 @@ app.post('/api/precios/sugerir', adminOCuenta, async (req, res) => {
 });
 
 // --- IA: estimador de impuestos según la ley del país configurado ---
-app.post('/api/impuestos/estimar', async (req, res) => {
+app.post('/api/impuestos/estimar', limitar({ nombre: 'impuestos', max: 10, ventanaSeg: 60,
+  mensaje: 'Muchas estimaciones seguidas.' }), async (req, res) => {
   if (await esBot(req)) return res.status(403).json({ error: 'Acceso denegado.' });
   const r = await estimarImpuestos(req.body?.ingresosMensuales);
   res.status(r.ok ? 200 : 400).json(r);
@@ -289,7 +305,8 @@ app.get('/api/voz', async (req, res) => {
 
 // --- Buzón de contacto ---
 const contactos = [];
-app.post('/api/contacto', async (req, res) => {
+app.post('/api/contacto', limitar({ nombre: 'contacto', max: 5, ventanaSeg: 600,
+  mensaje: 'Ya nos mandaste varias consultas.' }), async (req, res) => {
   if (await esBot(req)) return res.status(403).json({ error: 'Acceso denegado.' });
   const b = req.body ?? {};
   const asunto = String(b.asunto || '').slice(0, 200).trim();
@@ -374,7 +391,8 @@ app.post('/api/admin/cuentas/:id/estado', soloAdmin, async (req, res) => {
 });
 
 // ==================== Cuentas SaaS (registro / login / sesión) ====================
-app.post('/api/auth/registro', async (req, res) => {
+app.post('/api/auth/registro', limitar({ nombre: 'registro', max: 5, ventanaSeg: 3600,
+  mensaje: 'Demasiadas cuentas creadas desde esta conexión.' }), async (req, res) => {
   if (await esBot(req)) return res.status(403).json({ error: 'Acceso denegado.' });
   const r = await cuentas.registrar(req.body ?? {});
   if (r.ok && r.cuenta?.email) {
@@ -386,7 +404,8 @@ app.post('/api/auth/registro', async (req, res) => {
   }
   res.status(r.ok ? 200 : 400).json(r);
 });
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', limitar({ nombre: 'login', max: 10, ventanaSeg: 300,
+  mensaje: 'Demasiados intentos de ingreso.' }), async (req, res) => {
   if (await esBot(req)) return res.status(403).json({ error: 'Acceso denegado.' });
   const r = await cuentas.login(req.body ?? {});
   res.status(r.ok ? 200 : 401).json(r);

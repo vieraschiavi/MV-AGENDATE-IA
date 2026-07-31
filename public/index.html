@@ -10,7 +10,23 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="MV Agendate IA — tu asistente que cotiza y agenda solo">
 <meta property="og:description" content="IA que atiende WhatsApp y teléfono, cotiza con tus precios y agenda optimizando traslados reales.">
-<meta property="og:image" content="https://mv-agendate-ia.vercel.app/logo-mv.png">
+<!-- Tarjeta social 1200x627 (og-mv-agendate-ia.png). Antes acá iba logo-mv.png,
+     que es cuadrado de 512: las redes lo mostraban como miniatura chica. Con la
+     tarjeta apaisada + summary_large_image el link se comparte a ancho completo.
+     og:image DEBE ser URL absoluta: las redes no resuelven rutas relativas. -->
+<meta property="og:image" content="https://mv-agendate-ia.vercel.app/og-mv-agendate-ia.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="627">
+<meta property="og:image:alt" content="MV Agendate IA — cotizá y agendá solo, por WhatsApp y teléfono">
+<meta property="og:url" content="https://mv-agendate-ia.vercel.app/">
+<meta property="og:site_name" content="MV Agendate IA">
+<meta property="og:locale" content="es_UY">
+<link rel="canonical" href="https://mv-agendate-ia.vercel.app/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="MV Agendate IA — tu asistente que cotiza y agenda solo">
+<meta name="twitter:description" content="IA que atiende WhatsApp y teléfono, cotiza con tus precios y agenda optimizando traslados reales.">
+<meta name="twitter:image" content="https://mv-agendate-ia.vercel.app/og-mv-agendate-ia.png">
+<meta name="twitter:image:alt" content="MV Agendate IA — cotizá y agendá solo, por WhatsApp y teléfono">
 <style>
   :root{
     --fondo:#070d15; --fondo2:#0b1520; --tinta:#eaf2fa; --sub:#8fa6ba;
@@ -336,7 +352,7 @@
   </div>
 </section>
 
-<footer data-i18n-html="pie">MV Agendate IA · Turnos y presupuestos con IA para cualquier profesión de LATAM · <a href="/">Inicio</a> · <a href="/demo.html">Demo</a> · <a href="/comprar.html">Comprar</a> · <a href="/eula.html">Licencia</a></footer>
+<footer data-i18n-html="pie">MV Agendate IA · Turnos y presupuestos con IA para cualquier profesión de LATAM · <a href="/">Inicio</a> · <a href="/demo.html">Demo</a> · <a href="/comprar.html">Comprar</a> · <a href="/oficios/">Oficios</a> · <a href="/eula.html">Licencia</a></footer>
 
 <script>
 window.MV_PT = {
@@ -383,7 +399,7 @@ window.MV_PT = {
   p3n:'SaaS online', p3a:'Sem instalar nada — pronto em 1 minuto', p3b:'14 dias de teste grátis, sem cartão', p3c:'Dados privados e isolados, de qualquer lugar', p3cta:'Testar 14 dias grátis →',
   cieH:'Instale hoje. Em um minuto está orçando por você.', cieP:'3 dias grátis com tudo habilitado. Sem cartão. Se não servir, não paga nada.',
   cieB1:'📲 Instalar grátis →', cieB2:'Ver a versão clássica do site',
-  pie:'MV Agenda IA · Agendamentos e orçamentos com IA para qualquer profissão da América Latina · <a href="/">Início</a> · <a href="/demo.html">Demo</a> · <a href="/comprar.html">Comprar</a> · <a href="/eula.html">Licença</a>'
+  pie:'MV Agenda IA · Agendamentos e orçamentos com IA para qualquer profissão da América Latina · <a href="/">Início</a> · <a href="/demo.html">Demo</a> · <a href="/comprar.html">Comprar</a> · <a href="/oficios/">Profissões</a> · <a href="/eula.html">Licença</a>'
 };
 window.MV_EN = {
   marca:'Schedule AI',
@@ -429,7 +445,7 @@ window.MV_EN = {
   p3n:'SaaS online', p3a:'Nothing to install — ready in 1 minute', p3b:'14-day free trial, no card', p3c:'Private, isolated data from anywhere', p3cta:'Try 14 days free →',
   cieH:'Install it today. In a minute it\'s quoting for you.', cieP:'3 days free with everything enabled. No card. If it\'s not for you, you pay nothing.',
   cieB1:'📲 Install free →', cieB2:'See the classic version of the site',
-  pie:'MV Schedule AI · AI scheduling and quoting for any trade · <a href="/">Home</a> · <a href="/demo.html">Demo</a> · <a href="/comprar.html">Buy</a> · <a href="/eula.html">License</a>'
+  pie:'MV Schedule AI · AI scheduling and quoting for any trade · <a href="/">Home</a> · <a href="/demo.html">Demo</a> · <a href="/comprar.html">Buy</a> · <a href="/oficios/">Trades</a> · <a href="/eula.html">License</a>'
 };
 </script>
 <script src="/js/i18n.js"></script>
@@ -526,10 +542,23 @@ window.MV_EN = {
   const fmtFecha = (iso) => { try { return new Date(iso).toLocaleDateString(locale(), { year: 'numeric', month: 'short' }); } catch { return ''; } };
 
   async function cargar() {
-    let d; try { d = await (await fetch('/api/resenas')).json(); } catch { return; }
     const lista = document.getElementById('resLista');
     const vacio = document.getElementById('resVacio');
     const sub = document.getElementById('resSub');
+    let d;
+    try {
+      const r = await fetch('/api/resenas');
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      d = await r.json();
+    } catch (e) {
+      // Antes esto era `catch { return; }`: la sección quedaba con el título y
+      // nada debajo, sin que el visitante supiera por qué.
+      console.error('[resenas] no se pudieron cargar:', e);
+      vacio.style.display = 'block';
+      vacio.textContent = T('resError', 'No pudimos cargar las reseñas en este momento. Recargá la página para volver a intentar.');
+      lista.innerHTML = '';
+      return;
+    }
     if (!d.resenas || !d.resenas.length) { vacio.style.display = 'block'; lista.innerHTML = ''; return; }
     vacio.style.display = 'none';
     if (d.total) sub.textContent = `★ ${d.promedio} · ${d.total} ${d.total === 1 ? (T('resUna', 'reseña') ) : (T('resVarias','reseñas'))}`;

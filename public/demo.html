@@ -5,6 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Demo — MV Agendate IA</title>
 <link rel="icon" href="/logo-mv.svg" type="image/svg+xml">
+<meta name="description" content="Probá gratis el asistente: chateá con él, pedí un presupuesto real y mirá cómo arma los horarios teniendo en cuenta el traslado entre citas.">
+<link rel="canonical" href="https://mv-agendate-ia.vercel.app/demo.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MV Agendate IA">
+<meta property="og:title" content="Demo en vivo — MV Agendate IA">
+<meta property="og:description" content="Probá gratis el asistente: chateá con él, pedí un presupuesto real y mirá cómo arma los horarios teniendo en cuenta el traslado entre citas.">
+<meta property="og:url" content="https://mv-agendate-ia.vercel.app/demo.html">
+<meta property="og:image" content="https://mv-agendate-ia.vercel.app/logo-mv.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Demo en vivo — MV Agendate IA">
+<meta name="twitter:description" content="Probá gratis el asistente: chateá con él, pedí un presupuesto real y mirá cómo arma los horarios teniendo en cuenta el traslado entre citas.">
+<meta name="twitter:image" content="https://mv-agendate-ia.vercel.app/logo-mv.png">
+
 <style>
   :root { --azul:#0f2a43; --cel:#1f7ae0; --oro:#e3a72f; --gris:#f4f6f9; }
   * { margin:0; box-sizing:border-box; font-family:'Segoe UI', system-ui, sans-serif; }
@@ -101,6 +114,10 @@ const I18N = {
     chips: ['¿Cuánto sale instalar un tomacorriente?', 'Necesito un electricista para mañana', '¿Tenés horarios esta semana?'],
     duracion: 'Duración estimada', minutos: 'minutos', propuestos: 'Horarios propuestos para mañana:', traslado: 'traslado',
     labMano: 'Mano de obra', labMat: 'Materiales', labTras: 'Traslado', labHon: 'Honorarios',
+    cotizando: 'Calculando el presupuesto…',
+    errCotizar: '⚠️ No pudimos calcular el presupuesto. Revisá tu conexión y probá de nuevo.',
+    errHorarios: '⚠️ No pudimos proponer horarios ahora. El presupuesto de arriba es válido igual.',
+    errCatalogo: '⚠️ No pudimos cargar el catálogo de trabajos. Recargá la página para volver a intentar.',
     urg: { normal: 'Normal (agendado)', mismo_dia: 'Mismo día', urgente: 'Urgente' },
     hor: { habil: 'Horario hábil', nocturno: 'Nocturno (después de 20h)', feriado: 'Feriado' }
   },
@@ -115,6 +132,10 @@ const I18N = {
     chips: ['Quanto custa instalar uma tomada?', 'Preciso de um eletricista para amanhã', 'Tem horários esta semana?'],
     duracion: 'Duração estimada', minutos: 'minutos', propuestos: 'Horários propostos para amanhã:', traslado: 'deslocamento',
     labMano: 'Mão de obra', labMat: 'Materiais', labTras: 'Deslocamento', labHon: 'Honorários',
+    cotizando: 'Calculando o orçamento…',
+    errCotizar: '⚠️ Não conseguimos calcular o orçamento. Verifique sua conexão e tente de novo.',
+    errHorarios: '⚠️ Não conseguimos propor horários agora. O orçamento acima continua válido.',
+    errCatalogo: '⚠️ Não conseguimos carregar o catálogo de trabalhos. Recarregue a página para tentar de novo.',
     urg: { normal: 'Normal (agendado)', mismo_dia: 'Mesmo dia', urgente: 'Urgente' },
     hor: { habil: 'Horário comercial', nocturno: 'Noturno (após 20h)', feriado: 'Feriado' }
   },
@@ -129,6 +150,10 @@ const I18N = {
     chips: ['How much to install an outlet?', 'I need an electrician for tomorrow', 'Any slots this week?'],
     duracion: 'Estimated duration', minutos: 'minutes', propuestos: 'Proposed times for tomorrow:', traslado: 'travel',
     labMano: 'Labor', labMat: 'Materials', labTras: 'Travel', labHon: 'Fee',
+    cotizando: 'Calculating the quote…',
+    errCotizar: "⚠️ We couldn't calculate the quote. Check your connection and try again.",
+    errHorarios: "⚠️ We couldn't propose time slots right now. The quote above is still valid.",
+    errCatalogo: "⚠️ We couldn't load the job catalogue. Reload the page to try again.",
     urg: { normal: 'Normal (scheduled)', mismo_dia: 'Same day', urgente: 'Urgent' },
     hor: { habil: 'Business hours', nocturno: 'After hours (after 8pm)', feriado: 'Holiday' }
   }
@@ -212,14 +237,34 @@ $('#formChat').addEventListener('submit', async (e) => {
 
 // ---------- Cotizador ----------
 let oficios = [];
+// Los nombres de oficio/trabajo los escribe el profesional, así que se cargan
+// con la API del DOM: new Option() trata el texto como texto y no como HTML.
+function llenarSelect(sel, items) {
+  sel.replaceChildren();
+  for (const it of items) sel.add(new Option(it.nombre, it.clave));
+}
 async function cargarOficios() {
-  oficios = await (await fetch('/api/oficios')).json();
-  $('#selOficio').innerHTML = oficios.map(o => `<option value="${o.clave}">${o.nombre}</option>`).join('');
-  actualizarTrabajos();
+  try {
+    const r = await fetch('/api/oficios');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    oficios = await r.json();
+    if (!Array.isArray(oficios) || !oficios.length) throw new Error('catálogo vacío');
+    llenarSelect($('#selOficio'), oficios);
+    actualizarTrabajos();
+  } catch (e) {
+    // Sin catálogo el formulario queda inservible: se avisa en vez de dejar los
+    // selects vacíos y mudos.
+    console.error('[demo] no se pudo cargar el catálogo de oficios:', e);
+    const caja = $('#resultado');
+    caja.style.display = 'block';
+    caja.textContent = T().errCatalogo;
+    const btn = $('#formCot')?.querySelector('button[type="submit"], button:not([type])');
+    if (btn) { btn.disabled = true; btn.style.opacity = '.55'; }
+  }
 }
 function actualizarTrabajos() {
   const of = oficios.find(o => o.clave === $('#selOficio').value) || oficios[0];
-  $('#selTrabajo').innerHTML = (of?.trabajos || []).map(t => `<option value="${t.clave}">${t.nombre}</option>`).join('');
+  llenarSelect($('#selTrabajo'), of?.trabajos || []);
 }
 $('#selOficio').addEventListener('change', actualizarTrabajos);
 cargarOficios();
@@ -229,11 +274,28 @@ $('#formCot').addEventListener('submit', async (e) => {
   const fd = new FormData(e.target);
   const body = Object.fromEntries(fd.entries());
   body.distanciaKm = Number(body.distanciaKm) || 0;
-  const r = await fetch('/api/cotizar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  const d = await r.json();
   const caja = $('#resultado');
+  const btnCot = e.target.querySelector('button[type="submit"], button:not([type])');
+  // Estado de carga: antes el usuario apretaba "Cotizar" y no pasaba nada
+  // visible hasta que respondía el servidor (o nunca, si fallaba).
   caja.style.display = 'block';
-  if (d.error) { caja.innerHTML = '⚠️ ' + d.error; return; }
+  caja.textContent = T().cotizando;
+  if (btnCot) btnCot.disabled = true;
+  let d;
+  try {
+    const r = await fetch('/api/cotizar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!r.ok && r.status !== 400) throw new Error('HTTP ' + r.status);
+    d = await r.json();
+  } catch (err) {
+    console.error('[demo] falló la cotización:', err);
+    caja.textContent = T().errCotizar;
+    if (btnCot) btnCot.disabled = false;
+    return;
+  }
+  if (btnCot) btnCot.disabled = false;
+  // textContent: d.error es texto, no HTML — y así no depende de que el
+  // servidor nunca mande marcado adentro del mensaje de error.
+  if (d.error) { caja.textContent = '⚠️ ' + d.error; return; }
   const sim = d.simbolo || '$';
   const etiqueta = d.tipo_cobro === 'honorarios' ? T().labHon : T().labMano;
   caja.innerHTML =
@@ -247,15 +309,25 @@ $('#formCot').addEventListener('submit', async (e) => {
   // Horarios de ejemplo, para mostrar el motor de agenda con traslados.
   const hoy = new Date();
   const manana = new Date(hoy.getTime() + 86400000);
-  const propuestos = await (await fetch('/api/agenda/proponer', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      fecha: manana.toISOString().slice(0, 10), diaSemana: manana.getDay(),
-      ubicacionCliente: { lat: -34.90 + Math.random() * 0.03, lng: -56.16 + Math.random() * 0.03 },
-      duracionMin: d.duracion_estimada_min,
-      citasDelDia: [{ inicio: '09:00', fin: '10:00', ubicacion: { lat: -34.91, lng: -56.15 } }]
-    })
-  })).json();
+  let propuestos;
+  try {
+    const rh = await fetch('/api/agenda/proponer', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fecha: manana.toISOString().slice(0, 10), diaSemana: manana.getDay(),
+        ubicacionCliente: { lat: -34.90 + Math.random() * 0.03, lng: -56.16 + Math.random() * 0.03 },
+        duracionMin: d.duracion_estimada_min,
+        citasDelDia: [{ inicio: '09:00', fin: '10:00', ubicacion: { lat: -34.91, lng: -56.15 } }]
+      })
+    });
+    if (!rh.ok) throw new Error('HTTP ' + rh.status);
+    propuestos = await rh.json();
+  } catch (err) {
+    // La cotización de arriba ya se mostró bien; sólo falla esta sección.
+    console.error('[demo] no se pudieron proponer horarios:', err);
+    $('#horarios').textContent = T().errHorarios;
+    return;
+  }
   $('#horarios').innerHTML = propuestos.propuestas?.length
     ? '<strong>' + T().propuestos + '</strong>' + propuestos.propuestas.map(p => `<div class="horario">🕐 ${p.inicio} - ${p.fin} (${T().traslado}: ${p.traslado_previo_min + p.traslado_posterior_min} min)</div>`).join('')
     : (propuestos.motivo_descarte ? `<div class="horario">${propuestos.motivo_descarte}</div>` : '');

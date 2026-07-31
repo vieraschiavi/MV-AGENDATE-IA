@@ -31,10 +31,31 @@ compiladas por JDK 21).
 
 ## Firma (importante)
 
-`mv-release.keystore` (contraseña en `build-apk.sh`) **no se debe perder ni
-regenerar**: una actualización de la APK solo se instala encima de la
-anterior si está firmada con la misma clave. Como la app se distribuye desde
-la web propia (no Play Store), el keystore se versiona en el repo a propósito.
+El keystore **NO se versiona** y la contraseña **NO va en el código**: son la
+identidad de la app. Quien tenga los dos puede firmar una APK haciéndose pasar
+por MV Agendate IA. Se pasan por entorno:
+
+```
+ANDROID_STOREPASS='tu-clave' ./build-apk.sh
+```
+
+Si `mv-release.keystore` no existe, el script lo crea con esa contraseña en el
+primer build. **Guardalo y respaldalo fuera del repo** (gestor de contraseñas o
+backup cifrado): una actualización de la APK solo se instala encima de la
+anterior si está firmada con la misma clave.
+
+### Clave anterior: rotada por filtración
+
+El keystore original y su contraseña estuvieron commiteados en el repo, así que
+se consideran comprometidos. Quedó apartado como
+`COMPROMETIDO-NO-USAR-mv-release.keystore` (ignorado por git) y **no debe
+volver a usarse**; si hiciera falta, sigue recuperable del historial de git.
+
+La rotación se hizo antes de publicar en Google Play, que es la única ventana
+en la que sale gratis: una vez publicada, Play exige la misma clave para toda
+actualización y ya no se puede rotar. La contrapartida es que quien haya
+instalado la APK vieja bajada de la web **tiene que desinstalar antes de poner
+la nueva** (Android rechaza una actualización firmada con otra clave).
 
 ## Instalación en el teléfono
 

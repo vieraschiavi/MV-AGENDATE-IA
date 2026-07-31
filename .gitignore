@@ -8,9 +8,12 @@ movil/node_modules/
 movil/android/
 movil/www/
 movil/android-apk/build/
-movil/android-apk/debug.keystore
-movil/mv-release.keystore
 movil/*.apk.idsig
+# Keystores de firma: son la identidad de la app, NUNCA se versionan. Antes se
+# listaban rutas sueltas y android/mv-release.keystore se coló por estar en una
+# carpeta que no estaba en la lista; con un patrón general no vuelve a pasar.
+*.keystore
+*.jks
 src/clave-embebida.b64
 voces/*.onnx
 .vercel

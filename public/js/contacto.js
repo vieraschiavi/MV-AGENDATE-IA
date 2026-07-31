@@ -93,13 +93,17 @@
     const asunto = `${t('sub')} — ${asu}`;
     const href = `mailto:${DESTINO}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
 
-    // Aviso al backend (best-effort; no bloquea el mailto).
+    // Aviso al backend (best-effort). Si falla NO se le muestra error al usuario
+    // a propósito: el canal real es el mailto de abajo, que abre igual. Se loguea
+    // para poder diagnosticarlo desde la consola.
     try {
       fetch('/api/contacto', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre: nom, email: mail, telefono: tel, asunto: asu, pregunta: pre }),
-      }).catch(() => {});
-    } catch {}
+      }).catch((e) => console.warn('[contacto] no se pudo avisar al backend:', e));
+    } catch (e) {
+      console.warn('[contacto] no se pudo avisar al backend:', e);
+    }
 
     const okBox = ov.querySelector('.mvc-ok');
     okBox.textContent = t('ok'); okBox.style.display = 'block';

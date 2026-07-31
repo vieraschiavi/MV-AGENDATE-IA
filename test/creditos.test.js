@@ -1,7 +1,7 @@
 // Tests de los créditos de IA por cuenta SaaS — node --test
 import { test, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { estadoCreditos, haySaldo, consumir, acreditar, creditosHabilitado, bonoDePack, PACKS } from '../src/store/creditos.js';
+import { estadoCreditos, haySaldo, consumir, acreditar, creditosHabilitado, bonoDePack } from '../src/store/creditos.js';
 import { setConfig } from '../src/store/config.js';
 
 beforeEach(() => setConfig({ creditosSaas: '', creditosMargen: '2.5', creditosBono: '3', costoInputMusd: '15', costoOutputMusd: '75' }));

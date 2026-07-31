@@ -102,7 +102,7 @@
     <div style="display:flex;gap:10px;align-items:center;">
       <input id="logoUrl" placeholder="URL del logo o subilo →" style="flex:1;">
       <input id="logoFile" type="file" accept="image/*" style="width:auto;padding:6px;">
-      <img id="logoPrev" style="width:40px;height:40px;border-radius:8px;object-fit:contain;display:none;">
+      <img id="logoPrev" alt="Vista previa del logo que subiste" style="width:40px;height:40px;border-radius:8px;object-fit:contain;display:none;">
     </div>
     <div class="hint">Podés pegar una URL o subir una imagen (se guarda embebida). Si lo dejás vacío, usa el logo MV.</div>
 
@@ -327,6 +327,12 @@
 
 <script>
 const $ = (s) => document.querySelector(s);
+// Escapa texto para meterlo dentro de HTML. Se usa para todo lo que no
+// escribimos nosotros: respuestas de la API, texto redactado por el modelo de
+// IA y nombres que carga el profesional.
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
+  { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+));
 const CAMPOS = ['proveedorIA','anthropicApiKey','openaiApiKey','geminiApiKey','creditosSaas','creditosMargen','creditosBono','nombreProfesional','oficioProfesional','pais','moneda','aprobarCotizaciones','agenciaNombre','agenciaTelefono','logoUrl','horarioInicio','horarioFin','almuerzoInicio','almuerzoFin','diasLibres','whatsappToken','whatsappPhoneId','whatsappVerifyToken','twilioAccountSid','twilioAuthToken','twilioNumero','deepgramApiKey','elevenlabsApiKey','elevenlabsVoiceId','crmWebhookUrl','mercadopagoToken','resendApiKey','emailFrom','demoLimite','demoMaxUsos','licenciaLocal'];
 
 // Combo de oficios (cargado desde el catálogo del cotizador) + chips de días libres.
@@ -347,19 +353,28 @@ function pintarDiasLibres() {
 $('#diasLibres').value = [...diasLibresSet].sort().join(',');
 pintarDiasLibres();
 let OFICIOS = [];
+// Llena un <select> con la API del DOM en vez de innerHTML. Los nombres de
+// oficio/trabajo los escribe el usuario (profesiones propias), así que armar el
+// HTML a mano permitiría inyectar marcado. Con new Option() el texto se trata
+// SIEMPRE como texto, nunca como HTML.
+function llenarSelect(sel, items, aValor, aTexto) {
+  sel.replaceChildren();
+  for (const it of items) sel.add(new Option(aTexto(it), aValor(it)));
+}
+
 function cargarOficiosUI() {
   return fetch('/api/oficios').then((r) => r.json()).then((oficios) => {
     OFICIOS = oficios;
     const sel = $('#oficioProfesional').value;
-    $('#oficioProfesional').innerHTML = oficios.map((o) => `<option value="${o.clave}">${o.nombre}${o.custom ? ' (propio)' : ''}</option>`).join('');
+    llenarSelect($('#oficioProfesional'), oficios, (o) => o.clave, (o) => `${o.nombre}${o.custom ? ' (propio)' : ''}`);
     if (sel) $('#oficioProfesional').value = sel;
-    $('#ipOficio').innerHTML = oficios.map((o) => `<option value="${o.clave}">${o.nombre}</option>`).join('');
+    llenarSelect($('#ipOficio'), oficios, (o) => o.clave, (o) => o.nombre);
   });
 }
 cargarOficiosUI().then(cargarEquipo);
 fetch('/api/paises').then((r) => r.json()).then((paises) => {
   const sel = $('#pais').value;
-  $('#pais').innerHTML = paises.map((p) => `<option value="${p.clave}">${p.nombre} (${p.moneda})</option>`).join('');
+  llenarSelect($('#pais'), paises, (p) => p.clave, (p) => `${p.nombre} (${p.moneda})`);
   $('#pais').value = sel || 'uy';
 });
 
@@ -409,12 +424,16 @@ $('#btnInvestigar').onclick = async () => {
     const d = await r.json();
     if (!r.ok || !d.ok) { out.textContent = d.error || 'No se pudo investigar.'; return; }
     sugerencia = d;
-    out.innerHTML = `<strong>${d.oficio} — mercado de ${d.pais} (${d.moneda})</strong>` +
-      (d.notas_generales ? `<div class="hint" style="margin:4px 0 8px;">${d.notas_generales}</div>` : '') +
+    // OJO: todo lo que viene en `d` lo redactó el modelo de IA a partir de un
+    // prompt que incluye el nombre del oficio, que lo escribe el usuario. O sea
+    // que es texto NO confiable: se escapa antes de meterlo como HTML. Los
+    // números van por toLocaleString(), que ya devuelve sólo dígitos.
+    out.innerHTML = `<strong>${esc(d.oficio)} — mercado de ${esc(d.pais)} (${esc(d.moneda)})</strong>` +
+      (d.notas_generales ? `<div class="hint" style="margin:4px 0 8px;">${esc(d.notas_generales)}</div>` : '') +
       '<table style="width:100%;border-collapse:collapse;font-size:.85rem;">' +
       '<tr><th style="text-align:left;padding:4px;">Trabajo</th><th style="text-align:right;padding:4px;">Sugerido</th><th style="text-align:right;padding:4px;">Materiales</th><th style="text-align:right;padding:4px;">Rango de mercado</th></tr>' +
-      d.trabajos.map((t) => `<tr style="border-top:1px solid var(--line);"><td style="padding:4px;">${t.clave}${t.nota ? ` <span class="hint">(${t.nota})</span>` : ''}</td><td style="text-align:right;padding:4px;"><strong>${t.mano_obra.toLocaleString()}</strong></td><td style="text-align:right;padding:4px;">${t.materiales_base.toLocaleString()}</td><td style="text-align:right;padding:4px;">${t.rango_mercado[0].toLocaleString()} – ${t.rango_mercado[1].toLocaleString()}</td></tr>`).join('') +
-      '</table>' + `<div class="hint" style="margin-top:6px;">${d.descargo}</div>`;
+      d.trabajos.map((t) => `<tr style="border-top:1px solid var(--line);"><td style="padding:4px;">${esc(t.clave)}${t.nota ? ` <span class="hint">(${esc(t.nota)})</span>` : ''}</td><td style="text-align:right;padding:4px;"><strong>${Number(t.mano_obra).toLocaleString()}</strong></td><td style="text-align:right;padding:4px;">${Number(t.materiales_base).toLocaleString()}</td><td style="text-align:right;padding:4px;">${Number(t.rango_mercado[0]).toLocaleString()} – ${Number(t.rango_mercado[1]).toLocaleString()}</td></tr>`).join('') +
+      '</table>' + `<div class="hint" style="margin-top:6px;">${esc(d.descargo)}</div>`;
     $('#btnAplicarPrecios').style.display = '';
   } catch { out.textContent = 'Error de red.'; }
 };
@@ -657,9 +676,11 @@ async function cargarMiNumero() {
     const d = await r.json();
     if (!d.ok) { el.textContent = ''; return; }
     if (!d.numeros.length) { el.textContent = 'Todavía no tenés ningún número activo.'; return; }
+    // n.numero y n.sid vienen de la API de Twilio; se escapan igual, sobre todo
+    // el sid que va dentro de un atributo.
     el.innerHTML = '📍 ' + d.numeros.map((n) =>
-      `<strong>${n.numero}</strong> ` +
-      `<button type="button" class="btnReapuntar" data-sid="${n.sid}" style="background:none;border:1px solid #cfd9e4;border-radius:8px;padding:3px 9px;font-size:.75rem;cursor:pointer;margin-left:4px;">🔗 Reapuntar webhook a este dominio</button>`
+      `<strong>${esc(n.numero)}</strong> ` +
+      `<button type="button" class="btnReapuntar" data-sid="${esc(n.sid)}" style="background:none;border:1px solid #cfd9e4;border-radius:8px;padding:3px 9px;font-size:.75rem;cursor:pointer;margin-left:4px;">🔗 Reapuntar webhook a este dominio</button>`
     ).join('<br>');
     el.querySelectorAll('.btnReapuntar').forEach((btn) => {
       btn.onclick = async () => {
@@ -679,7 +700,7 @@ $('#btnBuscarNumeros').onclick = async () => {
   try {
     const r = await fetch('/api/telefonia/numeros-disponibles?pais=' + $('#paisNumero').value, { headers: headers() });
     const d = await r.json();
-    if (!d.ok) { cont.innerHTML = `<div class="hint">⚠️ ${d.error}</div>`; return; }
+    if (!d.ok) { cont.innerHTML = `<div class="hint">⚠️ ${esc(d.error)}</div>`; return; }
     if (!d.numeros.length) { cont.innerHTML = '<div class="hint">No hay números disponibles para ese país ahora mismo. Probá otro.</div>'; return; }
     cont.innerHTML = d.numeros.map((n) =>
       `<div class="row" style="align-items:center;margin-top:8px;">` +
