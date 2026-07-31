@@ -9,13 +9,100 @@
     }
   },
   "crons": [
-    { "path": "/api/cron/diario", "schedule": "0 12 * * *" }
+    {
+      "path": "/api/cron/diario",
+      "schedule": "0 12 * * *"
+    }
   ],
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index.js" },
-    { "source": "/salud", "destination": "/api/index.js" },
-    { "source": "/descargar/(.*)", "destination": "/api/index.js" },
-    { "source": "/webhook/(.*)", "destination": "/api/index.js" },
+    {
+      "source": "/abogados",
+      "destination": "/oficios/abogados.html"
+    },
+    {
+      "source": "/cerrajeros",
+      "destination": "/oficios/cerrajeros.html"
+    },
+    {
+      "source": "/contadores",
+      "destination": "/oficios/contadores.html"
+    },
+    {
+      "source": "/cuidadores",
+      "destination": "/oficios/cuidadores.html"
+    },
+    {
+      "source": "/electricistas",
+      "destination": "/oficios/electricistas.html"
+    },
+    {
+      "source": "/escribanos",
+      "destination": "/oficios/escribanos.html"
+    },
+    {
+      "source": "/fleteros",
+      "destination": "/oficios/fleteros.html"
+    },
+    {
+      "source": "/gomerias-moviles",
+      "destination": "/oficios/gomerias-moviles.html"
+    },
+    {
+      "source": "/jardineros",
+      "destination": "/oficios/jardineros.html"
+    },
+    {
+      "source": "/kinesiologos",
+      "destination": "/oficios/kinesiologos.html"
+    },
+    {
+      "source": "/mecanicos-a-domicilio",
+      "destination": "/oficios/mecanicos-a-domicilio.html"
+    },
+    {
+      "source": "/pintores",
+      "destination": "/oficios/pintores.html"
+    },
+    {
+      "source": "/plomeros",
+      "destination": "/oficios/plomeros.html"
+    },
+    {
+      "source": "/profesores-particulares",
+      "destination": "/oficios/profesores-particulares.html"
+    },
+    {
+      "source": "/psicologos",
+      "destination": "/oficios/psicologos.html"
+    },
+    {
+      "source": "/tecnicos-de-aire-acondicionado",
+      "destination": "/oficios/tecnicos-de-aire-acondicionado.html"
+    },
+    {
+      "source": "/tecnicos-de-electrodomesticos",
+      "destination": "/oficios/tecnicos-de-electrodomesticos.html"
+    },
+    {
+      "source": "/veterinarios-a-domicilio",
+      "destination": "/oficios/veterinarios-a-domicilio.html"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/salud",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/descargar/(.*)",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/webhook/(.*)",
+      "destination": "/api/index.js"
+    },
     {
       "source": "/149e9513-01fa-4fb0-aad4-566afd725d1b/2d206a39-8ed7-437e-a3be-862e0f06eea3/a-4-a/c.js",
       "destination": "https://api.vercel.com/bot-protection/v1/challenge"
@@ -33,8 +120,14 @@
           "key": "Content-Security-Policy",
           "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests"
         },
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
         {
           "key": "Permissions-Policy",
           "value": "geolocation=(self), microphone=(self), camera=(), payment=(), usb=(), interest-cohort=()"
@@ -44,7 +137,10 @@
     {
       "source": "/149e9513-01fa-4fb0-aad4-566afd725d1b/2d206a39-8ed7-437e-a3be-862e0f06eea3/:path*",
       "headers": [
-        { "key": "X-Frame-Options", "value": "SAMEORIGIN" }
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        }
       ]
     }
   ]

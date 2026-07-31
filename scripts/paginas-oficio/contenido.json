@@ -1,0 +1,183 @@
+{
+  "_nota": "Copy editorial POR OFICIO para las landings de SEO. Cada entrada se escribe a mano: el dolor concreto del rubro, un intercambio de WhatsApp con el vocabulario real de ese cliente, y el detalle de agenda que lo diferencia. Los precios y duraciones NO se escriben acá: salen de src/data/oficios.json para que nunca queden desincronizados. Generar con: node scripts/paginas-oficio/generar.js",
+
+  "electricista": {
+    "slug": "electricistas",
+    "h1": "El asistente que atiende tus urgencias eléctricas mientras estás con las manos ocupadas",
+    "dolor": "Cuando estás arriba de una escalera con el tester en la mano, el celular suena y no lo podés atender. Esa llamada perdida casi siempre es una urgencia — un cortocircuito, una casa sin luz — y el que llama no espera: marca al siguiente electricista de la lista.",
+    "chatCliente": "Hola, se me cortó la luz en toda la casa y saltó la térmica. ¿Podés venir hoy?",
+    "chatBot": "Hola! Eso suena a cortocircuito. La reparación lleva unos 60 minutos y sale $X. Tengo un hueco hoy 16:40 o mañana 8:10 — ¿cuál te sirve?",
+    "agenda": "Un tablero lleva dos horas y una toma corriente cuarenta y cinco minutos. El asistente no te encaja un tablero entre dos visitas cortas: reserva el bloque completo y calcula el traslado.",
+    "urgencia": "Los cortocircuitos y las casas sin luz entran como urgencia y se ofrecen en el primer hueco del día, no al final de la cola."
+  },
+
+  "plomero": {
+    "slug": "plomeros",
+    "h1": "Contestá los destapes y las pérdidas sin salir de abajo de la pileta",
+    "dolor": "Una pérdida de agua no espera. El cliente escribe a cinco plomeros a la vez y contrata al primero que le contesta con un precio. Si estás con las manos mojadas y el celular en el bolsillo, ese trabajo ya lo perdiste.",
+    "chatCliente": "Buenas, tengo una pérdida abajo de la bacha que me está inundando la cocina",
+    "chatBot": "Hola! Reparación de pérdida de agua: 75 minutos, $X. Si querés lo antes posible tengo hoy 15:20. ¿Te paso a confirmar la dirección?",
+    "agenda": "Un termotanque son dos horas y media; un destape, una hora. El asistente los agenda distinto y nunca te promete un termotanque en un hueco de cuarenta minutos.",
+    "urgencia": "Las pérdidas de agua se tratan como urgencia: el cliente recibe el horario más cercano disponible, no el próximo libre en la semana."
+  },
+
+  "pintor": {
+    "slug": "pintores",
+    "h1": "Presupuestá pintura sin perder medio día visitando obras que no cierran",
+    "dolor": "El pintor pierde mañanas enteras yendo a relevar ambientes que después no contratan. Y cada visita de presupuesto que no cierra es un día que no facturaste.",
+    "chatCliente": "Hola, quiero pintar el living, más o menos 20 metros cuadrados. ¿Cuánto me sale?",
+    "chatBot": "Hola! Un ambiente de 12 a 25 m2 lleva unas 7 horas de trabajo y sale $X. Si querés paso primero a relevar (30 min, sin cargo). ¿Te viene bien el jueves?",
+    "agenda": "Pintar un frente son ocho horas: ocupa el día entero. El asistente lo sabe y no te agenda nada más ese día, en vez de prometer dos trabajos imposibles.",
+    "urgencia": "La visita de relevamiento es corta y se encastra entre trabajos largos, así presupuestás sin romper la jornada de obra."
+  },
+
+  "mecanico": {
+    "slug": "mecanicos-a-domicilio",
+    "h1": "Atendé autos varados sin dejar el que tenés en el elevador",
+    "dolor": "Un auto que no arranca es un cliente desesperado, y vos estás abajo de otro auto. Cada minuto que tardás en contestar es un auxilio que se lleva la grúa.",
+    "chatCliente": "No me arranca el auto, estoy en la calle. ¿Venís?",
+    "chatBot": "Hola! Auxilio por falla de arranque: 45 minutos, $X más traslado. Estoy a X km tuyo, puedo llegar 17:30. ¿Dónde estás exactamente?",
+    "agenda": "El traslado del mecánico a domicilio pesa más que en otros oficios: se cobra por kilómetro y el asistente lo suma al presupuesto antes de confirmar.",
+    "urgencia": "Un auxilio por falla de arranque no puede esperar tres días: entra como urgente y se ofrece el hueco más próximo."
+  },
+
+  "abogado": {
+    "slug": "abogados",
+    "h1": "Que las consultas se agenden solas mientras estás en audiencia",
+    "dolor": "En audiencia no atendés el teléfono. La consulta que entra a las 10 de la mañana y no recibe respuesta hasta las 6 de la tarde, muchas veces ya se fue a otro estudio.",
+    "chatCliente": "Buenos días, necesito asesorarme por un tema laboral, ¿tiene disponibilidad esta semana?",
+    "chatBot": "Buenos días. La consulta inicial es de 45 minutos y los honorarios son $X. Tengo miércoles 11:00 o jueves 15:30, presencial o por videollamada. ¿Cuál prefiere?",
+    "agenda": "El asistente respeta los bloques de audiencia: se los cargás como ocupados y no ofrece esos horarios aunque el día figure libre.",
+    "urgencia": "El desglose dice honorarios, no mano de obra ni materiales — y no hay traslado, porque la consulta es en el estudio o por video."
+  },
+
+  "escribano": {
+    "slug": "escribanos",
+    "h1": "Coordiná firmas sin que la agenda se te desarme por un certificado de 20 minutos",
+    "dolor": "Una escritura de compraventa mueve a cuatro personas y no se puede reprogramar sin costo. Pero entre medio entran certificaciones de firma de veinte minutos que te desordenan el día.",
+    "chatCliente": "Hola, necesito certificar una firma. ¿Qué día puedo pasar?",
+    "chatBot": "Hola! La certificación de firma lleva 20 minutos y sale $X. Tengo hoy 14:20 o mañana temprano. ¿Cuál le queda cómodo?",
+    "agenda": "La reunión de firma de una compraventa son 90 minutos y no se toca. El asistente encastra las certificaciones cortas alrededor, sin pisarla nunca.",
+    "urgencia": "Trabaja con honorarios y contempla traslado cuando la firma es fuera de la escribanía."
+  },
+
+  "psicologo": {
+    "slug": "psicologos",
+    "h1": "Agendá sesiones sin cortar la que estás dando",
+    "dolor": "No podés mirar el celular en medio de una sesión. Pero el paciente que escribe pidiendo turno y no recibe respuesta en el día suele no volver a escribir.",
+    "chatCliente": "Hola, quería consultar por una primera entrevista",
+    "chatBot": "Hola! La primera consulta es de 60 minutos, $X. Tengo martes 17:00 o viernes 10:00. ¿Alguno le sirve?",
+    "agenda": "Las sesiones son de 50 minutos y en bloque. El asistente respeta el corte entre paciente y paciente en vez de encimarlas.",
+    "urgencia": "Sin traslado y con honorarios: la agenda se arma sobre horarios de consultorio, no sobre distancias."
+  },
+
+  "cerrajero": {
+    "slug": "cerrajeros",
+    "h1": "Nadie que quedó afuera de su casa espera dos horas una respuesta",
+    "dolor": "El cerrajero vive de la urgencia. Alguien parado en la vereda a las 11 de la noche llama a cuatro números seguidos: contesta uno solo y ese se lleva el trabajo.",
+    "chatCliente": "Me quedé afuera, se me trabó la llave en la puerta",
+    "chatBot": "Hola! Apertura de puerta: 30 minutos, $X más traslado. Puedo estar ahí en 25 minutos. ¿Me pasás la dirección?",
+    "agenda": "Trabajos cortos, de 25 a 45 minutos: la agenda se llena de huecos chicos y el asistente los aprovecha calculando el traslado entre uno y otro.",
+    "urgencia": "La apertura de puerta es el caso urgente por excelencia y se ofrece siempre en el primer hueco disponible."
+  },
+
+  "tecnico_electrodomesticos": {
+    "slug": "tecnicos-de-electrodomesticos",
+    "h1": "Diagnosticá a domicilio sin perder el día coordinando por WhatsApp",
+    "dolor": "Entre que el cliente describe el ruido raro de la heladera y vos entendés si conviene ir, se van veinte mensajes. Multiplicado por diez consultas al día, es media jornada tipeando.",
+    "chatCliente": "Hola, el lavarropas no centrifuga y hace un ruido raro",
+    "chatBot": "Hola! Reparación de lavarropas: 75 minutos, $X. Si preferís, primero voy a diagnosticar (30 min). Tengo mañana 9:00. ¿Te sirve?",
+    "agenda": "Una heladera lleva 90 minutos y un diagnóstico 30. El asistente separa la visita de diagnóstico de la reparación, así no te quedás corto de tiempo.",
+    "urgencia": "Una heladera rota se trata distinto de un service programado: entra antes en la cola."
+  },
+
+  "tecnico_aire_acondicionado": {
+    "slug": "tecnicos-de-aire-acondicionado",
+    "h1": "Sobreviví a la primera ola de calor sin perder ningún cliente",
+    "dolor": "El primer día de 35 grados te entran cincuenta mensajes en tres horas. Contestás los primeros diez y los otros cuarenta se van a la competencia, aunque tuvieras lugar el jueves.",
+    "chatCliente": "Hola, el aire no enfría nada. ¿Le falta gas?",
+    "chatBot": "Hola! Puede ser. La carga de gas refrigerante lleva 60 minutos y sale $X. Tengo jueves 11:30 o viernes 8:00. ¿Cuál te sirve?",
+    "agenda": "Instalar un split son tres horas: es medio día. El asistente reserva el bloque completo y no te mete un service preventivo encima.",
+    "urgencia": "En temporada alta el asistente contesta las cincuenta consultas en paralelo, sin cansarse y sin dejar ninguna sin respuesta."
+  },
+
+  "jardinero": {
+    "slug": "jardineros",
+    "h1": "Cerrá cortes y podas mientras tenés la bordeadora encendida",
+    "dolor": "Con la máquina en la mano no escuchás el teléfono, y el trabajo de jardinería se pierde rápido: si no contestás hoy, el vecino ya llamó a otro.",
+    "chatCliente": "Hola, necesito que me corten el pasto del fondo, está bastante alto",
+    "chatBot": "Hola! Corte de césped y prolijado: 90 minutos, $X más traslado. Tengo jueves a la mañana. ¿Te va?",
+    "agenda": "Diseñar y plantar un jardín son cuatro horas; un corte, hora y media. El asistente arma la ruta del día agrupando los cortes cercanos entre sí.",
+    "urgencia": "El traslado del jardinero se calcula por kilómetro y se suma al presupuesto antes de confirmar el horario."
+  },
+
+  "gomeria_movil": {
+    "slug": "gomerias-moviles",
+    "h1": "Llegá primero al auxilio: el que contesta antes se lleva la goma",
+    "dolor": "El que está con la rueda pinchada en la banquina llama hasta que alguien atiende. No compara precio: contrata al primero que le confirma que va.",
+    "chatCliente": "Pinché en la ruta, ¿pueden venir a cambiarme la rueda?",
+    "chatBot": "Hola! Cambio de neumático a domicilio: 30 minutos, $X más traslado. ¿Dónde estás? Te confirmo en cuánto llego.",
+    "agenda": "Son los trabajos más cortos del catálogo — 25 a 30 minutos — pero con el traslado más caro por kilómetro. El asistente calcula la distancia real antes de dar el precio.",
+    "urgencia": "Todo auxilio es urgente por definición: se ofrece siempre el hueco inmediato."
+  },
+
+  "contador": {
+    "slug": "contadores",
+    "h1": "Que los vencimientos no se mezclen con las consultas nuevas",
+    "dolor": "En semana de vencimiento de IVA no tenés cabeza para contestar consultas de gente que quiere abrir una empresa. Pero si no las contestás, se van.",
+    "chatCliente": "Buenas, quiero armar una unipersonal, ¿me podés asesorar?",
+    "chatBot": "Hola! La constitución de unipersonal o SAS lleva una reunión de 60 minutos, honorarios $X. Tengo martes 16:00. ¿Te sirve?",
+    "agenda": "Bloqueás la semana de vencimientos y el asistente no ofrece esos días, aunque figuren libres en el calendario.",
+    "urgencia": "Honorarios, sin traslado: la agenda se arma sobre reuniones en el estudio o por videollamada."
+  },
+
+  "veterinario": {
+    "slug": "veterinarios-a-domicilio",
+    "h1": "Atendé al animal, no al teléfono",
+    "dolor": "Con un perro asustado en la camilla no podés soltar todo para contestar. Y del otro lado hay alguien preocupado por su mascota que necesita respuesta ya.",
+    "chatCliente": "Hola, mi perro está decaído y no come hace dos días. ¿Podés venir a verlo?",
+    "chatBot": "Hola! Consulta general a domicilio: 40 minutos, honorarios $X más traslado. Tengo hoy 18:00 o mañana 10:30. ¿Cuál preferís?",
+    "agenda": "Una vacunación son 20 minutos y una consulta 40. El asistente agrupa las vacunaciones cercanas en la misma salida para no hacer el viaje dos veces.",
+    "urgencia": "Un animal decaído se prioriza sobre un control de rutina."
+  },
+
+  "kinesiologo": {
+    "slug": "kinesiologos",
+    "h1": "Sesiones a domicilio con la ruta ya resuelta",
+    "dolor": "Atendés a domicilio, así que cada turno mal ubicado en el mapa te come media hora de viaje que no cobrás.",
+    "chatCliente": "Hola, tengo la espalda contracturada hace una semana. ¿Atendés a domicilio?",
+    "chatBot": "Hola! Sesión de kinesiología a domicilio: 45 minutos, honorarios $X más traslado. Tengo miércoles 15:00 por tu zona. ¿Te sirve?",
+    "agenda": "El asistente ordena los turnos del día por cercanía, así encadenás sesiones en la misma zona en vez de cruzar la ciudad entre una y otra.",
+    "urgencia": "Honorarios más traslado: el kilometraje se calcula y se avisa antes de confirmar."
+  },
+
+  "profesor_particular": {
+    "slug": "profesores-particulares",
+    "h1": "Que los padres reserven la clase sin ida y vuelta de mensajes",
+    "dolor": "La coordinación con los padres son quince mensajes por clase: qué día, a qué hora, si es individual o con un compañero. Todo eso mientras estás dando otra clase.",
+    "chatCliente": "Hola, busco clases de matemática para mi hijo de 3ro de liceo",
+    "chatBot": "Hola! La clase particular individual es de 60 minutos, $X. También hay clase grupal de hasta 4 alumnos (90 min). Tengo lunes y miércoles 18:00. ¿Cuál te sirve?",
+    "agenda": "La clase grupal dura 90 minutos y la individual 60. El asistente no encima una sobre otra ni te agenda dos grupos en el mismo horario.",
+    "urgencia": "Época de exámenes: el asistente sigue contestando aunque tengas la agenda llena, y ofrece el primer hueco real."
+  },
+
+  "cuidador": {
+    "slug": "cuidadores",
+    "h1": "Coordiná turnos largos sin que se te superpongan",
+    "dolor": "Los turnos de cuidado son de 4 u 8 horas. Un solo turno mal anotado significa dejar a una familia sin cobertura, que es lo peor que puede pasar en este rubro.",
+    "chatCliente": "Hola, necesito alguien que cuide a mi mamá los martes y jueves a la tarde",
+    "chatBot": "Hola! El turno de 4 horas sale $X. Tengo disponible martes y jueves de 14 a 18. ¿Lo dejamos fijo?",
+    "agenda": "Un turno de 8 horas ocupa el día entero. El asistente lo bloquea completo y no ofrece ningún otro horario ese día — es el oficio donde superponer es más grave.",
+    "urgencia": "Sin traslado por kilómetro: se trabaja en el domicilio de la familia, con turnos fijos y previsibles."
+  },
+
+  "fletero": {
+    "slug": "fleteros",
+    "h1": "Cotizá fletes con el kilometraje ya calculado",
+    "dolor": "El precio de un flete es casi todo distancia. Cotizar a ojo por WhatsApp termina en fletes que te dejan perdiendo plata o en presupuestos que espantan al cliente.",
+    "chatCliente": "Hola, necesito mudar un apartamento de 2 dormitorios del Centro a Pocitos",
+    "chatBot": "Hola! Mudanza completa: unas 5 horas, $X más traslado según distancia. ¿Me pasás las dos direcciones y te confirmo el total?",
+    "agenda": "Una mudanza completa son cinco horas y ocupa casi todo el día; un flete chico, una hora. El asistente los distingue y no te promete una mudanza en un hueco corto.",
+    "urgencia": "Es el oficio con el traslado por kilómetro más alto del catálogo: el cálculo de distancia real es lo que separa un flete rentable de uno que no lo es."
+  }
+}
