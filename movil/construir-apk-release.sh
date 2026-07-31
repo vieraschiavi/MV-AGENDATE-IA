@@ -70,7 +70,14 @@ UNS=$(find . -name 'app-release-unsigned.apk' | head -1)
 
 echo "[5/6] Keystore de release"
 KS="$AQUI/mv-release.keystore"
-STOREPASS="${MV_KEYSTORE_PASS:-mvagente2026}"
+# La contraseña NUNCA va en el código, ni siquiera como valor por defecto:
+# quedaba commiteada y servía para firmar en nombre de la app.
+STOREPASS="${MV_KEYSTORE_PASS:-}"
+[ -n "$STOREPASS" ] || {
+  echo "Falta MV_KEYSTORE_PASS (contraseña del keystore de firma)."
+  echo "Usá:  MV_KEYSTORE_PASS='tu-clave' ./construir-apk-release.sh"
+  exit 1
+}
 if [ ! -f "$KS" ]; then
   keytool -genkeypair -v -keystore "$KS" -alias mv -keyalg RSA -keysize 2048 -validity 10000 \
     -storepass "$STOREPASS" -keypass "$STOREPASS" \
