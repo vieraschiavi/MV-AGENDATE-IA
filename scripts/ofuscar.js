@@ -10,6 +10,9 @@
 // No toca el repo: dist-protegido/ es un artefacto de build (gitignored),
 // y el servidor de desarrollo (`npm run dev`, `npm test`) sigue corriendo
 // contra src/ tal cual.
+//
+// Con --owner (npm run empaquetar-exe-owner) se genera la copia SIN el límite
+// de prueba de 3 días, para uso propio del dueño — ver electron/owner-config.cjs.
 import { readdirSync, statSync, readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { join, dirname, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,6 +21,8 @@ import JavaScriptObfuscator from 'javascript-obfuscator';
 const RAIZ = dirname(dirname(fileURLToPath(import.meta.url)));
 const SALIDA = join(RAIZ, 'dist-protegido');
 const CARPETAS = ['src', 'electron'];
+const ES_OWNER = process.argv.includes('--owner');
+const OWNER_CONFIG_RUTA = join(RAIZ, 'electron', 'owner-config.cjs');
 
 const OPCIONES = {
   compact: true,
@@ -58,7 +63,10 @@ for (const carpeta of CARPETAS) {
 
     const ext = extname(rutaOrigen);
     if (ext === '.js' || ext === '.cjs' || ext === '.mjs') {
-      const codigo = readFileSync(rutaOrigen, 'utf8');
+      const esOwnerConfig = ES_OWNER && rutaOrigen === OWNER_CONFIG_RUTA;
+      const codigo = esOwnerConfig
+        ? "module.exports = { diasPrueba: 0 };\n"
+        : readFileSync(rutaOrigen, 'utf8');
       const resultado = JavaScriptObfuscator.obfuscate(codigo, OPCIONES);
       writeFileSync(rutaDestino, resultado.getObfuscatedCode());
       ofuscados++;
@@ -69,4 +77,5 @@ for (const carpeta of CARPETAS) {
   });
 }
 
-console.log(`✔ Ofuscados ${ofuscados} archivos .js/.cjs, copiados ${copiados} archivos de datos → ${SALIDA}`);
+const etiqueta = ES_OWNER ? ' [OWNER — sin límite de prueba]' : '';
+console.log(`✔ Ofuscados ${ofuscados} archivos .js/.cjs, copiados ${copiados} archivos de datos → ${SALIDA}${etiqueta}`);

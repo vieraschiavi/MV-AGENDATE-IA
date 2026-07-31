@@ -11,6 +11,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const net = require('node:net');
 const { spawn } = require('node:child_process');
+const ownerConfig = require('./owner-config.cjs');
 
 const PORT = process.env.PORT || 3000;
 const RAIZ = path.join(__dirname, '..');
@@ -58,9 +59,11 @@ function mostrarError(titulo, detalle) {
 
 function iniciarServidor() {
   logStream = fs.createWriteStream(logArchivo() || path.join(RAIZ, 'servidor.log'), { flags: 'a' });
+  const envExtra = { ELECTRON_RUN_AS_NODE: '1', PORT: String(PORT), MV_ESCRITORIO: '1' };
+  if (ownerConfig.diasPrueba !== null) envExtra.DIAS_PRUEBA = String(ownerConfig.diasPrueba);
   procesoServidor = spawn(process.execPath, [SERVIDOR], {
     cwd: RAIZ,
-    env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', PORT: String(PORT), MV_ESCRITORIO: '1' },
+    env: { ...process.env, ...envExtra },
     stdio: ['ignore', 'pipe', 'pipe']
   });
   const capturar = (chunk) => {
