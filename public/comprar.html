@@ -5,6 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Comprar — MV Agendate IA</title>
 <link rel="icon" href="/logo-mv.svg" type="image/svg+xml">
+<meta name="description" content="Elegí tu plan de MV Agendate IA y pagá con MercadoPago: pago único o suscripción mensual, con la versión online o para descargar.">
+<link rel="canonical" href="https://mv-agendate-ia.vercel.app/comprar.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MV Agendate IA">
+<meta property="og:title" content="Comprar — MV Agendate IA">
+<meta property="og:description" content="Elegí tu plan de MV Agendate IA y pagá con MercadoPago: pago único o suscripción mensual, con la versión online o para descargar.">
+<meta property="og:url" content="https://mv-agendate-ia.vercel.app/comprar.html">
+<meta property="og:image" content="https://mv-agendate-ia.vercel.app/logo-mv.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Comprar — MV Agendate IA">
+<meta name="twitter:description" content="Elegí tu plan de MV Agendate IA y pagá con MercadoPago: pago único o suscripción mensual, con la versión online o para descargar.">
+<meta name="twitter:image" content="https://mv-agendate-ia.vercel.app/logo-mv.png">
+
 <style>
   :root{ --navy:#0f2a43; --navy2:#16466e; --cel:#1f7ae0; --oro:#e0b25c; --line:#e6ebf1; --ok:#1a7f37; }
   *{ box-sizing:border-box; }
@@ -116,7 +129,9 @@ const TX_ALL = {
     unico:'Pagamento único pelo MercadoPago; sem renovação automática.',
     email:'Coloque seu email.', conectando:'Conectando com o MercadoPago…',
     err:'Não foi possível iniciar o pagamento com o MercadoPago. Tente de novo em alguns minutos.',
-    errConn:'Erro de conexão. Tente de novo.', btn:'Ir pagar com MercadoPago →'
+    errConn:'Erro de conexão. Tente de novo.', btn:'Ir pagar com MercadoPago →',
+    cargandoPlanes:'Carregando planos…',
+    errorPlanes:'Não conseguimos carregar os planos. Verifique sua conexão e recarregue a página. Se continuar, fale conosco e enviamos o link de pagamento.'
   },
   en: {
     online:'Online (no download)', mes:'/mo',
@@ -124,7 +139,9 @@ const TX_ALL = {
     unico:'One-time payment via MercadoPago; no auto-renewal.',
     email:'Enter your email.', conectando:'Connecting to MercadoPago…',
     err:'Could not start the MercadoPago payment. Try again in a few minutes.',
-    errConn:'Connection error. Try again.', btn:'Go to pay with MercadoPago →'
+    errConn:'Connection error. Try again.', btn:'Go to pay with MercadoPago →',
+    cargandoPlanes:'Loading plans…',
+    errorPlanes:"We couldn't load the plans. Check your connection and reload the page. If it persists, contact us and we'll send you the payment link."
   },
   es: {
     online:'Online (sin descarga)', mes:'/mes',
@@ -132,7 +149,9 @@ const TX_ALL = {
     unico:'Pago único por MercadoPago; sin renovación automática.',
     email:'Poné tu email.', conectando:'Conectando con MercadoPago…',
     err:'No se pudo iniciar el pago con MercadoPago. Probá de nuevo en unos minutos.',
-    errConn:'Error de conexión. Probá de nuevo.', btn:'Ir a pagar con MercadoPago →'
+    errConn:'Error de conexión. Probá de nuevo.', btn:'Ir a pagar con MercadoPago →',
+    cargandoPlanes:'Cargando planes…',
+    errorPlanes:'No pudimos cargar los planes. Revisá tu conexión y recargá la página. Si sigue igual, escribinos y te pasamos el link de pago.'
   }
 };
 const TX = () => TX_ALL[_pt() ? 'pt' : _en() ? 'en' : 'es'];
@@ -140,7 +159,29 @@ document.addEventListener('mv:idioma', () => { if (Object.keys(PLANES).length) r
 let PLANES = {}, plan = 'basico', medio = 'mercadopago', recurrente = false, pedidoId = null;
 // Plan preseleccionado desde la landing (?plan=basico|full)
 const _planUrl = new URLSearchParams(location.search).get('plan');
-fetch('/api/planes').then(r=>r.json()).then(d=>{ PLANES=d.planes; if(_planUrl && PLANES[_planUrl]) plan=_planUrl; render(); });
+// Estado de carga visible mientras llegan los planes, y un error accionable si
+// no llegan: sin esto la página de pago quedaba vacía y muda, con el botón de
+// pagar habilitado sobre un catálogo inexistente.
+$('#planes').textContent = TX().cargandoPlanes;
+fetch('/api/planes')
+  .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  .then(d => {
+    if (!d || !d.planes || !Object.keys(d.planes).length) throw new Error('respuesta vacía');
+    PLANES = d.planes;
+    if (_planUrl && PLANES[_planUrl]) plan = _planUrl;
+    render();
+  })
+  .catch((e) => {
+    console.error('[comprar] no se pudieron cargar los planes:', e);
+    $('#planes').innerHTML = '';
+    const aviso = document.createElement('div');
+    aviso.className = 'plan';
+    aviso.style.cssText = 'display:block;border-color:#c0392b;';
+    aviso.textContent = TX().errorPlanes;
+    $('#planes').appendChild(aviso);
+    const btn = $('#btnComprar');
+    if (btn) { btn.disabled = true; btn.style.opacity = '.55'; btn.style.cursor = 'not-allowed'; }
+  });
 function render() {
   $('#planes').innerHTML = Object.entries(PLANES).map(([k,p])=>`<div class="plan ${k===plan?'on':''}" data-k="${k}"><div><strong>${p.nombre}</strong><small>${p.incluye}</small></div><div class="p">USD ${p.precio}${p.mensual?'/mes':''}${window.mvUYU?`<small style="display:block;font-weight:600;opacity:.6;font-size:.68em;">${window.mvUYU(p.precio)}${p.mensual?'/mes':''}</small>`:''}</div></div>`).join('');
   document.querySelectorAll('.plan').forEach(el=>el.onclick=()=>{ plan=el.dataset.k; if(plan!=='full') recurrente=false; render(); });

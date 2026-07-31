@@ -11,6 +11,13 @@
 <meta property="og:title" content="MV Agendate IA — tu asistente que cotiza y agenda solo">
 <meta property="og:description" content="IA que atiende WhatsApp y teléfono, cotiza con tus precios y agenda optimizando traslados reales.">
 <meta property="og:image" content="https://mv-agendate-ia.vercel.app/logo-mv.png">
+<meta property="og:url" content="https://mv-agendate-ia.vercel.app/">
+<meta property="og:site_name" content="MV Agendate IA">
+<link rel="canonical" href="https://mv-agendate-ia.vercel.app/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MV Agendate IA — tu asistente que cotiza y agenda solo">
+<meta name="twitter:description" content="IA que atiende WhatsApp y teléfono, cotiza con tus precios y agenda optimizando traslados reales.">
+<meta name="twitter:image" content="https://mv-agendate-ia.vercel.app/logo-mv.png">
 <style>
   :root{
     --fondo:#070d15; --fondo2:#0b1520; --tinta:#eaf2fa; --sub:#8fa6ba;
@@ -526,10 +533,23 @@ window.MV_EN = {
   const fmtFecha = (iso) => { try { return new Date(iso).toLocaleDateString(locale(), { year: 'numeric', month: 'short' }); } catch { return ''; } };
 
   async function cargar() {
-    let d; try { d = await (await fetch('/api/resenas')).json(); } catch { return; }
     const lista = document.getElementById('resLista');
     const vacio = document.getElementById('resVacio');
     const sub = document.getElementById('resSub');
+    let d;
+    try {
+      const r = await fetch('/api/resenas');
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      d = await r.json();
+    } catch (e) {
+      // Antes esto era `catch { return; }`: la sección quedaba con el título y
+      // nada debajo, sin que el visitante supiera por qué.
+      console.error('[resenas] no se pudieron cargar:', e);
+      vacio.style.display = 'block';
+      vacio.textContent = T('resError', 'No pudimos cargar las reseñas en este momento. Recargá la página para volver a intentar.');
+      lista.innerHTML = '';
+      return;
+    }
     if (!d.resenas || !d.resenas.length) { vacio.style.display = 'block'; lista.innerHTML = ''; return; }
     vacio.style.display = 'none';
     if (d.total) sub.textContent = `★ ${d.promedio} · ${d.total} ${d.total === 1 ? (T('resUna', 'reseña') ) : (T('resVarias','reseñas'))}`;
