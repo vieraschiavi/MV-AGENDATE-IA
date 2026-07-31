@@ -137,13 +137,15 @@ export function verificarDescarga(token) {
 
 // Qué archivo de descarga corresponde a cada versión. Los paquetes reales
 // viven en public/descargas/ (servidos también como estáticos). La APK es un
-// .apk; el resto entrega el paquete PC (que incluye instrucciones y arranque).
+// .apk; "pc"/"todas" entregan el instalador de Windows (NSIS, un solo .exe
+// que instala la app — ver electron-builder en package.json). "pc_exe" queda
+// como alias por compatibilidad con links de descarga ya emitidos.
 export function archivoDeVersion(version) {
   return {
-    pc: 'MV-Agendate-IA-PC.zip',
+    pc: 'MV-Agendate-IA-Setup.exe',
     pc_exe: 'MV-Agendate-IA-Setup.exe',
     apk: 'MV-Agendate-IA.apk',
-    ios: 'MV-Agendate-IA-PC.zip',
-    todas: 'MV-Agendate-IA-PC.zip',
-  }[version] || 'MV-Agendate-IA-PC.zip';
+    ios: 'MV-Agendate-IA-Setup.exe',
+    todas: 'MV-Agendate-IA-Setup.exe',
+  }[version] || 'MV-Agendate-IA-Setup.exe';
 }

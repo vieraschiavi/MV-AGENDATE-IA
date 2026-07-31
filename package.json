@@ -18,6 +18,8 @@
     "ofuscar": "node scripts/ofuscar.js",
     "preempaquetar-exe": "node scripts/ofuscar.js",
     "empaquetar-exe": "electron-builder --win --x64 --publish never",
+    "preempaquetar-exe-owner": "node scripts/ofuscar.js --owner",
+    "empaquetar-exe-owner": "electron-builder --win --x64 --publish never --config.appId=com.mv.agendateia.owner --config.productName=\"MV Agendate IA (Dueno)\" --config.nsis.artifactName=MV-Agendate-IA-Setup-Dueno.exe --config.nsis.shortcutName=\"MV Agendate IA (Dueno)\" --config.nsis.uninstallDisplayName=\"MV Agendate IA (Dueno)\"",
     "dev": "node --watch src/server.js",
     "test": "node --test"
   },
@@ -65,6 +67,7 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "MV Agendate IA",
+      "uninstallDisplayName": "MV Agendate IA",
       "artifactName": "MV-Agendate-IA-Setup.exe"
     }
   }
