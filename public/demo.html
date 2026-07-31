@@ -293,7 +293,9 @@ $('#formCot').addEventListener('submit', async (e) => {
     return;
   }
   if (btnCot) btnCot.disabled = false;
-  if (d.error) { caja.innerHTML = '⚠️ ' + d.error; return; }
+  // textContent: d.error es texto, no HTML — y así no depende de que el
+  // servidor nunca mande marcado adentro del mensaje de error.
+  if (d.error) { caja.textContent = '⚠️ ' + d.error; return; }
   const sim = d.simbolo || '$';
   const etiqueta = d.tipo_cobro === 'honorarios' ? T().labHon : T().labMano;
   caja.innerHTML =
