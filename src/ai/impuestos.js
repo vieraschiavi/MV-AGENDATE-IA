@@ -44,7 +44,10 @@ const REGIMENES = {
   cu: { regimen: 'TCP (ONAT)', pct: 0.15, nota: 'Trabajador por cuenta propia: cuota mensual + impuesto progresivo sobre ingresos personales.' },
 };
 
-function estimarLocal(ingresos, paisClave, nombrePais, moneda, simbolo) {
+// `_simbolo` se recibe por simetría con la variante que usa IA, pero acá no se
+// usa: el consumidor formatea con `moneda`. Se deja en la firma para no cambiar
+// la aridad en los 3 call sites.
+function estimarLocal(ingresos, paisClave, nombrePais, moneda, _simbolo) {
   const r = REGIMENES[paisClave] || REGIMENES.uy;
   const impuestos = Math.round(ingresos * r.pct);
   return {

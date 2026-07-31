@@ -6,7 +6,6 @@
 // final — cada cuenta guarda sus datos bajo su propia clave de Redis y no ve
 // nada de las demás. Sin cuentaId opera sobre la cuenta 'default', que es
 // exactamente el comportamiento single-tenant de siempre (copia descargable).
-import { randomUUID } from 'node:crypto';
 import { kvGet, kvSet } from './redis.js';
 import { listarOficios } from '../ai/cotizador.js';
 import { listarProfesionales } from './config.js';

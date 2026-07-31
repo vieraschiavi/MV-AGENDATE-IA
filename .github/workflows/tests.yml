@@ -1,0 +1,38 @@
+# Corre la suite de tests y el linter en cada push y en cada pull request.
+# Si algo se rompe, el job falla y el PR queda en rojo.
+#
+# Corre en ubuntu-latest (los runners Linux no tienen el gate de facturación
+# que hoy bloquea build-windows-exe.yml, ver ese archivo).
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # Instalación limpia y reproducible desde package-lock.json.
+      # ELECTRON_SKIP_BINARY_DOWNLOAD: electron/electron-builder son sólo para
+      # empaquetar el instalador de escritorio; los tests no los usan y bajar
+      # ~100 MB de Chromium acá sería tiempo tirado.
+      - name: Instalar dependencias
+        run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+
+      - name: Linter
+        run: npm run lint
+
+      - name: Tests
+        run: npm test

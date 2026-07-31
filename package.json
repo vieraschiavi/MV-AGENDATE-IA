@@ -21,6 +21,7 @@
     "preempaquetar-exe-owner": "node scripts/ofuscar.js --owner",
     "empaquetar-exe-owner": "electron-builder --win --x64 --publish never --config.appId=com.mv.agendateia.owner --config.productName=\"MV Agendate IA (Dueno)\" --config.nsis.artifactName=MV-Agendate-IA-Setup-Dueno.exe --config.nsis.shortcutName=\"MV Agendate IA (Dueno)\" --config.nsis.uninstallDisplayName=\"MV Agendate IA (Dueno)\"",
     "dev": "node --watch src/server.js",
+    "lint": "eslint .",
     "test": "node --test"
   },
   "engines": {
@@ -36,8 +37,12 @@
   "license": "UNLICENSED",
   "private": true,
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "electron": "^43.1.0",
     "electron-builder": "^26.15.3",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "javascript-obfuscator": "^5.5.0"
   },
   "build": {
@@ -48,8 +53,20 @@
     },
     "asar": false,
     "files": [
-      { "from": "dist-protegido/src", "to": "src", "filter": ["**/*"] },
-      { "from": "dist-protegido/electron", "to": "electron", "filter": ["**/*"] },
+      {
+        "from": "dist-protegido/src",
+        "to": "src",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "dist-protegido/electron",
+        "to": "electron",
+        "filter": [
+          "**/*"
+        ]
+      },
       "public/**/*",
       "!public/video/**",
       "!public/descargas/**",
