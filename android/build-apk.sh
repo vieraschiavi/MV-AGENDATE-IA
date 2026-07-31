@@ -11,10 +11,17 @@ BT="$SDK/build-tools/${BT_VERSION:-35.0.0}"
 JAR="$SDK/platforms/android-34/android.jar"
 VC="${VERSION_CODE:-1}"
 VN="${VERSION_NAME:-1.0.0}"
-KEYSTORE="mv-release.keystore"
-STOREPASS="mvagendate2026"
+KEYSTORE="${ANDROID_KEYSTORE:-mv-release.keystore}"
+# La contraseña del keystore NUNCA va en el código: se pasa por entorno.
+#   ANDROID_STOREPASS='...' ./build-apk.sh
+STOREPASS="${ANDROID_STOREPASS:-}"
 
 [ -f "$JAR" ] || { echo "Falta el SDK de Android en $SDK"; exit 1; }
+[ -n "$STOREPASS" ] || {
+  echo "Falta ANDROID_STOREPASS (contraseña del keystore de firma)."
+  echo "Usá:  ANDROID_STOREPASS='tu-clave' ./build-apk.sh"
+  exit 1
+}
 
 rm -rf build && mkdir -p build/gen build/classes build/dex
 

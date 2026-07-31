@@ -347,19 +347,28 @@ function pintarDiasLibres() {
 $('#diasLibres').value = [...diasLibresSet].sort().join(',');
 pintarDiasLibres();
 let OFICIOS = [];
+// Llena un <select> con la API del DOM en vez de innerHTML. Los nombres de
+// oficio/trabajo los escribe el usuario (profesiones propias), así que armar el
+// HTML a mano permitiría inyectar marcado. Con new Option() el texto se trata
+// SIEMPRE como texto, nunca como HTML.
+function llenarSelect(sel, items, aValor, aTexto) {
+  sel.replaceChildren();
+  for (const it of items) sel.add(new Option(aTexto(it), aValor(it)));
+}
+
 function cargarOficiosUI() {
   return fetch('/api/oficios').then((r) => r.json()).then((oficios) => {
     OFICIOS = oficios;
     const sel = $('#oficioProfesional').value;
-    $('#oficioProfesional').innerHTML = oficios.map((o) => `<option value="${o.clave}">${o.nombre}${o.custom ? ' (propio)' : ''}</option>`).join('');
+    llenarSelect($('#oficioProfesional'), oficios, (o) => o.clave, (o) => `${o.nombre}${o.custom ? ' (propio)' : ''}`);
     if (sel) $('#oficioProfesional').value = sel;
-    $('#ipOficio').innerHTML = oficios.map((o) => `<option value="${o.clave}">${o.nombre}</option>`).join('');
+    llenarSelect($('#ipOficio'), oficios, (o) => o.clave, (o) => o.nombre);
   });
 }
 cargarOficiosUI().then(cargarEquipo);
 fetch('/api/paises').then((r) => r.json()).then((paises) => {
   const sel = $('#pais').value;
-  $('#pais').innerHTML = paises.map((p) => `<option value="${p.clave}">${p.nombre} (${p.moneda})</option>`).join('');
+  llenarSelect($('#pais'), paises, (p) => p.clave, (p) => `${p.nombre} (${p.moneda})`);
   $('#pais').value = sel || 'uy';
 });
 

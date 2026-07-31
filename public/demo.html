@@ -212,14 +212,20 @@ $('#formChat').addEventListener('submit', async (e) => {
 
 // ---------- Cotizador ----------
 let oficios = [];
+// Los nombres de oficio/trabajo los escribe el profesional, así que se cargan
+// con la API del DOM: new Option() trata el texto como texto y no como HTML.
+function llenarSelect(sel, items) {
+  sel.replaceChildren();
+  for (const it of items) sel.add(new Option(it.nombre, it.clave));
+}
 async function cargarOficios() {
   oficios = await (await fetch('/api/oficios')).json();
-  $('#selOficio').innerHTML = oficios.map(o => `<option value="${o.clave}">${o.nombre}</option>`).join('');
+  llenarSelect($('#selOficio'), oficios);
   actualizarTrabajos();
 }
 function actualizarTrabajos() {
   const of = oficios.find(o => o.clave === $('#selOficio').value) || oficios[0];
-  $('#selTrabajo').innerHTML = (of?.trabajos || []).map(t => `<option value="${t.clave}">${t.nombre}</option>`).join('');
+  llenarSelect($('#selTrabajo'), of?.trabajos || []);
 }
 $('#selOficio').addEventListener('change', actualizarTrabajos);
 cargarOficios();

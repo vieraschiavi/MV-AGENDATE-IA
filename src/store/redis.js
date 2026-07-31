@@ -37,6 +37,13 @@ export async function kvIncrBy(clave, cantidad) {
   return nuevo;
 }
 
+/** Fija (o refresca) el vencimiento de una clave ya existente, en segundos. */
+export async function kvExpire(clave, segundos) {
+  if (cliente) return await cliente.expire(clave, segundos);
+  if (memoria.has(clave)) setTimeout(() => memoria.delete(clave), segundos * 1000).unref();
+  return 1;
+}
+
 export async function kvDel(clave) {
   if (cliente) return await cliente.del(clave);
   memoria.delete(clave);
