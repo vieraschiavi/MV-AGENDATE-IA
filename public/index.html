@@ -449,6 +449,7 @@ window.MV_EN = {
 };
 </script>
 <script src="/js/i18n.js"></script>
+<script src="/js/seguro.js"></script>
 <script>
 (function () {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -570,7 +571,7 @@ window.MV_EN = {
         <div style="color:var(--sub); font-size:.8rem;">${escapar(r.oficio || '')}${r.oficio ? ' · ' : ''}${fmtFecha(r.fecha)}</div>
       </div>`).join('');
   }
-  function escapar(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  const escapar = window.escaparHtml;
 
   // Selector de estrellas
   let puntaje = 5;
