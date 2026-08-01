@@ -10,7 +10,9 @@
 // pasar por nuestro cobro), el chequeo no hace nada — no se corta nunca.
 import { get as cfg } from './config.js';
 
-const SERVIDOR_CENTRAL = process.env.MV_SERVIDOR_LICENCIAS || '';
+// Función (no constante) para que un test pueda fijar la env var antes de
+// llamar a chequear() sin depender del orden de carga del módulo.
+const servidorCentral = () => process.env.MV_SERVIDOR_LICENCIAS || '';
 const INTERVALO_MS = 6 * 60 * 60 * 1000; // 6 horas
 
 let iaSuspendida = false;
@@ -26,9 +28,10 @@ export function motivoSuspension() {
 
 async function chequear() {
   const licencia = cfg('licenciaLocal');
-  if (!licencia || !SERVIDOR_CENTRAL) return; // no es una copia con suscripción gestionada: nunca se corta nada
+  const servidor = servidorCentral();
+  if (!licencia || !servidor) return; // no es una copia con suscripción gestionada: nunca se corta nada
   try {
-    const url = `${SERVIDOR_CENTRAL}/api/licencia/estado?licencia=${encodeURIComponent(licencia)}`;
+    const url = `${servidor}/api/licencia/estado?licencia=${encodeURIComponent(licencia)}`;
     const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
     if (!r.ok) return; // error del servidor central: no suspendemos por las dudas
     const d = await r.json();
@@ -46,3 +49,7 @@ export function iniciarChequeoLicencia() {
   const t = setInterval(chequear, INTERVALO_MS);
   t.unref?.();
 }
+
+// Expuesto solo para test/estadoLicencia.test.js: dispara un chequeo puntual
+// sin esperar al intervalo de 6 horas.
+export const _internos = { chequear };
