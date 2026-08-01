@@ -305,12 +305,5 @@ línea/rama igual o mayor al promedio del resto del código — ver
 `test/licencias.test.js`, `test/mercadopago.test.js`,
 `test/suscripciones.test.js` y `test/estadoLicencia.test.js`.
 
-**Advertencia de deprecación conocida:** al correr la suite puede aparecer
-`DeprecationWarning: The 'punycode' module is deprecated` (DEP0040). No sale
-de código propio: es una dependencia transitiva de `@anthropic-ai/sdk@0.39.0`
-(vía `node-fetch@2` → `whatwg-url@5` → `tr46@0.0.3`, que todavía usa el
-`punycode` embebido de Node). Versiones más nuevas del SDK (`0.115.x`)
-eliminan esa cadena por completo, pero es un salto de ~76 versiones menores
-sobre la dependencia más sensible del proyecto (el motor de IA del chatbot) —
-no se sube en este PR sin probarla a fondo contra conversaciones reales
-primero. Queda documentado acá en vez de silenciarlo con una flag.
+La suite corre sin ninguna advertencia de deprecación (`node --test` limpio,
+sin `DeprecationWarning` de ningún tipo).
