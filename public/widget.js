@@ -43,6 +43,12 @@
   document.body.appendChild(caja);
 
   const msgs = caja.querySelector('#mv-msgs');
+  // Mismo patrón que public/js/mensajes.js (agregarMensaje), duplicado a
+  // propósito acá: este archivo se embebe en el sitio del profesional con un
+  // único <script src>, así que no puede depender de que también se cargue
+  // /js/mensajes.js. El texto puede venir del cliente final o de la IA —
+  // textContent, nunca innerHTML. Ver test/mensajes.test.js (prueba también
+  // este archivo, no solo el de demo.html).
   function agregar(texto, quien) {
     const d = document.createElement('div');
     d.className = 'mv-m ' + quien;

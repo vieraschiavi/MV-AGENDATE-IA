@@ -98,6 +98,7 @@
 </main>
 
 <script src="/js/seguro.js"></script>
+<script src="/js/mensajes.js"></script>
 <script>
 const $ = (s) => document.querySelector(s);
 const esc = window.escaparHtml;
@@ -188,14 +189,10 @@ function aplicarIdioma() {
   $('#selIdioma').value = idioma;
 }
 
-function agregar(texto, quien) {
-  const div = document.createElement('div');
-  div.className = 'msg ' + quien;
-  div.textContent = texto;
-  $('#mensajes').appendChild(div);
-  $('#mensajes').scrollTop = $('#mensajes').scrollHeight;
-  return div;
-}
+// Pintado de mensajes centralizado en public/js/mensajes.js (con test de
+// regresión XSS en test/mensajes.test.js) — el texto puede venir del cliente
+// final o de la IA, nunca se inserta como HTML.
+function agregar(texto, quien) { return window.agregarMensaje($('#mensajes'), texto, 'msg ' + quien); }
 
 aplicarIdioma();
 agregar(T().saludo, 'bot');
