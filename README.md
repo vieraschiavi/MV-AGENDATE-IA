@@ -273,6 +273,44 @@ costo de API aparte, sin markup).
 
 ## 8. Tests
 
+Corren con `node --test` (nativo, sin framework externo) y **no necesitan
+nada más que Node instalado** — sin `.env`, sin clave de IA, sin Redis real
+(hay un fallback en memoria en `src/store/redis.js`) y sin `data/` previo
+(se crea solo si algún test lo necesita, y no se versiona). En una máquina
+limpia, recién clonado el repo:
+
 ```bash
-npm test
+git clone https://github.com/vieraschiavi/mv-agendate-ia.git
+cd mv-agendate-ia
+npm ci            # o npm install si no hay package-lock.json fresco
+npm test          # node --test — corre los ~110 tests de test/*.test.js
+npm run lint      # eslint . — 0 errores esperados
 ```
+
+Sin preguntarle a nadie, sin pedir credenciales: los tests que tocan un
+servicio externo (MercadoPago, Nominatim/geocoding, los proveedores de IA)
+mockean `fetch` en vez de pegarle a la red real — ver el patrón
+`conFetchMock()` en `test/geocoding.test.js`, `test/mercadopago.test.js` y
+`test/estadoLicencia.test.js`.
+
+**Cobertura real** (usa el reporter nativo de Node, no un paquete aparte):
+
+```bash
+node --test --experimental-test-coverage
+```
+
+Los módulos que tocan dinero (`licencias.js`, `mercadopago.js`,
+`suscripciones.js`, `estadoLicencia.js`) se mantienen con cobertura de
+línea/rama igual o mayor al promedio del resto del código — ver
+`test/licencias.test.js`, `test/mercadopago.test.js`,
+`test/suscripciones.test.js` y `test/estadoLicencia.test.js`.
+
+**Advertencia de deprecación conocida:** al correr la suite puede aparecer
+`DeprecationWarning: The 'punycode' module is deprecated` (DEP0040). No sale
+de código propio: es una dependencia transitiva de `@anthropic-ai/sdk@0.39.0`
+(vía `node-fetch@2` → `whatwg-url@5` → `tr46@0.0.3`, que todavía usa el
+`punycode` embebido de Node). Versiones más nuevas del SDK (`0.115.x`)
+eliminan esa cadena por completo, pero es un salto de ~76 versiones menores
+sobre la dependencia más sensible del proyecto (el motor de IA del chatbot) —
+no se sube en este PR sin probarla a fondo contra conversaciones reales
+primero. Queda documentado acá en vez de silenciarlo con una flag.
