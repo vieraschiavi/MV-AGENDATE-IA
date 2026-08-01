@@ -23,87 +23,82 @@ export const TEMAS_AYUDA = [
   {
     claves: /(empezar|comenzar|arranc|instal|primer|inicio|setup|api key|clave de ia|anthropic)/,
     titulo: 'Primeros pasos',
-    texto: 'Para arrancar: 1) Abrí /config.html y pegá tu API key de Claude (se consigue en console.anthropic.com — sin ella el programa funciona en modo demo). 2) Elegí tu oficio y cargá tu nombre. 3) Ajustá tu jornada, almuerzo y días libres. 4) Probá el chatbot desde la misma página de configuración o en /demo.html. Todo se aplica al instante, sin reiniciar.'
+    texto: 'Para arrancar: 1) Entrá a Configuración y pegá tu clave de Claude, la IA que usa el asistente (se consigue gratis en la web de Anthropic — sin ella el programa igual funciona en modo demo, para que pruebes todo). 2) Elegí tu oficio y cargá tu nombre. 3) Ajustá tu horario de trabajo, tu almuerzo y tus días libres. 4) Probá el chatbot ahí mismo en Configuración, o en la Demo. Todo se aplica al toque, no hace falta reiniciar nada.'
   },
   {
     claves: /(precio|cotiz|presupuesto|catalogo|catálogo|tarifa|lista de precios|oficio)/,
     titulo: 'Cotizador y precios',
-    texto: 'El agente cotiza SOLO con tu catálogo de precios (src/data/oficios.json — 18 precargados y podés crear tu propia profesión desde /config.html, con la moneda de tu país). Nunca inventa un número: mano de obra + materiales + traslado. Ajustá los valores del catálogo a tus precios reales antes de vender. También podés cotizar a mano desde la demo o al crear una cita en /agenda.html.'
+    texto: 'El asistente cotiza SOLO con tu propia lista de precios (hay 18 oficios ya cargados, y podés crear el tuyo desde Configuración, con la moneda de tu país). Nunca inventa un número: siempre calcula mano de obra, materiales y traslado por separado. Antes de empezar a atender clientes, revisá que los precios cargados sean los tuyos de verdad. También podés probar una cotización a mano desde la Demo.'
   },
   {
     claves: /(agenda|horario|traslado|viaje|cita|turno|almuerzo|descanso|d[ií]a libre)/,
     titulo: 'Agenda con traslados reales',
-    texto: 'El motor de agenda propone horarios considerando el tiempo de viaje estimado hacia y desde las citas vecinas (Haversine + velocidad urbana), y respeta tu jornada, almuerzo y días libres de /config.html. En /agenda.html gestionás las citas en vista Tabla o Tablero (kanban por estado), con exportación CSV/Excel. Cada cita guarda coordenadas: si el cliente comparte su ubicación de WhatsApp se usan directo; si escribe la dirección, se geocodifica sola (gratis, Nominatim/OSM).'
+    texto: 'El asistente propone horarios teniendo en cuenta cuánto tardás en llegar de una cita a la otra, y siempre respeta tu horario de trabajo, tu almuerzo y tus días libres (los cargás en Configuración). En Agenda ves tus citas en lista o en tablero, y podés exportarlas a Excel. Si el cliente te comparte su ubicación por WhatsApp, se usa directo; si te escribe la dirección con palabras, el sistema la ubica solo, sin que hagas nada.'
   },
   {
     claves: /(whatsapp|meta|webhook|verify)/,
     titulo: 'Conectar WhatsApp',
-    texto: 'En Meta for Developers creá una app de WhatsApp Business, y cargá Token, Phone Number ID y Verify Token en /config.html. Después apuntá el webhook de Meta a https://tu-dominio/webhook/whatsapp con el mismo verify token, y probá la conexión con el botón "Probar conexión de WhatsApp". Ojo: Meta solo permite texto libre dentro de las 24 h del último mensaje del cliente (afecta el aviso de retraso). Guía completa en docs/CANALES.md.'
+    texto: 'Para que el asistente atienda tu WhatsApp, primero necesitás una cuenta de WhatsApp Business (es gratis y se crea en unos minutos desde la web de Meta/Facebook para desarrolladores). Con eso listo, en Configuración → Canales pegás los datos que te dio Meta y apretás "Probar conexión" para confirmar que quedó bien conectado. Un detalle: WhatsApp solo deja mandar mensajes libres dentro de las 24 horas después de que el cliente te escribió por última vez — por eso a veces el aviso de retraso puede no llegarle si pasó mucho tiempo sin hablar.'
   },
   {
     claves: /(voz|voice|tel[eé]fono|llama|twilio|deepgram|piper|elevenlabs)/,
     titulo: 'ChatVoice (teléfono)',
-    texto: 'Hay dos vías: la rápida usa Twilio <Gather> + voz neural (solo requiere Account SID/Auth Token de Twilio, y podés comprar un número desde /config.html sin entrar a Twilio); la premium agrega Deepgram (voz en tiempo real) y habla con Piper — voz es_AR-daniela rioplatense, gratis y offline (se instala con promo/instalar-voz.sh) — o ElevenLabs si querés voz clonada. La premium necesita servidor persistente (PC/VPS); en Vercel funciona la vía rápida.'
+    texto: 'Para que el asistente también atienda llamadas, comprás un número de teléfono directo desde Configuración, sin tener que entrar a ningún otro sitio — hay un botón para eso. Existe además una versión con voz más natural y en tiempo real, pero esa necesita que el programa esté corriendo en tu computadora o un servidor propio: en la versión online gratuita funciona la versión estándar, que ya suena bien.'
   },
   {
     claves: /(retraso|demora|tarde|aviso)/,
     titulo: 'Aviso automático de retraso',
-    texto: 'Si marcás un trabajo "en curso" y el sistema estima que vas a llegar 30+ minutos tarde a la próxima cita (fin estimado + traslado real), le escribe solo por WhatsApp al próximo cliente disculpando la demora. En PC corre cada 5 minutos; en Vercel hace falta un cron externo gratuito (cron-job.org o GitHub Actions, ver docs/CANALES.md) porque los Cron Jobs nativos de Vercel Hobby están limitados a 1 vez por día. También podés forzar la revisión desde /panel.html.'
+    texto: 'Si marcás un trabajo como "en curso" y el sistema calcula que vas a llegar 30 minutos tarde o más a tu próxima cita, le avisa solo por WhatsApp al próximo cliente, disculpándose por la demora — no tenés que hacer nada, pasa en segundo plano. También podés forzar la revisión cuando quieras desde el Panel del día.'
   },
   {
     claves: /(dashboard|estad[ií]stica|facturaci[oó]n|reporte|anal[ií]tica|export|excel|csv|pdf)/,
     titulo: 'Dashboards y exportaciones',
-    texto: '/dashboards.html muestra trabajos por día/semana/mes/año, comparativas mes a mes y año contra año, facturación total y ticket promedio, con filtros por año, mes, oficio, estado y profesional. Todo se exporta a CSV/Excel (agenda y clientes) respetando los filtros; cada cita tiene además una ficha imprimible/PDF.'
+    texto: 'En Dashboards ves cuántos trabajos hiciste por día, semana, mes o año, comparado con otros períodos, cuánto facturaste y el ticket promedio, con filtros por oficio, estado o profesional. Podés exportar todo a Excel, y cada cita tiene una ficha que podés imprimir o guardar como PDF.'
   },
   {
     claves: /(cliente|crm|ficha|direcci[oó]n|receptor)/,
     titulo: 'CRM de clientes',
-    texto: 'En /clientes.html cada cliente tiene su página con teléfono, email, dirección (con confirmación y geocoding automático), quién suele atender si no es el titular, notas y el historial completo de trabajos. El agente confirma la dirección y el receptor en cada conversación antes de cerrar una cita, y actualiza la ficha solo.'
+    texto: 'Cada cliente tiene su propia ficha con teléfono, email, dirección (confirmada y ubicada automáticamente), quién suele atender si no es el titular, notas y el historial completo de trabajos que le hiciste. El asistente confirma la dirección y quién recibe en cada conversación, así la ficha se mantiene actualizada sola, sin que la toques.'
   },
   {
     claves: /(equipo|varios|multi|profesionales|trabajadores|estudio)/,
     titulo: 'Varios profesionales (equipo)',
-    texto: 'Si en la cuenta trabaja más de un profesional (ej. un estudio con 3 electricistas), cargalos en /config.html → "Equipo": cada uno con su oficio, jornada y días libres. El chatbot identifica cuál corresponde antes de cotizar, cada uno agenda sobre su propia agenda (sin mezclar traslados) y los dashboards filtran por profesional. Con uno solo, nada cambia.'
+    texto: 'Si en tu negocio trabaja más de una persona (por ejemplo, un estudio con 3 electricistas), cargalos en Configuración → Equipo, cada uno con su oficio, su horario y sus días libres. El chatbot identifica solo a quién le corresponde cada trabajo antes de cotizar, y cada uno tiene su propia agenda, sin mezclarse entre sí. Si trabajás solo, no necesitás tocar nada acá.'
   },
   {
     claves: /(plan|comprar|pago|mercado ?pago|licencia|suscripci[oó]n|cu[aá]nto (sale|cuesta) el programa|full|b[aá]sico)/,
     titulo: 'Planes y compra',
-    texto: 'Dos planes de pago único: Básico USD 129 (agenda + cotizador + CRM + dashboards + app PC/Android) y Full USD 299 (todo lo anterior + chatbot y ChatVoice con IA + aviso de retraso), más una opción SaaS online por USD 15/mes (cuenta en la nube, sin instalar nada, 14 días de prueba gratis). Se compra en /comprar.html por MercadoPago (tarjeta/saldo, checkout seguro). El plan Full usa tus propias cuentas de Claude/WhatsApp/Twilio: ese costo de uso (típicamente USD 20-50/mes según volumen) corre aparte, directo a esos proveedores, sin markup.'
+    texto: 'Dos planes de pago único: Básico USD 129 (agenda + cotizador + CRM + dashboards + la app para PC y Android) y Full USD 299 (todo lo de Básico, más el chatbot y el asistente de teléfono con IA, y el aviso automático de retraso), además de la opción de usarlo online sin instalar nada por USD 15 al mes, con 14 días gratis para probarlo. Todo se paga por MercadoPago, con tarjeta o el medio que prefieras. Con el plan Full, el costo de que la IA converse por WhatsApp o teléfono corre aparte (normalmente entre USD 20 y 50 por mes, según cuánto lo uses) — se lo pagás directo a esos proveedores, el programa no te cobra nada extra por eso.'
   },
   {
     claves: /(android|apk|celular|m[oó]vil|pwa|app|play ?store)/,
     titulo: 'App Android / PC',
-    texto: 'El mismo servidor sirve una PWA instalable como app (sin Play Store): desde el celular, abrí el sitio y "Agregar a pantalla de inicio". También hay scripts para generar el APK (movil/construir-apk-gradle.sh). En PC corre con npm start; la primera vez te pide la API key por consola.'
-  },
-  {
-    claves: /(vercel|deploy|nube|dominio|hosting|servidor)/,
-    titulo: 'Deploy en Vercel',
-    texto: 'El repo ya trae vercel.json (estático public/ + función serverless api/index.js). Conectá el repo en vercel.com, configurá las variables de entorno (o cargá todo después en /config.html) y agregá Redis de Upstash para que los datos persistan entre invocaciones serverless. Para el aviso de retraso, sumá un cron externo gratuito (cron-job.org o GitHub Actions) apuntando a /api/agenda/chequear-retrasos: los Cron Jobs nativos de Vercel Hobby están limitados a 1 vez por día. El ChatVoice premium (tiempo real) requiere servidor persistente; el resto funciona completo en Vercel.'
+    texto: 'Podés usar el programa desde el celular como si fuera una app, sin bajarla de Play Store: entrá al sitio desde el navegador del celular y elegí "Agregar a pantalla de inicio". También hay una versión instalable para PC.'
   },
   {
     claves: /(pa[ií]s|moneda|d[oó]lar|usd|impuesto|monotributo|iva|bps|afip|sat|sunat|neto|latam|argentina|m[eé]xico|chile|colombia|per[uú]|brasil)/,
     titulo: 'País, moneda e impuestos (LATAM)',
-    texto: 'En /config.html → "País y moneda" elegís tu país de LATAM: la moneda de cotización y facturación se ajusta sola (o podés facturar en USD). En Dashboards, el estimador "Neto estimado" usa IA para calcular tu carga impositiva según la ley de tu país (régimen simplificado, aportes) y cuánto te queda neto — orientativo, no reemplaza a tu contador. Y en "Mi profesión / precios de mercado" la IA investiga qué se cobra en tu país por cada trabajo y te sugiere los precios.'
+    texto: 'En Configuración elegís tu país de LATAM: la moneda que usás para cotizar y facturar se ajusta sola (o podés facturar en dólares si preferís). En Dashboards, el asistente puede estimarte cuánto te queda neto según los impuestos de tu país — es solo orientativo, no reemplaza a tu contador. Y en la sección de tu profesión, la IA puede investigar qué cobran otros profesionales en tu zona y sugerirte precios.'
   },
   {
     claves: /(mi profesi[oó]n|crear (oficio|profesi[oó]n)|no est[aá] (en la lista|mi))/,
     titulo: 'Crear tu propia profesión',
-    texto: 'El catálogo sirve para cualquier profesión u oficio con agenda: médicos, abogados, escribanos, psicólogos, talleres, estética, etc. Hay 18 precargadas, y en /config.html → "Mi profesión / precios de mercado" creás la tuya con sus tipos de trabajo, duraciones y precios (marcando "honorarios" si sos un servicio profesional sin materiales). La IA puede sugerirte los precios del mercado de tu país.'
+    texto: 'El programa sirve para cualquier oficio o profesión con agenda: médicos, abogados, escribanos, psicólogos, talleres, estética, y lo que sea. Ya vienen 18 profesiones cargadas, y en Configuración podés crear la tuya con tus propios trabajos, tiempos y precios (marcá "honorarios" si cobrás por tu tiempo profesional, sin materiales de por medio). La IA también te puede sugerir precios de mercado de tu país si no sabés por dónde arrancar.'
   },
   {
     claves: /(aprobar|aprobaci[oó]n|sugerido|confirmar (el )?precio|precio directo)/,
     titulo: 'Aprobación de cotizaciones',
-    texto: 'El precio que calcula el asistente es un SUGERIDO: por defecto el chatbot no le dice ningún monto al cliente hasta que vos lo apruebes. Cada cotización pendiente te llega por WhatsApp y aparece en el Panel del día → "Cotizaciones por aprobar", donde la confirmás tal cual o ajustás el monto (o la rechazás para atenderla vos directo). Al aprobar, si la charla fue por WhatsApp el cliente recibe el precio confirmado al instante. Si preferís que el bot dé el precio directo sin pasar por vos, cambialo en /config.html → "Aprobación de cotizaciones".'
+    texto: 'Por defecto, el asistente NO le dice el precio al cliente hasta que vos lo apruebes. Cada cotización pendiente te llega avisada por WhatsApp y aparece en el Panel del día, en "Cotizaciones por aprobar" — ahí la confirmás tal cual, la ajustás, o la rechazás para atenderla vos mismo. Al aprobarla, si la charla fue por WhatsApp, el cliente recibe el precio confirmado al instante. Si preferís que el asistente dé el precio directo sin pedirte permiso cada vez, podés cambiar eso en Configuración.'
   },
   {
     claves: /(cuenta online|saas|iniciar sesi[oó]n|registrarme|login|sesi[oó]n|trial|prueba gratis|sin instalar)/,
     titulo: 'Cuenta online (SaaS)',
-    texto: 'Además de la versión descargable (pago único), podés usar MV Agendate IA como servicio online: en /app → "Cuenta online" creás tu cuenta con email y contraseña, con 14 días de prueba gratis y después USD 15/mes por MercadoPago. Tus clientes, citas y dashboards quedan privados y aislados de cualquier otra cuenta, y tu configuración también es propia: en /config.html (con tu sesión iniciada) definís TU profesión, país/moneda, precios, horarios y equipo sin tocar a nadie más. Hasta podés conectar tu propio WhatsApp Business, tu número de teléfono (ChatVoice/Twilio) y tu API key de Claude: los mensajes y llamadas que lleguen a TUS números los atiende TU asistente, con tu catálogo, y agenda en tus datos.'
+    texto: 'Además de instalarlo, podés usar MV Agendate IA directamente desde el navegador sin instalar nada: te registrás con tu email, tenés 14 días gratis para probarlo, y después seguís pagando una cuota mensual chica por MercadoPago. Tus clientes, tus citas, tus dashboards y tu configuración quedan privados — solo vos los ves. Y podés conectar tu propio WhatsApp y tu propia clave de IA igual que en la versión instalada, para que TU asistente atienda TU número.'
   },
   {
     claves: /(seguridad|admin|clave de administraci[oó]n|proteger)/,
     titulo: 'Seguridad',
-    texto: 'Definí una clave de administración en /config.html → Seguridad: protege la configuración, el panel y las acciones de escritura (se pide como X-Admin-Key). Los secretos (API keys) nunca se muestran de vuelta, solo si están configurados. Para vender copias con tu clave embebida y oculta: npm run embeber-clave.'
+    texto: 'Podés poner una contraseña extra en Configuración → Seguridad para que nadie más pueda entrar a cambiar tus datos o tu configuración, aunque tenga acceso a tu computadora o al link. Tus claves y contraseñas nunca se vuelven a mostrar en pantalla una vez guardadas, por tu seguridad.'
   }
 ];
 
@@ -115,7 +110,7 @@ Tu única fuente es esta guía oficial:
 
 ${guia}
 
-Reglas: respondé en español rioplatense (vos/tenés), claro y concreto, en 2-6 oraciones; indicá siempre la pantalla o archivo exacto (ej: /config.html). Si la duda no está cubierta por la guía, decilo con honestidad y sugerí escribir por el buzón de contacto (botón "Contacto" abajo a la derecha). No inventes funciones que el programa no tiene. No des asesoramiento ajeno al programa.`;
+Reglas: respondé en español rioplatense (vos/tenés), claro y concreto, en 2-6 oraciones, sin tecnicismos — quien pregunta es el profesional que compró o está probando el programa, no un programador. Indicá siempre en qué pantalla del menú lo encuentra (ej: "en Configuración"), nunca nombres de archivo ni de código. Si la duda no está cubierta por la guía, decilo con honestidad y sugerí escribir por el buzón de contacto (botón "Contacto" abajo a la derecha). No inventes funciones que el programa no tiene. No des asesoramiento ajeno al programa.`;
 }
 
 // ---------- Modo demo (sin API key): matcheo por palabras clave ----------
@@ -123,8 +118,8 @@ Reglas: respondé en español rioplatense (vos/tenés), claro y concreto, en 2-6
 function responderAyudaDemo(texto) {
   const t = String(texto ?? '').toLowerCase();
   const tema = TEMAS_AYUDA.find((x) => x.claves.test(t));
-  if (tema) return `${tema.texto}\n\n(Respuesta de la guía local — cargá tu API key de Claude en /config.html para respuestas con IA.)`;
-  return 'Puedo ayudarte con: primeros pasos, cotizador y precios, agenda y traslados, WhatsApp, ChatVoice, aviso de retraso, dashboards, CRM de clientes, equipo multi-profesional, planes y compra, app Android, deploy en Vercel y seguridad. Contame tu duda con alguna de esas palabras, o usá el botón "Contacto" para escribirnos directo.';
+  if (tema) return `${tema.texto}\n\n(Respuesta de la guía local — cargá tu clave de Claude en Configuración para respuestas con IA.)`;
+  return 'Puedo ayudarte con: primeros pasos, cotizador y precios, agenda y traslados, WhatsApp, ChatVoice (teléfono), aviso de retraso, dashboards, CRM de clientes, equipo con varios profesionales, planes y compra, app para Android/PC y seguridad. Contame tu duda con alguna de esas palabras, o usá el botón "Contacto" para escribirnos directo.';
 }
 
 // ---------- Sesiones ----------
