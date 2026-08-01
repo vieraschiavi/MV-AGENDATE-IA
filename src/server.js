@@ -186,7 +186,8 @@ app.post('/api/ayuda', limitar({ nombre: 'ayuda', max: 20, ventanaSeg: 60,
 
 // --- Cotizador (formulario directo, sin pasar por el chat) ---
 app.get('/api/oficios', (_req, res) => res.json(listarOficios()));
-app.post('/api/cotizar', (req, res) => {
+app.post('/api/cotizar', limitar({ nombre: 'cotizar', max: 30, ventanaSeg: 60,
+  mensaje: 'Muchas cotizaciones seguidas.' }), (req, res) => {
   const r = cotizar({ oficio: cfg('oficioProfesional') || undefined, ...req.body });
   res.status(r.error ? 400 : 200).json(r);
 });
@@ -274,24 +275,32 @@ app.post('/api/impuestos/estimar', limitar({ nombre: 'impuestos', max: 10, venta
 });
 
 // --- Geocoding gratuito (Nominatim/OSM): dirección de texto ↔ coordenadas ---
-app.get('/api/geocoding', async (req, res) => {
+// Nominatim (el geocoder gratuito que usamos) exige respetar su límite de uso
+// del lado del cliente: como máximo ~1 req/seg, y pide no automatizar ráfagas.
+// Si no lo limitamos acá, cualquiera puede hacer que NUESTRA IP termine
+// bloqueada por Nominatim para TODOS los profesionales que usan el programa.
+app.get('/api/geocoding', limitar({ nombre: 'geocoding', max: 20, ventanaSeg: 60,
+  mensaje: 'Muchas búsquedas de dirección seguidas.' }), async (req, res) => {
   const r = await geocodificar(req.query.direccion);
   res.status(r.ok ? 200 : 400).json(r);
 });
-app.get('/api/geocoding/inverso', async (req, res) => {
+app.get('/api/geocoding/inverso', limitar({ nombre: 'geocoding-inverso', max: 20, ventanaSeg: 60,
+  mensaje: 'Muchas búsquedas de dirección seguidas.' }), async (req, res) => {
   const r = await geocodificarInverso(Number(req.query.lat), Number(req.query.lng));
   res.status(r.ok ? 200 : 400).json(r);
 });
 
 // --- Motor de agenda: horarios propuestos considerando traslados y descansos ---
-app.post('/api/agenda/proponer', (req, res) => {
+app.post('/api/agenda/proponer', limitar({ nombre: 'agenda-proponer', max: 30, ventanaSeg: 60,
+  mensaje: 'Muchas búsquedas de horario seguidas.' }), (req, res) => {
   const r = proponerHorarios(req.body ?? {});
   res.json(r);
 });
 
 // --- Voz del profesional (TTS) — Piper es_AR-daniela (rioplatense, gratis). ---
 app.get('/api/voz/estado', (_req, res) => res.json({ disponible: piperDisponible(), voz: 'es_AR-daniela (rioplatense)' }));
-app.get('/api/voz', async (req, res) => {
+app.get('/api/voz', limitar({ nombre: 'voz', max: 15, ventanaSeg: 60,
+  mensaje: 'Muchos audios seguidos.' }), async (req, res) => {
   const texto = String(req.query?.texto || '').slice(0, 900).trim();
   if (!texto) return res.status(400).json({ error: 'Falta el parámetro texto.' });
   if (!piperDisponible()) return res.status(503).json({ error: 'La voz Piper no está instalada. Ejecutá promo/instalar-voz.sh' });
@@ -560,7 +569,8 @@ app.post('/api/cotizaciones/:id/resolver', adminOCuenta, async (req, res) => {
 app.get('/api/clientes', async (req, res) => res.json(await trabajos.listarClientes(req.cuentaId)));
 app.get('/api/cliente/:id', async (req, res) => { const c = await trabajos.obtenerCliente(req.params.id, req.cuentaId); res.status(c ? 200 : 404).json(c || { error: 'No encontrado' }); });
 app.post('/api/cliente', adminOCuenta, async (req, res) => res.json({ ok: true, cliente: await trabajos.guardarCliente(req.body ?? {}, req.cuentaId) }));
-app.post('/api/cliente/:id/confirmar-direccion', async (req, res) => {
+app.post('/api/cliente/:id/confirmar-direccion', limitar({ nombre: 'confirmar-direccion', max: 20, ventanaSeg: 60,
+  mensaje: 'Muchas confirmaciones seguidas.' }), async (req, res) => {
   const direccionInformada = req.body?.direccionInformada;
   let lat, lng;
   if (direccionInformada) {
@@ -623,7 +633,8 @@ app.get('/api/tokens/catalogo', (_req, res) => res.json(catalogoConEstado()));
 
 // ==================== Compra / pagos / licencias / descarga ====================
 app.get('/api/planes', (_req, res) => res.json({ planes: lic.PLANES, medios: lic.MEDIOS, mercadopago: mercadopagoActivo() }));
-app.post('/api/comprar', async (req, res) => {
+app.post('/api/comprar', limitar({ nombre: 'comprar', max: 10, ventanaSeg: 300,
+  mensaje: 'Demasiados pedidos seguidos.' }), async (req, res) => {
   if (await esBot(req)) return res.status(403).json({ error: 'Acceso denegado.' });
   // Único medio de pago: MercadoPago. Nunca simulamos la compra: o redirigimos
   // al checkout real de MercadoPago (init_point), o devolvemos un error claro.
@@ -735,7 +746,8 @@ app.post('/api/creditos/recargar', adminOCuenta, async (req, res) => {
 
 // --- Reseñas del producto (web pública): dejar, listar (aprobadas) y moderar ---
 app.get('/api/resenas', async (_req, res) => res.json(await resenas.resenasPublicas()));
-app.post('/api/resenas', async (req, res) => {
+app.post('/api/resenas', limitar({ nombre: 'resenas', max: 5, ventanaSeg: 600,
+  mensaje: 'Ya nos dejaste varias reseñas seguidas.' }), async (req, res) => {
   if (await esBot(req)) return res.status(403).json({ ok: false, error: 'Acceso denegado.' });
   const r = await resenas.crearResena(req.body ?? {});
   res.status(r.ok ? 200 : 400).json(r);
