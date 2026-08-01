@@ -43,6 +43,7 @@ import { piperDisponible, sintetizarWav } from './channels/tts-piper.js';
 import { checkBotId } from 'botid/server';
 import { iniciarChequeoLicencia, iaHabilitada, motivoSuspension } from './store/estadoLicencia.js';
 import { limitar } from './store/limites.js';
+import { escucharEnPuertoLibre, abrirNavegador } from './arranque.js';
 
 // Protección antibots (Vercel BotID) para los endpoints públicos más caros/abusables
 // (Claude, checkout). Sólo funciona desplegado en Vercel; si falla la verificación
@@ -840,20 +841,36 @@ if (process.env.VERCEL) {
   const intervaloRetrasos = setInterval(() => { chequearRetrasosDeHoy().catch((e) => console.error('[aviso-retraso]', e.message)); }, 5 * 60 * 1000);
   intervaloRetrasos.unref?.();
 
-  const server = app.listen(PORT, () => {
-    console.log(`\n🛠️  MV Agendate IA escuchando en http://localhost:${PORT}`);
-    console.log(`   Modo: ${enModoDemo() ? 'DEMO (sin API key — cargala en /config.html)' : 'IA real (Claude)'}`);
-    console.log('   Configuración/API key: /config.html');
-    console.log('   Landing:  /            Demo chat+voz: /demo.html      Panel: /panel.html');
-    console.log('   Webhooks: /webhook/whatsapp  /webhook/voz  /webhook/voz-premium');
-    const ips = ipsLocales();
-    if (ips.length) {
-      console.log('\n   📱 Para usar la app en el CELULAR (sin instalar nada), conectá el teléfono');
-      console.log('      a la MISMA red Wi-Fi y abrí en Chrome del celular:');
-      for (const ip of ips) console.log(`        →  http://${ip}:${PORT}/movil`);
-      console.log('      Luego menú ⋮ → "Agregar a pantalla de inicio" y queda como app.');
-    }
-    montarVozPremium(server);
-    console.log();
-  });
+  // Si el puerto está ocupado por otro programa, se usa el siguiente libre en
+  // vez de morir con un EADDRINUSE sin atrapar (ver src/arranque.js).
+  escucharEnPuertoLibre(app, PORT)
+    .then(({ server, puerto }) => {
+      const url = `http://localhost:${puerto}`;
+      console.log(`\n🛠️  MV Agendate IA escuchando en ${url}`);
+      if (puerto !== Number(PORT)) {
+        console.log(`   (el ${PORT} estaba ocupado por otro programa)`);
+      }
+      console.log(`   Modo: ${enModoDemo() ? 'DEMO (sin API key — cargala en /config.html)' : 'IA real (Claude)'}`);
+      console.log('   Configuración/API key: /config.html');
+      console.log('   Landing:  /            Demo chat+voz: /demo.html      Panel: /panel.html');
+      console.log('   Webhooks: /webhook/whatsapp  /webhook/voz  /webhook/voz-premium');
+      const ips = ipsLocales();
+      if (ips.length) {
+        console.log('\n   📱 Para usar la app en el CELULAR (sin instalar nada), conectá el teléfono');
+        console.log('      a la MISMA red Wi-Fi y abrí en Chrome del celular:');
+        for (const ip of ips) console.log(`        →  http://${ip}:${puerto}/movil`);
+        console.log('      Luego menú ⋮ → "Agregar a pantalla de inicio" y queda como app.');
+      }
+      montarVozPremium(server);
+      console.log();
+      // El navegador lo abre el servidor, no el lanzador .bat: hasta acá no se
+      // sabía el puerto final. El .bat abría siempre el 3000 y, si ese puerto
+      // era de otra app, le mostraba esa otra app al cliente.
+      if (process.env.MV_ABRIR_NAVEGADOR === '1') abrirNavegador(url);
+    })
+    .catch((e) => {
+      console.error(`\n[X] No se pudo abrir el servidor en el puerto ${PORT}: ${e.message}`);
+      console.error('    Probá cerrar otros programas o reiniciar la computadora.\n');
+      process.exit(1);
+    });
 }
