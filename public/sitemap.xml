@@ -2,6 +2,8 @@
 <!-- Si usás dominio propio, reemplazá mv-agendate-ia.vercel.app -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://mv-agendate-ia.vercel.app/</loc><priority>1.0</priority></url>
+  <url><loc>https://mv-agendate-ia.vercel.app/pt/</loc><priority>0.9</priority></url>
+  <url><loc>https://mv-agendate-ia.vercel.app/en/</loc><priority>0.9</priority></url>
   <url><loc>https://mv-agendate-ia.vercel.app/online.html</loc><priority>0.9</priority></url>
   <url><loc>https://mv-agendate-ia.vercel.app/demo.html</loc><priority>0.9</priority></url>
   <url><loc>https://mv-agendate-ia.vercel.app/comprar.html</loc><priority>0.9</priority></url>
