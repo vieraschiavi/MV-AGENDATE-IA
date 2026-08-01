@@ -49,10 +49,11 @@
   </div>
   <div id="cont"></div>
 </div>
+<script src="/js/seguro.js"></script>
 <script>
 const $ = (s) => document.querySelector(s);
 const stars = (n) => '★★★★★☆☆☆☆☆'.slice(5 - n, 10 - n);
-const esc = (s) => { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; };
+const esc = window.escaparHtml;
 function headers() { const h = { 'Content-Type': 'application/json' }; const k = $('#admin').value.trim(); if (k) h['X-Admin-Key'] = k; return h; }
 function aviso(m, ok) { const a = $('#aviso'); a.textContent = m; a.style.color = ok ? '#1a7f37' : '#c0392b'; }
 

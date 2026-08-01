@@ -97,8 +97,10 @@
   </div>
 </main>
 
+<script src="/js/seguro.js"></script>
 <script>
 const $ = (s) => document.querySelector(s);
+const esc = window.escaparHtml;
 let sessionId = null;
 
 // --- Multiidioma es/pt (la web y la demo entienden ambos, igual que el chatbot) ---
@@ -304,7 +306,7 @@ $('#formCot').addEventListener('submit', async (e) => {
     '<small>' + etiqueta + ': ' + sim + d.desglose.mano_obra +
       (d.tipo_cobro === 'honorarios' && !d.desglose.materiales ? '' : ' · ' + T().labMat + ': ' + sim + d.desglose.materiales) +
       ' · ' + T().labTras + ': ' + sim + d.desglose.traslado + '</small>' +
-    '<small>' + d.trabajo + ' (' + d.oficio + ')</small>';
+    '<small>' + esc(d.trabajo) + ' (' + esc(d.oficio) + ')</small>';
 
   // Horarios de ejemplo, para mostrar el motor de agenda con traslados.
   const hoy = new Date();

@@ -60,8 +60,10 @@ window.MV_EN = {
 };
 </script>
 <script src="/js/i18n.js"></script>
+<script src="/js/seguro.js"></script>
 <script>
 const $ = (s) => document.querySelector(s);
+const esc = window.escaparHtml;
 const _pt = () => (window.mvIdioma && window.mvIdioma() === 'pt');
 const VERNOMBRE = { pc: '💻 PC / Servidor', apk: '📱 Android (APK)', ios: '🍏 iOS', todas: '📦 Todas las versiones' };
 // Textos dinámicos del estado del pedido, según idioma.
@@ -115,13 +117,16 @@ async function poll() {
   $('#rTot').textContent = d.total_usd ? ('USD ' + d.total_usd) : '—';
 
   if (d.estado === 'pagado' && d.token) {
+    // id (parámetro de la URL) y los campos de d vienen del backend, pero id
+    // en particular lo elige quien arma el link — se escapa igual que
+    // cualquier otro dato ajeno antes de meterlo en innerHTML.
     $('#estadoBox').innerHTML =
-      '<div class="estado ok"><strong>' + TX().confirmado + '</strong><br>' + TX().licencia + ': <code>' + d.licencia + '</code></div>' +
-      '<a class="btn" href="/descargar/' + d.token + '">' + TX().descargar + (VERNOMBRE[d.version] || TX().software) + '</a>' +
-      '<div class="box">' + TX().guarda + ' (<code>' + id + '</code>).</div>';
+      '<div class="estado ok"><strong>' + TX().confirmado + '</strong><br>' + TX().licencia + ': <code>' + esc(d.licencia) + '</code></div>' +
+      '<a class="btn" href="/descargar/' + encodeURIComponent(d.token) + '">' + TX().descargar + (VERNOMBRE[d.version] || TX().software) + '</a>' +
+      '<div class="box">' + TX().guarda + ' (<code>' + esc(id) + '</code>).</div>';
   } else {
     $('#estadoBox').innerHTML =
-      '<div class="estado pend"><span class="spin"></span><strong>' + TX().confirmando + '</strong><br>' + TX().actualiza + ' (<code>' + id + '</code>).</div>';
+      '<div class="estado pend"><span class="spin"></span><strong>' + TX().confirmando + '</strong><br>' + TX().actualiza + ' (<code>' + esc(id) + '</code>).</div>';
     setTimeout(poll, 4000);
   }
 }
