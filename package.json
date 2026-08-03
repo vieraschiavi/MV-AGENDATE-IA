@@ -86,6 +86,9 @@
       "createStartMenuShortcut": true,
       "shortcutName": "MV Agendate IA",
       "uninstallDisplayName": "MV Agendate IA",
+      "installerSidebar": "build/instalador-sidebar.bmp",
+      "uninstallerSidebar": "build/instalador-sidebar.bmp",
+      "installerHeaderIcon": "build/logo-mv.ico",
       "artifactName": "MV-Agendate-IA-Setup.exe"
     }
   }
