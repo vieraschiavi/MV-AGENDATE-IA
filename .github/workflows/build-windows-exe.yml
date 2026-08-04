@@ -41,7 +41,11 @@ jobs:
 
       - run: npm ci
 
+      # Las tres variantes del instalador (cada "pre" regenera dist-protegido/
+      # con la config de su variante, por eso van en serie y no en paralelo).
       - run: npm run empaquetar-exe
+      - run: npm run empaquetar-exe-demo
+      - run: npm run empaquetar-exe-owner
 
       - name: Publicar release (siempre "latest")
         uses: softprops/action-gh-release@v2
@@ -50,6 +54,19 @@ jobs:
           name: MV Agendate IA — Windows (build automático)
           make_latest: true
           body: Generado automáticamente por GitHub Actions desde el último commit de `main`. No editar a mano — se reemplaza en cada build.
-          files: dist-instalador/MV-Agendate-IA-Setup.exe
+          # OJO: acá van SOLO las variantes vendibles/públicas. La variante del
+          # dueño (sin límite de prueba) NUNCA se publica en el release — se
+          # sube como artifact privado del workflow, abajo.
+          files: |
+            dist-instalador/MV-Agendate-IA-Setup.exe
+            dist-instalador/MV-Agendate-IA-Setup-Demo.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Guardar instalador del dueño (artifact privado, no release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: MV-Agendate-IA-Setup-Dueno
+          path: dist-instalador/MV-Agendate-IA-Setup-Dueno.exe
+          retention-days: 30
+          if-no-files-found: error
