@@ -1,15 +1,6 @@
 # Corre la suite de tests y el linter en cada push y en cada pull request.
 # Si algo se rompe, el job falla y el PR queda en rojo.
-#
-# OJO — este workflow está escrito y es correcto, pero HOY NO PUEDE CORRER:
-# GitHub Actions está bloqueado a nivel de la cuenta. Los jobs terminan en
-# "failure" a los ~10 segundos, con runner_id 0 y sin ningún log (la API
-# devuelve 404 al pedirlos), o sea que nunca se les asigna una máquina. Le
-# pasa igual a este job en ubuntu-latest y a build-windows-exe.yml en
-# windows-latest, así que no es cosa del sistema operativo del runner.
-# Se destraba desde GitHub → Settings → Billing (método de pago / límite de
-# gasto). Hasta entonces, la verificación hay que correrla a mano:
-#   npm ci && npm run lint && npm test
+# Para reproducir lo mismo a mano: npm ci && npm run lint && npm test
 name: Tests
 
 on:
