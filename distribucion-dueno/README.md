@@ -12,6 +12,21 @@ y no tiene ninguna otra restricción distinta a la versión que se vende.
 sirve) — solo está disponible clonando o descargando este archivo desde este
 repositorio privado de GitHub.
 
+## Las tres variantes del instalador
+
+| Variante | Comando | Artefacto | Prueba |
+|---|---|---|---|
+| Cliente pago (se vende) | `npm run empaquetar-exe` | `MV-Agendate-IA-Setup.exe` | 3 días, se destraba con la licencia del pago |
+| Demo | `npm run empaquetar-exe-demo` | `MV-Agendate-IA-Setup-Demo.exe` | 3 días fijos (ignora `DIAS_PRUEBA` del entorno) |
+| Dueño | `npm run empaquetar-exe-owner` | `MV-Agendate-IA-Setup-Dueno.exe` | Sin límite |
+
+`npm run empaquetar-exe-todos` genera las tres en serie. Cada variante tiene su
+propio `appId` y nombre de producto, así que pueden convivir instaladas en la
+misma máquina (accesos directos, carpeta y desinstalador separados). El CI
+(`build-windows-exe.yml`) publica cliente y demo en el release
+`desktop-windows-latest`; la del dueño se sube SOLO como artifact privado del
+workflow, nunca al release.
+
 ## Regenerarlo
 
 ```

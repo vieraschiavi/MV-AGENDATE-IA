@@ -40,7 +40,7 @@ final siempre lo aprueba el profesional antes de comunicárselo al cliente.
 | Configurar (setup interactivo) | `npm run configurar` |
 | Embeber clave API en el build | `npm run embeber-clave` |
 | Empaquetar paquete PC (zip) | `npm run empaquetar-pc` |
-| Empaquetar instalador Windows (.exe) | `npm run empaquetar-exe` |
+| Empaquetar instalador Windows (.exe) | `npm run empaquetar-exe` (cliente) / `-demo` / `-owner` / `-todos` |
 
 > No hay linter configurado. No hay build step del panel (el bundle de Vite está
 > commiteado en `public/app/`). El deploy lo maneja Vercel; ver `vercel.json`.

@@ -11,8 +11,10 @@
 // y el servidor de desarrollo (`npm run dev`, `npm test`) sigue corriendo
 // contra src/ tal cual.
 //
-// Con --owner (npm run empaquetar-exe-owner) se genera la copia SIN el límite
-// de prueba de 3 días, para uso propio del dueño — ver electron/owner-config.cjs.
+// Variantes del instalador (ver electron/owner-config.cjs):
+//   (sin flag)  cliente pago: prueba de 3 días por defecto, se activa con la licencia del pago
+//   --demo      demo: prueba de 3 días fijada explícitamente (ignora DIAS_PRUEBA del entorno)
+//   --owner     dueño: SIN límite de prueba, para uso propio del vendedor
 import { readdirSync, statSync, readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { join, dirname, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,7 +24,16 @@ const RAIZ = dirname(dirname(fileURLToPath(import.meta.url)));
 const SALIDA = join(RAIZ, 'dist-protegido');
 const CARPETAS = ['src', 'electron'];
 const ES_OWNER = process.argv.includes('--owner');
+const ES_DEMO = process.argv.includes('--demo');
+if (ES_OWNER && ES_DEMO) {
+  console.error('✘ --owner y --demo son excluyentes: elegí una variante.');
+  process.exit(1);
+}
 const OWNER_CONFIG_RUTA = join(RAIZ, 'electron', 'owner-config.cjs');
+// Línea que reemplaza a owner-config.cjs según la variante (null = dejar el archivo tal cual).
+const CONFIG_VARIANTE = ES_OWNER ? 'module.exports = { diasPrueba: 0 };\n'
+  : ES_DEMO ? 'module.exports = { diasPrueba: 3 };\n'
+  : null;
 
 const OPCIONES = {
   compact: true,
@@ -63,9 +74,9 @@ for (const carpeta of CARPETAS) {
 
     const ext = extname(rutaOrigen);
     if (ext === '.js' || ext === '.cjs' || ext === '.mjs') {
-      const esOwnerConfig = ES_OWNER && rutaOrigen === OWNER_CONFIG_RUTA;
-      const codigo = esOwnerConfig
-        ? "module.exports = { diasPrueba: 0 };\n"
+      const esConfigVariante = CONFIG_VARIANTE !== null && rutaOrigen === OWNER_CONFIG_RUTA;
+      const codigo = esConfigVariante
+        ? CONFIG_VARIANTE
         : readFileSync(rutaOrigen, 'utf8');
       const resultado = JavaScriptObfuscator.obfuscate(codigo, OPCIONES);
       writeFileSync(rutaDestino, resultado.getObfuscatedCode());
@@ -77,5 +88,5 @@ for (const carpeta of CARPETAS) {
   });
 }
 
-const etiqueta = ES_OWNER ? ' [OWNER — sin límite de prueba]' : '';
+const etiqueta = ES_OWNER ? ' [OWNER — sin límite de prueba]' : ES_DEMO ? ' [DEMO — prueba de 3 días fija]' : ' [CLIENTE]';
 console.log(`✔ Ofuscados ${ofuscados} archivos .js/.cjs, copiados ${copiados} archivos de datos → ${SALIDA}${etiqueta}`);
