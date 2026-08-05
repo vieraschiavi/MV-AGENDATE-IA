@@ -846,6 +846,10 @@ if (process.env.VERCEL) {
   escucharEnPuertoLibre(app, PORT)
     .then(({ server, puerto }) => {
       const url = `http://localhost:${puerto}`;
+      // Marca parseable para el envoltorio de escritorio (electron/main.cjs):
+      // el puerto REAL puede no ser el pedido si estaba ocupado por otra app,
+      // y la ventana tiene que apuntar acá — no al 3000 de otro programa.
+      console.log(`MV_PUERTO=${puerto}`);
       console.log(`\n🛠️  MV Agendate IA escuchando en ${url}`);
       if (puerto !== Number(PORT)) {
         console.log(`   (el ${PORT} estaba ocupado por otro programa)`);

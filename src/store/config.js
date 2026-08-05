@@ -8,7 +8,9 @@ import { dirname, join } from 'node:path';
 import { overridesActivos, paisDemoActivo } from './contextoCuenta.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const FILE = join(process.env.VERCEL ? '/tmp/mvdata' : join(here, '../../data'), 'config.json');
+// MV_DATOS_DIR permite aislar los datos (lo usan los tests que levantan un
+// servidor real, para no pisar el data/ compartido del repo).
+const FILE = join(process.env.MV_DATOS_DIR || (process.env.VERCEL ? '/tmp/mvdata' : join(here, '../../data')), 'config.json');
 
 // Claves de configuración y su variable de entorno equivalente (para defaults).
 const ENV = {

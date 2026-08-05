@@ -13,7 +13,10 @@ const net = require('node:net');
 const { spawn } = require('node:child_process');
 const ownerConfig = require('./owner-config.cjs');
 
-const PORT = process.env.PORT || 3000;
+// Puerto PEDIDO. Si está ocupado por otro programa, el servidor elige el
+// siguiente libre (src/arranque.js) y avisa el REAL con la línea MV_PUERTO=n;
+// la ventana se abre en ese puerto real — nunca en el de otra app.
+const PUERTO_PEDIDO = Number(process.env.PORT) || 3000;
 const RAIZ = path.join(__dirname, '..');
 const SERVIDOR = path.join(RAIZ, 'src', 'server.js');
 
@@ -21,6 +24,8 @@ let procesoServidor = null;
 let ventana = null;
 let salidaServidor = ''; // últimas líneas de stdout/stderr del servidor, para mostrar si falla
 let logStream = null;
+let avisarPuertoReal = null;
+const puertoReal = new Promise((resolve) => { avisarPuertoReal = resolve; });
 
 function logArchivo() {
   try {
@@ -59,7 +64,7 @@ function mostrarError(titulo, detalle) {
 
 function iniciarServidor() {
   logStream = fs.createWriteStream(logArchivo() || path.join(RAIZ, 'servidor.log'), { flags: 'a' });
-  const envExtra = { ELECTRON_RUN_AS_NODE: '1', PORT: String(PORT), MV_ESCRITORIO: '1' };
+  const envExtra = { ELECTRON_RUN_AS_NODE: '1', PORT: String(PUERTO_PEDIDO), MV_ESCRITORIO: '1' };
   if (ownerConfig.diasPrueba !== null) envExtra.DIAS_PRUEBA = String(ownerConfig.diasPrueba);
   procesoServidor = spawn(process.execPath, [SERVIDOR], {
     cwd: RAIZ,
@@ -70,6 +75,10 @@ function iniciarServidor() {
     const texto = chunk.toString('utf8');
     logStream?.write(texto);
     salidaServidor = (salidaServidor + texto).slice(-4000); // solo el final, para la pantalla de error
+    // El servidor anuncia en qué puerto quedó escuchando de verdad (puede no
+    // ser el pedido si estaba ocupado por otro programa).
+    const marca = /MV_PUERTO=(\d+)/.exec(texto);
+    if (marca) avisarPuertoReal(Number(marca[1]));
   };
   procesoServidor.stdout.on('data', capturar);
   procesoServidor.stderr.on('data', capturar);
@@ -84,12 +93,19 @@ function iniciarServidor() {
   });
 }
 
-function esperarServidor(intentos = 100) {
-  return new Promise((resolve, reject) => {
+// Espera a que el servidor anuncie su puerto real (MV_PUERTO=n) y a que ese
+// puerto responda. Devuelve el puerto listo para abrir la ventana. Conectar
+// "al 3000 porque sí" está prohibido: si otro programa lo ocupa, la ventana
+// mostraría ESA app en vez de la nuestra.
+async function esperarServidor(msMax = 30000) {
+  const puerto = await Promise.race([
+    puertoReal,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('El servidor no anunció su puerto a tiempo.\n\n' + (salidaServidor || '(sin salida)'))), msMax).unref?.())
+  ]);
+  await new Promise((resolve, reject) => {
     const probar = (restantes) => {
-      // Si el proceso ya murió, no tiene sentido seguir reintentando el puerto.
       if (!procesoServidor) return reject(new Error('El servidor terminó antes de responder.\n\n' + (salidaServidor || '(sin salida)')));
-      const socket = net.createConnection({ port: PORT, host: '127.0.0.1' }, () => {
+      const socket = net.createConnection({ port: puerto, host: '127.0.0.1' }, () => {
         socket.end();
         resolve();
       });
@@ -99,8 +115,9 @@ function esperarServidor(intentos = 100) {
         setTimeout(() => probar(restantes - 1), 300);
       });
     };
-    probar(intentos);
+    probar(100);
   });
+  return puerto;
 }
 
 async function crearVentana() {
@@ -114,8 +131,8 @@ async function crearVentana() {
   });
   ventana.loadURL(CARGANDO_HTML);
   try {
-    await esperarServidor();
-    if (!ventana.isDestroyed()) ventana.loadURL(`http://localhost:${PORT}/`);
+    const puerto = await esperarServidor();
+    if (!ventana.isDestroyed()) ventana.loadURL(`http://localhost:${puerto}/`);
   } catch (e) {
     mostrarError('No pude iniciar el servidor.', e.message);
   }

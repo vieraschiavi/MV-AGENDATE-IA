@@ -20,12 +20,15 @@ repositorio privado de GitHub.
 | Demo | `npm run empaquetar-exe-demo` | `MV-Agendate-IA-Setup-Demo.exe` | 3 días fijos (ignora `DIAS_PRUEBA` del entorno) |
 | Dueño | `npm run empaquetar-exe-owner` | `MV-Agendate-IA-Setup-Dueno.exe` | Sin límite |
 
-`npm run empaquetar-exe-todos` genera las tres en serie. Cada variante tiene su
-propio `appId` y nombre de producto, así que pueden convivir instaladas en la
-misma máquina (accesos directos, carpeta y desinstalador separados). El CI
-(`build-windows-exe.yml`) publica cliente y demo en el release
-`desktop-windows-latest`; la del dueño se sube SOLO como artifact privado del
-workflow, nunca al release.
+`npm run empaquetar-exe-todos` genera las tres en serie. La del dueño es
+**IDÉNTICA a la que descargan los compradores** — mismo nombre de producto
+("MV Agendate IA"), mismo appId, mismos accesos directos y desinstalador; lo
+único distinto es el nombre del archivo del instalador y que la prueba viene
+desactivada por dentro. La demo sí tiene identidad propia ("(Demo)") y puede
+convivir instalada con la de venta. El CI (`build-windows-exe.yml`) publica
+cliente y demo en el release `desktop-windows-latest`; la del dueño se sube
+SOLO como artifact privado del workflow, nunca al release — y además vive
+committeada en esta carpeta.
 
 ## Regenerarlo
 
