@@ -55,18 +55,12 @@ jobs:
           make_latest: true
           body: Generado automáticamente por GitHub Actions desde el último commit de `main`. No editar a mano — se reemplaza en cada build.
           # OJO: acá van SOLO las variantes vendibles/públicas. La variante del
-          # dueño (sin límite de prueba) NUNCA se publica en el release — se
-          # sube como artifact privado del workflow, abajo.
+          # dueño (sin límite de prueba) NUNCA se publica en el release: vive
+          # committeada en distribucion-dueno/ del repo privado. Acá solo se
+          # buildea para verificar que compila — no se sube como artifact
+          # porque el storage de Actions tiene cupo y ya reventó una vez.
           files: |
             dist-instalador/MV-Agendate-IA-Setup.exe
             dist-instalador/MV-Agendate-IA-Setup-Demo.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Guardar instalador del dueño (artifact privado, no release)
-        uses: actions/upload-artifact@v4
-        with:
-          name: MV-Agendate-IA-Setup-Dueno
-          path: dist-instalador/MV-Agendate-IA-Setup-Dueno.exe
-          retention-days: 30
-          if-no-files-found: error
