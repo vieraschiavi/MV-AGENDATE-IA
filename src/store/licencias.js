@@ -8,7 +8,7 @@ import { dirname, join } from 'node:path';
 import { randomUUID, randomBytes, createHmac, timingSafeEqual } from 'node:crypto';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const DIR = process.env.VERCEL ? '/tmp/mvdata' : join(here, '../../data');
+const DIR = process.env.MV_DATOS_DIR || (process.env.VERCEL ? '/tmp/mvdata' : join(here, '../../data'));
 const FILE = join(DIR, 'licencias.json');
 
 // Planes y precios (USD, pago único vía la tienda). Editables. version: 'pc' | 'apk' | 'ios' | 'todas'.

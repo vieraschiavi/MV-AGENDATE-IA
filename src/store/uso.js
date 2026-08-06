@@ -8,7 +8,7 @@ import { dirname, join } from 'node:path';
 import { get as cfg } from './config.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const DIR = process.env.VERCEL ? '/tmp/mvdata' : join(here, '../../data');
+const DIR = process.env.MV_DATOS_DIR || (process.env.VERCEL ? '/tmp/mvdata' : join(here, '../../data'));
 const FILE = join(DIR, 'uso.json');
 
 // Catálogo de APIs: qué hace cada una, para qué y costo de referencia (editable).
