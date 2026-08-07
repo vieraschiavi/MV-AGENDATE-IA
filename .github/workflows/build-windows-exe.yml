@@ -15,11 +15,18 @@ name: Build Windows desktop app
 on:
   push:
     branches: [main]
+    # Solo lo que de verdad entra en el instalador (ver package.json → build.files):
+    # src/, electron/, public/ (sin video ni descargas, excluidos del paquete),
+    # los assets del asistente (build/) y las deps. api/ es solo serverless de
+    # Vercel y NO se empaqueta. Los propios exes committeados (public/descargas/,
+    # distribucion-dueno/) tampoco disparan — si no, cada actualización de
+    # binarios causaba un rebuild inútil de ~10 min de runner Windows.
     paths:
       - 'src/**'
-      - 'api/**'
       - 'electron/**'
       - 'public/**'
+      - '!public/video/**'
+      - '!public/descargas/**'
       - 'build/**'
       - 'package.json'
       - 'package-lock.json'
