@@ -90,7 +90,7 @@ export default [
       'webapp/node_modules/**',
       'dist-instalador/**',
       'dist-protegido/**',
-      'distribucion-dueno/**',
+      'INSTALADOR/**',
       'public/app/**',        // bundle compilado de Vite (React)
       'public/vendor/**',     // código de terceros (botid), no se edita acá
       'movil/android-apk/**',
