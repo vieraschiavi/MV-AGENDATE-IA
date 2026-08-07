@@ -19,8 +19,8 @@ on:
     # src/, electron/, public/ (sin video ni descargas, excluidos del paquete),
     # los assets del asistente (build/) y las deps. api/ es solo serverless de
     # Vercel y NO se empaqueta. Los propios exes committeados (public/descargas/,
-    # distribucion-dueno/) tampoco disparan — si no, cada actualización de
-    # binarios causaba un rebuild inútil de ~10 min de runner Windows.
+    # INSTALADOR/) tampoco disparan — INSTALADOR/ ni figura en la lista, así el
+    # commit que este mismo workflow hace al final no re-dispara el build.
     paths:
       - 'src/**'
       - 'electron/**'
@@ -63,11 +63,34 @@ jobs:
           body: Generado automáticamente por GitHub Actions desde el último commit de `main`. No editar a mano — se reemplaza en cada build.
           # OJO: acá van SOLO las variantes vendibles/públicas. La variante del
           # dueño (sin límite de prueba) NUNCA se publica en el release: vive
-          # committeada en distribucion-dueno/ del repo privado. Acá solo se
-          # buildea para verificar que compila — no se sube como artifact
-          # porque el storage de Actions tiene cupo y ya reventó una vez.
+          # committeada en INSTALADOR/OWNER/ del repo privado (paso siguiente).
+          # No se sube como artifact porque el storage de Actions tiene cupo
+          # y ya reventó una vez.
           files: |
             dist-instalador/MV-Agendate-IA-Setup.exe
             dist-instalador/MV-Agendate-IA-Setup-Demo.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Deja los tres exes recién buildeados committeados en INSTALADOR/ para
+      # que el ZIP del repo (Code → Download ZIP) siempre traiga los
+      # instaladores al día: CLIENTE/ (demo + oficial) y OWNER/ (la del dueño,
+      # sin límite de prueba, que nunca va al release). El push solo toca
+      # INSTALADOR/, que no está en los paths de arriba — no re-dispara esto.
+      - name: Actualizar carpeta INSTALADOR del repo
+        shell: bash
+        run: |
+          mkdir -p INSTALADOR/CLIENTE INSTALADOR/OWNER
+          cp dist-instalador/MV-Agendate-IA-Setup.exe      INSTALADOR/CLIENTE/
+          cp dist-instalador/MV-Agendate-IA-Setup-Demo.exe INSTALADOR/CLIENTE/
+          cp dist-instalador/MV-Agendate-IA-Setup-Dueno.exe INSTALADOR/OWNER/
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add INSTALADOR
+          if git diff --cached --quiet; then
+            echo "INSTALADOR ya estaba al día — nada que commitear."
+            exit 0
+          fi
+          git commit -m "Actualizar INSTALADOR con los exes del build ${GITHUB_SHA::7}"
+          git pull --rebase origin main
+          git push origin HEAD:main
