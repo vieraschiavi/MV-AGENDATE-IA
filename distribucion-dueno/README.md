@@ -26,9 +26,10 @@ repositorio privado de GitHub.
 único distinto es el nombre del archivo del instalador y que la prueba viene
 desactivada por dentro. La demo sí tiene identidad propia ("(Demo)") y puede
 convivir instalada con la de venta. El CI (`build-windows-exe.yml`) publica
-cliente y demo en el release `desktop-windows-latest`; la del dueño se sube
-SOLO como artifact privado del workflow, nunca al release — y además vive
-committeada en esta carpeta.
+cliente y demo en el release `desktop-windows-latest`; la del dueño nunca va
+al release ni se sube como artifact (el storage de Actions tiene cupo limitado
+y ya lo reventó una vez): su único canal de distribución es esta carpeta del
+repo privado.
 
 ## Regenerarlo
 

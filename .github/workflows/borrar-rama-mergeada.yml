@@ -1,0 +1,37 @@
+# Borra la rama de un PR apenas se mergea — equivalente a la opción
+# "Automatically delete head branches" de Settings, pero versionada en el repo.
+# Solo toca ramas de ESTE repo (no forks) y nunca main.
+name: Borrar rama mergeada
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  borrar:
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref != 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Borrar la rama del PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const rama = context.payload.pull_request.head.ref;
+            try {
+              await github.rest.git.deleteRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `heads/${rama}`
+              });
+              core.info(`Rama ${rama} borrada.`);
+            } catch (e) {
+              // Si ya la borraron a mano (o GitHub la borró), no es un error.
+              if (e.status === 422) core.info(`La rama ${rama} ya no existía.`);
+              else throw e;
+            }
