@@ -36,6 +36,13 @@ on:
 permissions:
   contents: write
 
+# Dos builds en paralelo se pisan en el `git pull --rebase` del último paso
+# (chocan en los .exe, que son binarios y no se pueden mergear) y dejan el job
+# rojo con el release ya publicado. Se encolan: siempre gana el commit más nuevo.
+concurrency:
+  group: build-windows-exe
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: windows-latest
@@ -77,20 +84,41 @@ jobs:
       # instaladores al día: CLIENTE/ (demo + oficial) y OWNER/ (la del dueño,
       # sin límite de prueba, que nunca va al release). El push solo toca
       # INSTALADOR/, que no está en los paths de arriba — no re-dispara esto.
-      - name: Actualizar carpeta INSTALADOR del repo
+      #
+      # También refresca public/descargas/: el botón "Descargar para PC" de
+      # /instalar.html apunta al archivo estático de esa carpeta, y src/server.js
+      # lo sirve ANTES de caer al release. Si no se actualiza acá, la web sigue
+      # entregando el exe viejo (p.ej. con la prueba de días anterior) por más
+      # que el release esté al día. public/descargas/** está excluido de los
+      # paths de arriba, así que este commit tampoco re-dispara el build.
+      - name: Actualizar instaladores del repo (INSTALADOR/ + web)
         shell: bash
         run: |
-          mkdir -p INSTALADOR/CLIENTE INSTALADOR/OWNER
+          # GitHub rechaza archivos de 100 MiB o más. Los exes rondan los 97,5
+          # MiB: si uno cruza el límite, el push falla DESPUÉS de publicar el
+          # release y la web se queda sirviendo el instalador viejo sin que
+          # nadie se entere. Mejor cortar acá, con el motivo escrito.
+          LIMITE=$((100 * 1024 * 1024))
+          for exe in dist-instalador/*.exe; do
+            peso=$(stat -c%s "$exe")
+            echo "$exe → $((peso / 1024 / 1024)) MiB"
+            if [ "$peso" -ge "$LIMITE" ]; then
+              echo "::error::$exe pesa $peso bytes y GitHub no acepta archivos de 100 MiB o más. Hay que sacar los exes del repo (release o Git LFS) antes de seguir commiteándolos."
+              exit 1
+            fi
+          done
+          mkdir -p INSTALADOR/CLIENTE INSTALADOR/OWNER public/descargas
           cp dist-instalador/MV-Agendate-IA-Setup.exe      INSTALADOR/CLIENTE/
           cp dist-instalador/MV-Agendate-IA-Setup-Demo.exe INSTALADOR/CLIENTE/
           cp dist-instalador/MV-Agendate-IA-Setup-Dueno.exe INSTALADOR/OWNER/
+          cp dist-instalador/MV-Agendate-IA-Setup.exe      public/descargas/
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add INSTALADOR
+          git add INSTALADOR public/descargas
           if git diff --cached --quiet; then
-            echo "INSTALADOR ya estaba al día — nada que commitear."
+            echo "Los instaladores ya estaban al día — nada que commitear."
             exit 0
           fi
-          git commit -m "Actualizar INSTALADOR con los exes del build ${GITHUB_SHA::7}"
+          git commit -m "Actualizar instaladores con los exes del build ${GITHUB_SHA::7}"
           git pull --rebase origin main
           git push origin HEAD:main

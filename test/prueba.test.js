@@ -1,7 +1,8 @@
-// Tests de la prueba gratis de la copia descargada (3 días → se corta) — node --test
+// Tests de la prueba gratis de la copia descargada (7 días → se corta) — node --test
 import { test, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { estadoPrueba, pruebaBloqueada, activarLicencia } from '../src/store/prueba.js';
+import { DIAS_PRUEBA_CLIENTE } from '../src/store/dias-prueba.js';
 import { setConfig } from '../src/store/config.js';
 
 const DIA = 86400000;
@@ -10,7 +11,7 @@ const envDias = process.env.DIAS_PRUEBA;
 
 beforeEach(() => {
   delete process.env.VERCEL;
-  process.env.DIAS_PRUEBA = '3';
+  process.env.DIAS_PRUEBA = String(DIAS_PRUEBA_CLIENTE);
   setConfig({ licenciaLocal: '', pruebaInicio: '' });
 });
 after(() => {
@@ -25,12 +26,27 @@ test('primer arranque: estampa el inicio y la prueba está vigente', () => {
   assert.equal(e.licenciada, false);
   assert.equal(e.vencida, false);
   assert.ok(e.inicio, 'debe estampar la fecha de inicio');
-  assert.ok(e.diasRestantes >= 2 && e.diasRestantes <= 3);
+  assert.equal(e.diasPrueba, 7);
+  assert.ok(e.diasRestantes >= 6 && e.diasRestantes <= 7);
   assert.equal(pruebaBloqueada(), false);
 });
 
-test('pasados los 3 días sin licencia: vencida y bloqueada', () => {
-  setConfig({ pruebaInicio: new Date(Date.now() - 4 * DIA).toISOString() });
+test('la versión que se vende arranca con 7 días de prueba', () => {
+  assert.equal(DIAS_PRUEBA_CLIENTE, 7);
+  delete process.env.DIAS_PRUEBA; // sin override: el default es el de la venta
+  assert.equal(estadoPrueba().diasPrueba, 7);
+});
+
+test('al sexto día todavía anda: no se corta antes de tiempo', () => {
+  setConfig({ pruebaInicio: new Date(Date.now() - 6 * DIA).toISOString() });
+  const e = estadoPrueba();
+  assert.equal(e.vencida, false);
+  assert.equal(e.diasRestantes, 1);
+  assert.equal(pruebaBloqueada(), false);
+});
+
+test('pasados los 7 días sin licencia: vencida y bloqueada', () => {
+  setConfig({ pruebaInicio: new Date(Date.now() - 8 * DIA).toISOString() });
   const e = estadoPrueba();
   assert.equal(e.vencida, true);
   assert.equal(e.diasRestantes, 0);
@@ -45,12 +61,48 @@ test('con licencia cargada nunca se bloquea, aunque el inicio sea viejo', () => 
 });
 
 test('activarLicencia levanta el candado y rechaza códigos inválidos', () => {
-  setConfig({ pruebaInicio: new Date(Date.now() - 5 * DIA).toISOString() });
+  setConfig({ pruebaInicio: new Date(Date.now() - 9 * DIA).toISOString() });
   assert.equal(pruebaBloqueada(), true);
   assert.equal(activarLicencia('xx').ok, false, 'código corto rechazado');
   const r = activarLicencia('MV-FULL-A1B2C3D4');
   assert.equal(r.ok, true);
   assert.equal(pruebaBloqueada(), false);
+});
+
+// --- Intentos de zafar del candado sin pagar ---
+
+test('un inicio de prueba ilegible no deja la copia abierta para siempre', () => {
+  // new Date('cualquiercosa') da NaN y `NaN <= 0` es false: sin validar, la
+  // prueba no vencía nunca. Se descarta y se cuenta desde ahora.
+  setConfig({ pruebaInicio: 'cualquiercosa' });
+  const e = estadoPrueba();
+  assert.equal(e.vencida, false);
+  assert.equal(e.diasRestantes, 7, 'arranca de cero, no da NaN');
+  assert.notEqual(e.inicio, 'cualquiercosa', 'debe re-estampar el inicio');
+});
+
+test('un inicio con fecha futura no regala años de prueba', () => {
+  setConfig({ pruebaInicio: '2099-01-01T00:00:00.000Z' });
+  const e = estadoPrueba();
+  assert.equal(e.diasRestantes, 7, 'se descarta la fecha futura');
+  assert.ok(new Date(e.inicio).getTime() <= Date.now());
+});
+
+test('un inicio adulterado no impide que el candado corte a los 7 días', () => {
+  setConfig({ pruebaInicio: '2099-01-01T00:00:00.000Z' });
+  estadoPrueba();                                    // re-estampa el inicio
+  const inicio = new Date(Date.now() - 8 * DIA).toISOString();
+  setConfig({ pruebaInicio: inicio });
+  assert.equal(pruebaBloqueada(), true);
+});
+
+test('un código de licencia inventado no destraba la copia', () => {
+  // Sin el mínimo de largo, un MV_LICENCIA=x en el entorno de la máquina daba
+  // licenciada:true y levantaba el candado sin haber pagado nunca.
+  setConfig({ pruebaInicio: new Date(Date.now() - 9 * DIA).toISOString(), licenciaLocal: 'x' });
+  const e = estadoPrueba();
+  assert.equal(e.licenciada, false);
+  assert.equal(pruebaBloqueada(), true);
 });
 
 test('DIAS_PRUEBA=0 desactiva la prueba (copia del vendedor, sin límite)', () => {

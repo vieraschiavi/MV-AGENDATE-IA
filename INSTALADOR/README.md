@@ -15,12 +15,18 @@ escritorio, entrada en el menú de programas y desinstalador** en
 | Archivo | Qué es |
 |---|---|
 | `MV-Agendate-IA-Setup-Demo.exe` | **Demo**: prueba de 3 días fijos. Identidad propia ("MV Agendate IA (Demo)"), puede convivir instalada con la versión de venta. |
-| `MV-Agendate-IA-Setup.exe` | **Oficial (se vende)**: arranca con prueba de 3 días y, cuando el cliente paga (MercadoPago), la licencia del pago la destraba sin límite. |
+| `MV-Agendate-IA-Setup.exe` | **Oficial (se vende)**: arranca con **prueba de 7 días** y, cuando el cliente paga (MercadoPago), la licencia del pago la destraba sin límite. Al día 7 sin pagar, el programa se bloquea. |
 
-El flujo del cliente: descarga la **demo** desde la web → la prueba vence a los
-3 días → paga → descarga la **oficial** y la activa con la licencia que recibe
-con el pago. Estos dos exes también se publican en el release
+El flujo del cliente: descarga la **oficial** desde la web → la usa completa
+7 días → al vencer, el panel queda bloqueado con la pantalla de "Comprar
+licencia" → paga por MercadoPago → activa el código que recibe y sigue sin
+límite. Estos dos exes también se publican en el release
 `desktop-windows-latest` (la web de venta apunta ahí vía `DESCARGA_EXE_URL`).
+
+Los días de prueba viajan **fijados adentro** de cada instalador (los escribe
+`scripts/ofuscar.js`, ver `scripts/variante-instalador.js`): sin eso, el
+comprador podría poner `DIAS_PRUEBA=0` en las variables de entorno de su
+Windows y quedarse con el programa sin pagar.
 
 ## OWNER/ — solo para el dueño
 
