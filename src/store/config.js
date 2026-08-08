@@ -97,7 +97,7 @@ const ENV = {
   // También levanta el candado de la prueba gratis de la copia descargada.
   licenciaLocal: 'MV_LICENCIA',
   // Fecha (ISO) del primer arranque de la copia descargada: arranca la prueba
-  // gratis de N días (DIAS_PRUEBA, default 3). Se estampa solo. Al vencer, el
+  // gratis de N días (DIAS_PRUEBA, default 7). Se estampa solo. Al vencer, el
   // programa se bloquea hasta ingresar la licencia que llega al pagar.
   pruebaInicio: 'PRUEBA_INICIO'
 };

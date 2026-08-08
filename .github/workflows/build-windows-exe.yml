@@ -77,20 +77,28 @@ jobs:
       # instaladores al día: CLIENTE/ (demo + oficial) y OWNER/ (la del dueño,
       # sin límite de prueba, que nunca va al release). El push solo toca
       # INSTALADOR/, que no está en los paths de arriba — no re-dispara esto.
-      - name: Actualizar carpeta INSTALADOR del repo
+      #
+      # También refresca public/descargas/: el botón "Descargar para PC" de
+      # /instalar.html apunta al archivo estático de esa carpeta, y src/server.js
+      # lo sirve ANTES de caer al release. Si no se actualiza acá, la web sigue
+      # entregando el exe viejo (p.ej. con la prueba de días anterior) por más
+      # que el release esté al día. public/descargas/** está excluido de los
+      # paths de arriba, así que este commit tampoco re-dispara el build.
+      - name: Actualizar instaladores del repo (INSTALADOR/ + web)
         shell: bash
         run: |
-          mkdir -p INSTALADOR/CLIENTE INSTALADOR/OWNER
+          mkdir -p INSTALADOR/CLIENTE INSTALADOR/OWNER public/descargas
           cp dist-instalador/MV-Agendate-IA-Setup.exe      INSTALADOR/CLIENTE/
           cp dist-instalador/MV-Agendate-IA-Setup-Demo.exe INSTALADOR/CLIENTE/
           cp dist-instalador/MV-Agendate-IA-Setup-Dueno.exe INSTALADOR/OWNER/
+          cp dist-instalador/MV-Agendate-IA-Setup.exe      public/descargas/
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add INSTALADOR
+          git add INSTALADOR public/descargas
           if git diff --cached --quiet; then
-            echo "INSTALADOR ya estaba al día — nada que commitear."
+            echo "Los instaladores ya estaban al día — nada que commitear."
             exit 0
           fi
-          git commit -m "Actualizar INSTALADOR con los exes del build ${GITHUB_SHA::7}"
+          git commit -m "Actualizar instaladores con los exes del build ${GITHUB_SHA::7}"
           git pull --rebase origin main
           git push origin HEAD:main

@@ -1,20 +1,27 @@
 // Prueba gratis de la copia DESCARGADA (PC/APK) — MV Agendate IA.
 // Modelo: al primer arranque se estampa la fecha de inicio; la app funciona
-// completa durante DIAS_PRUEBA días (default 3) y después se BLOQUEA (el panel/
+// completa durante DIAS_PRUEBA días (default 7) y después se BLOQUEA (el panel/
 // workspace deja de responder) hasta que se ingrese la licencia que llega al
-// pagar. El chatbot/demo público no se toca — es la vidriera de venta.
+// pagar en MercadoPago. El chatbot/demo público no se toca — es la vidriera de
+// venta.
+//
+// El instalador que se vende trae los 7 días FIJADOS adentro (scripts/ofuscar.js
+// escribe electron/owner-config.cjs y electron/main.cjs los inyecta como
+// DIAS_PRUEBA): así la variable de entorno de la máquina del comprador no puede
+// estirar la prueba ni desactivarla poniendo DIAS_PRUEBA=0.
 //
 // NO aplica en el sitio hosteado (Vercel): ahí conviven la landing/demo de
 // marketing y el modo SaaS online, que tiene su propio trial POR CUENTA
 // (14 días, ver store/cuentas.js). El discriminador es process.env.VERCEL.
 import { get as cfg, setConfig } from './config.js';
+import { DIAS_PRUEBA_CLIENTE } from './dias-prueba.js';
 
 const MS_DIA = 86400000;
 
-/** Días de prueba (env DIAS_PRUEBA, default 3). 0 o negativo = sin límite. */
+/** Días de prueba (env DIAS_PRUEBA, default 7). 0 o negativo = sin límite. */
 function diasPrueba() {
   const n = Number(process.env.DIAS_PRUEBA);
-  return Number.isFinite(n) ? n : 3;
+  return Number.isFinite(n) ? n : DIAS_PRUEBA_CLIENTE;
 }
 
 /**

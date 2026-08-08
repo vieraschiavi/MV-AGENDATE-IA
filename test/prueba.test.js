@@ -1,7 +1,8 @@
-// Tests de la prueba gratis de la copia descargada (3 días → se corta) — node --test
+// Tests de la prueba gratis de la copia descargada (7 días → se corta) — node --test
 import { test, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { estadoPrueba, pruebaBloqueada, activarLicencia } from '../src/store/prueba.js';
+import { DIAS_PRUEBA_CLIENTE } from '../src/store/dias-prueba.js';
 import { setConfig } from '../src/store/config.js';
 
 const DIA = 86400000;
@@ -10,7 +11,7 @@ const envDias = process.env.DIAS_PRUEBA;
 
 beforeEach(() => {
   delete process.env.VERCEL;
-  process.env.DIAS_PRUEBA = '3';
+  process.env.DIAS_PRUEBA = String(DIAS_PRUEBA_CLIENTE);
   setConfig({ licenciaLocal: '', pruebaInicio: '' });
 });
 after(() => {
@@ -25,12 +26,27 @@ test('primer arranque: estampa el inicio y la prueba está vigente', () => {
   assert.equal(e.licenciada, false);
   assert.equal(e.vencida, false);
   assert.ok(e.inicio, 'debe estampar la fecha de inicio');
-  assert.ok(e.diasRestantes >= 2 && e.diasRestantes <= 3);
+  assert.equal(e.diasPrueba, 7);
+  assert.ok(e.diasRestantes >= 6 && e.diasRestantes <= 7);
   assert.equal(pruebaBloqueada(), false);
 });
 
-test('pasados los 3 días sin licencia: vencida y bloqueada', () => {
-  setConfig({ pruebaInicio: new Date(Date.now() - 4 * DIA).toISOString() });
+test('la versión que se vende arranca con 7 días de prueba', () => {
+  assert.equal(DIAS_PRUEBA_CLIENTE, 7);
+  delete process.env.DIAS_PRUEBA; // sin override: el default es el de la venta
+  assert.equal(estadoPrueba().diasPrueba, 7);
+});
+
+test('al sexto día todavía anda: no se corta antes de tiempo', () => {
+  setConfig({ pruebaInicio: new Date(Date.now() - 6 * DIA).toISOString() });
+  const e = estadoPrueba();
+  assert.equal(e.vencida, false);
+  assert.equal(e.diasRestantes, 1);
+  assert.equal(pruebaBloqueada(), false);
+});
+
+test('pasados los 7 días sin licencia: vencida y bloqueada', () => {
+  setConfig({ pruebaInicio: new Date(Date.now() - 8 * DIA).toISOString() });
   const e = estadoPrueba();
   assert.equal(e.vencida, true);
   assert.equal(e.diasRestantes, 0);
@@ -45,7 +61,7 @@ test('con licencia cargada nunca se bloquea, aunque el inicio sea viejo', () => 
 });
 
 test('activarLicencia levanta el candado y rechaza códigos inválidos', () => {
-  setConfig({ pruebaInicio: new Date(Date.now() - 5 * DIA).toISOString() });
+  setConfig({ pruebaInicio: new Date(Date.now() - 9 * DIA).toISOString() });
   assert.equal(pruebaBloqueada(), true);
   assert.equal(activarLicencia('xx').ok, false, 'código corto rechazado');
   const r = activarLicencia('MV-FULL-A1B2C3D4');

@@ -104,7 +104,7 @@ app.use(async (req, _res, next) => {
 });
 
 // --- Candado de la prueba gratis (solo copia DESCARGADA) ---
-// Cuando la prueba de 3 días venció y no se cargó licencia, se corta el
+// Cuando la prueba de 7 días venció y no se cargó licencia, se corta el
 // workspace: las rutas de datos devuelven 402 y la SPA muestra el candado.
 // No aplica en Vercel (host de marketing + SaaS) ni a cuentas SaaS (que tienen
 // su propio trial por cuenta). Quedan vivas las rutas para licenciar/comprar.

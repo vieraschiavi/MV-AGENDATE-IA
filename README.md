@@ -191,15 +191,19 @@ UYU), registro en `/app` → Cuenta online; el webhook de MercadoPago
 activa/suspende la cuenta sola según el estado de la suscripción (matcheando
 el email del pagador).
 
-**Prueba gratis de la copia descargable (3 días):** al primer arranque, la
-copia PC/APK funciona completa durante `DIAS_PRUEBA` días (default 3, `0` =
+**Prueba gratis de la copia descargable (7 días):** al primer arranque, la
+copia PC/APK funciona completa durante `DIAS_PRUEBA` días (default 7, `0` =
 sin límite). Al vencer sin licencia, el workspace se corta (las rutas de datos
 devuelven 402 y la SPA muestra un candado con "Comprar" + activar licencia);
 la landing/demo, `/api/planes`, `/api/comprar` y la activación siguen vivas.
-Se levanta ingresando el código de licencia que llega al pagar
-(`POST /api/licencia/activar` → guarda `licenciaLocal`). NO aplica en el host
-Vercel (marketing + SaaS) ni a cuentas SaaS (que tienen su propio trial de 14
-días por cuenta). Store: `src/store/prueba.js`.
+Se levanta ingresando el código de licencia que llega al pagar por MercadoPago
+(`POST /api/licencia/activar` → guarda `licenciaLocal`). Los instaladores salen
+con los días **fijados adentro** (`scripts/variante-instalador.js`: cliente 7,
+demo 3, dueño 0) y `electron/main.cjs` los inyecta como `DIAS_PRUEBA`, así el
+entorno de la máquina del comprador no puede estirar ni desactivar la prueba.
+NO aplica en el host Vercel (marketing + SaaS) ni a cuentas SaaS (que tienen su
+propio trial de 14 días por cuenta). Store: `src/store/prueba.js`, duración en
+`src/store/dias-prueba.js`.
 
 **Proveedor de IA elegible (Claude / ChatGPT / Gemini):** cada profesional
 elige su proveedor en `/config.html` (campo `proveedorIA`) y pega SU propia API

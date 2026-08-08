@@ -12,13 +12,20 @@
 // contra src/ tal cual.
 //
 // Variantes del instalador (ver electron/owner-config.cjs):
-//   (sin flag)  cliente pago: prueba de 3 días por defecto, se activa con la licencia del pago
+//   (sin flag)  cliente pago: prueba de 7 días fijada, se activa con la licencia del pago
 //   --demo      demo: prueba de 3 días fijada explícitamente (ignora DIAS_PRUEBA del entorno)
 //   --owner     dueño: SIN límite de prueba, para uso propio del vendedor
+//
+// Las TRES fijan los días adentro del instalador: si el cliente quedara con
+// diasPrueba:null, la variable de entorno DIAS_PRUEBA de su propia máquina
+// pisaría la prueba (DIAS_PRUEBA=0 la desactiva) y tendría el programa gratis
+// para siempre sin pasar por MercadoPago.
 import { readdirSync, statSync, readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { join, dirname, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import JavaScriptObfuscator from 'javascript-obfuscator';
+import { configVariante } from './variante-instalador.js';
+import { DIAS_PRUEBA_CLIENTE } from '../src/store/dias-prueba.js';
 
 const RAIZ = dirname(dirname(fileURLToPath(import.meta.url)));
 const SALIDA = join(RAIZ, 'dist-protegido');
@@ -30,10 +37,9 @@ if (ES_OWNER && ES_DEMO) {
   process.exit(1);
 }
 const OWNER_CONFIG_RUTA = join(RAIZ, 'electron', 'owner-config.cjs');
-// Línea que reemplaza a owner-config.cjs según la variante (null = dejar el archivo tal cual).
-const CONFIG_VARIANTE = ES_OWNER ? 'module.exports = { diasPrueba: 0 };\n'
-  : ES_DEMO ? 'module.exports = { diasPrueba: 3 };\n'
-  : null;
+// Línea que reemplaza a owner-config.cjs según la variante. Nunca es null: el
+// instalador siempre sale con los días de prueba fijados adentro.
+const CONFIG_VARIANTE = configVariante({ owner: ES_OWNER, demo: ES_DEMO });
 
 const OPCIONES = {
   compact: true,
@@ -74,8 +80,7 @@ for (const carpeta of CARPETAS) {
 
     const ext = extname(rutaOrigen);
     if (ext === '.js' || ext === '.cjs' || ext === '.mjs') {
-      const esConfigVariante = CONFIG_VARIANTE !== null && rutaOrigen === OWNER_CONFIG_RUTA;
-      const codigo = esConfigVariante
+      const codigo = rutaOrigen === OWNER_CONFIG_RUTA
         ? CONFIG_VARIANTE
         : readFileSync(rutaOrigen, 'utf8');
       const resultado = JavaScriptObfuscator.obfuscate(codigo, OPCIONES);
@@ -88,5 +93,5 @@ for (const carpeta of CARPETAS) {
   });
 }
 
-const etiqueta = ES_OWNER ? ' [OWNER — sin límite de prueba]' : ES_DEMO ? ' [DEMO — prueba de 3 días fija]' : ' [CLIENTE]';
+const etiqueta = ES_OWNER ? ' [OWNER — sin límite de prueba]' : ES_DEMO ? ' [DEMO — prueba de 3 días fija]' : ` [CLIENTE — prueba de ${DIAS_PRUEBA_CLIENTE} días fija]`;
 console.log(`✔ Ofuscados ${ofuscados} archivos .js/.cjs, copiados ${copiados} archivos de datos → ${SALIDA}${etiqueta}`);
