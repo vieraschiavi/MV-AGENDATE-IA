@@ -66,9 +66,17 @@ function iniciarServidor() {
   logStream = fs.createWriteStream(logArchivo() || path.join(RAIZ, 'servidor.log'), { flags: 'a' });
   const envExtra = { ELECTRON_RUN_AS_NODE: '1', PORT: String(PUERTO_PEDIDO), MV_ESCRITORIO: '1' };
   if (ownerConfig.diasPrueba !== null) envExtra.DIAS_PRUEBA = String(ownerConfig.diasPrueba);
+  const env = { ...process.env, ...envExtra };
+  // El candado de la prueba no puede depender del entorno de la máquina del
+  // comprador. Estas dos lo desactivan solas: PRUEBA_INICIO mueve el arranque
+  // de la prueba (una fecha futura la estira para siempre) y MV_LICENCIA hace
+  // pasar por activada una copia que nunca se pagó. La licencia de verdad vive
+  // en data/config.json, que escribe /api/licencia/activar.
+  delete env.PRUEBA_INICIO;
+  delete env.MV_LICENCIA;
   procesoServidor = spawn(process.execPath, [SERVIDOR], {
     cwd: RAIZ,
-    env: { ...process.env, ...envExtra },
+    env,
     stdio: ['ignore', 'pipe', 'pipe']
   });
   const capturar = (chunk) => {

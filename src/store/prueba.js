@@ -24,6 +24,25 @@ function diasPrueba() {
   return Number.isFinite(n) ? n : DIAS_PRUEBA_CLIENTE;
 }
 
+/** Largo mínimo de un código de licencia (el que emite la compra es más largo). */
+const MIN_LICENCIA = 6;
+
+/** true si el código guardado puede ser una licencia de verdad. */
+function licenciaValida(codigo) {
+  return String(codigo || '').trim().length >= MIN_LICENCIA;
+}
+
+/**
+ * true si la fecha guardada sirve para contar la prueba: parseable y no futura.
+ * Una fecha futura solo sale de tocar el reloj o la config a mano, y estiraría
+ * la prueba; se descarta igual que una basura.
+ */
+function fechaUsable(valor) {
+  if (!valor) return false;
+  const ms = new Date(valor).getTime();
+  return Number.isFinite(ms) && ms <= Date.now();
+}
+
 /**
  * Estado de la prueba de la copia descargada. Estampa el inicio la primera vez.
  * @returns {{aplica:boolean, licenciada:boolean, vencida:boolean, diasRestantes:number, diasPrueba:number, inicio:string|null}}
@@ -33,12 +52,19 @@ export function estadoPrueba() {
   // En el host (Vercel) no hay prueba local: es la vidriera + SaaS por cuenta.
   if (process.env.VERCEL) return base;
   // Con licencia cargada, la copia está activada (pago único / suscripción).
-  if (cfg('licenciaLocal')) return { ...base, aplica: true, licenciada: true };
+  // Se exige el mismo mínimo que activarLicencia: si no, un MV_LICENCIA=x en el
+  // entorno de la máquina alcanzaba para hacer pasar por paga una copia que no
+  // lo está.
+  if (licenciaValida(cfg('licenciaLocal'))) return { ...base, aplica: true, licenciada: true };
   // Prueba desactivada (el vendedor corre su propia copia sin límite).
   if (diasPrueba() <= 0) return base;
 
+  // El inicio se estampa la primera vez. Se re-estampa también cuando lo que
+  // hay guardado no es una fecha usable: sin esto, un PRUEBA_INICIO basura en
+  // el entorno daba NaN (y `NaN <= 0` es false → nunca vencía) y uno con fecha
+  // futura regalaba años de prueba.
   let inicio = cfg('pruebaInicio');
-  if (!inicio) {
+  if (!fechaUsable(inicio)) {
     inicio = new Date().toISOString();
     setConfig({ pruebaInicio: inicio });
   }
@@ -67,7 +93,7 @@ export function pruebaBloqueada() {
  */
 export function activarLicencia(codigo) {
   const c = String(codigo || '').trim();
-  if (c.length < 6) return { ok: false, error: 'Ingresá un código de licencia válido (el que te llegó al comprar).' };
+  if (!licenciaValida(c)) return { ok: false, error: 'Ingresá un código de licencia válido (el que te llegó al comprar).' };
   setConfig({ licenciaLocal: c });
   return { ok: true, estado: estadoPrueba() };
 }

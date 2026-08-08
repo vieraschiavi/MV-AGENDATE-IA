@@ -70,6 +70,7 @@ rmSync(SALIDA, { recursive: true, force: true });
 
 let ofuscados = 0;
 let copiados = 0;
+let configsEscritas = 0;
 
 for (const carpeta of CARPETAS) {
   const origen = join(RAIZ, carpeta);
@@ -80,7 +81,9 @@ for (const carpeta of CARPETAS) {
 
     const ext = extname(rutaOrigen);
     if (ext === '.js' || ext === '.cjs' || ext === '.mjs') {
-      const codigo = rutaOrigen === OWNER_CONFIG_RUTA
+      const esConfigVariante = rutaOrigen === OWNER_CONFIG_RUTA;
+      if (esConfigVariante) configsEscritas++;
+      const codigo = esConfigVariante
         ? CONFIG_VARIANTE
         : readFileSync(rutaOrigen, 'utf8');
       const resultado = JavaScriptObfuscator.obfuscate(codigo, OPCIONES);
@@ -91,6 +94,16 @@ for (const carpeta of CARPETAS) {
       copiados++;
     }
   });
+}
+
+// Sin este chequeo, que electron/owner-config.cjs cambie de ruta o de nombre
+// haría salir el instalador con el archivo del repo (diasPrueba:null) y el
+// candado volvería a depender del DIAS_PRUEBA de la máquina del comprador —
+// en silencio, con el build en verde.
+if (configsEscritas !== 1) {
+  console.error(`✘ Esperaba fijar la config de la variante exactamente 1 vez y la fijé ${configsEscritas}. ` +
+    `¿Se movió ${OWNER_CONFIG_RUTA}? El instalador saldría sin los días de prueba fijados.`);
+  process.exit(1);
 }
 
 const etiqueta = ES_OWNER ? ' [OWNER — sin límite de prueba]' : ES_DEMO ? ' [DEMO — prueba de 3 días fija]' : ` [CLIENTE — prueba de ${DIAS_PRUEBA_CLIENTE} días fija]`;

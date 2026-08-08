@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Genera el paquete PC descargable (versión de prueba, 3 días) →
+# Genera el paquete PC descargable (versión de prueba, 7 días) →
 # public/descargas/MV-Agendate-IA-PC.zip. Es un snapshot: regeneralo cuando
 # cambie el código con  npm run empaquetar-pc.
 set -e

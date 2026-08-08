@@ -69,6 +69,42 @@ test('activarLicencia levanta el candado y rechaza códigos inválidos', () => {
   assert.equal(pruebaBloqueada(), false);
 });
 
+// --- Intentos de zafar del candado sin pagar ---
+
+test('un inicio de prueba ilegible no deja la copia abierta para siempre', () => {
+  // new Date('cualquiercosa') da NaN y `NaN <= 0` es false: sin validar, la
+  // prueba no vencía nunca. Se descarta y se cuenta desde ahora.
+  setConfig({ pruebaInicio: 'cualquiercosa' });
+  const e = estadoPrueba();
+  assert.equal(e.vencida, false);
+  assert.equal(e.diasRestantes, 7, 'arranca de cero, no da NaN');
+  assert.notEqual(e.inicio, 'cualquiercosa', 'debe re-estampar el inicio');
+});
+
+test('un inicio con fecha futura no regala años de prueba', () => {
+  setConfig({ pruebaInicio: '2099-01-01T00:00:00.000Z' });
+  const e = estadoPrueba();
+  assert.equal(e.diasRestantes, 7, 'se descarta la fecha futura');
+  assert.ok(new Date(e.inicio).getTime() <= Date.now());
+});
+
+test('un inicio adulterado no impide que el candado corte a los 7 días', () => {
+  setConfig({ pruebaInicio: '2099-01-01T00:00:00.000Z' });
+  estadoPrueba();                                    // re-estampa el inicio
+  const inicio = new Date(Date.now() - 8 * DIA).toISOString();
+  setConfig({ pruebaInicio: inicio });
+  assert.equal(pruebaBloqueada(), true);
+});
+
+test('un código de licencia inventado no destraba la copia', () => {
+  // Sin el mínimo de largo, un MV_LICENCIA=x en el entorno de la máquina daba
+  // licenciada:true y levantaba el candado sin haber pagado nunca.
+  setConfig({ pruebaInicio: new Date(Date.now() - 9 * DIA).toISOString(), licenciaLocal: 'x' });
+  const e = estadoPrueba();
+  assert.equal(e.licenciada, false);
+  assert.equal(pruebaBloqueada(), true);
+});
+
 test('DIAS_PRUEBA=0 desactiva la prueba (copia del vendedor, sin límite)', () => {
   process.env.DIAS_PRUEBA = '0';
   const e = estadoPrueba();

@@ -36,6 +36,13 @@ on:
 permissions:
   contents: write
 
+# Dos builds en paralelo se pisan en el `git pull --rebase` del último paso
+# (chocan en los .exe, que son binarios y no se pueden mergear) y dejan el job
+# rojo con el release ya publicado. Se encolan: siempre gana el commit más nuevo.
+concurrency:
+  group: build-windows-exe
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: windows-latest
@@ -87,6 +94,19 @@ jobs:
       - name: Actualizar instaladores del repo (INSTALADOR/ + web)
         shell: bash
         run: |
+          # GitHub rechaza archivos de 100 MiB o más. Los exes rondan los 97,5
+          # MiB: si uno cruza el límite, el push falla DESPUÉS de publicar el
+          # release y la web se queda sirviendo el instalador viejo sin que
+          # nadie se entere. Mejor cortar acá, con el motivo escrito.
+          LIMITE=$((100 * 1024 * 1024))
+          for exe in dist-instalador/*.exe; do
+            peso=$(stat -c%s "$exe")
+            echo "$exe → $((peso / 1024 / 1024)) MiB"
+            if [ "$peso" -ge "$LIMITE" ]; then
+              echo "::error::$exe pesa $peso bytes y GitHub no acepta archivos de 100 MiB o más. Hay que sacar los exes del repo (release o Git LFS) antes de seguir commiteándolos."
+              exit 1
+            fi
+          done
           mkdir -p INSTALADOR/CLIENTE INSTALADOR/OWNER public/descargas
           cp dist-instalador/MV-Agendate-IA-Setup.exe      INSTALADOR/CLIENTE/
           cp dist-instalador/MV-Agendate-IA-Setup-Demo.exe INSTALADOR/CLIENTE/
