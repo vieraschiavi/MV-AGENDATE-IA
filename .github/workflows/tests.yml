@@ -32,5 +32,8 @@ jobs:
       - name: Linter
         run: npm run lint
 
+      # Reporter compacto: el TAP por defecto son ~1100 líneas para 145 tests y
+      # el detalle de lo que falló queda enterrado en el medio, donde no se ve
+      # sin descargar el log entero. Con "dot" el resumen de fallos va al final.
       - name: Tests
-        run: npm test
+        run: npm test -- --test-reporter=dot
