@@ -54,6 +54,24 @@ de su Windows y quedarse con el programa sin pagar.
 |---|---|
 | `MV-Agendate-IA-Setup-Dueno.exe` | **Versión del dueño**, instalador: idéntica a la de venta (mismo producto, mismos accesos directos y desinstalador, mismo código ofuscado) pero con la **prueba desactivada** (`diasPrueba: 0`): funciona sin licencia ni límite de días. |
 | `MV-Agendate-IA-PC-Dueno.zip` | **Versión del dueño, portable.** Misma idea, para llevar en un pendrive. |
+| `Convertir-a-version-dueno.bat` | Pasa una copia **ya instalada** (la normal, la que se vende) a versión dueño, sin reinstalar. Se copia a la carpeta donde quedó instalado el programa y se le hace doble clic. |
+
+### Convertir-a-version-dueno.bat — cuándo sirve y cuándo no
+
+Sirve para no bajar 97 MB cuando ya tenés la versión normal instalada: reemplaza
+los dos archivos donde viaja la edición —`electron/owner-config.cjs` y
+`src/store/dias-prueba.js`, dentro de `resources\app\`— por los de la variante
+dueño, y deja una copia `.original` de cada uno. Corriéndolo de nuevo ofrece
+volver atrás. El resto del programa (incluido el código ofuscado) no se toca.
+
+**Es la llave maestra de tu propio producto: no lo repartas.** Convierte
+cualquier copia instalada en la versión completa, así que si se filtra a un
+cliente, a un chat o a una captura, cualquiera puede destrabar lo que vendés.
+Por eso vive solo acá, en `INSTALADOR/OWNER/` del repo privado — nunca en
+`public/`, nunca en el release, nunca adentro de un paquete.
+
+Si tenés dudas, usá directamente `MV-Agendate-IA-Setup-Dueno.exe`: es el mismo
+resultado sin ningún archivo suelto dando vueltas.
 
 **Nunca se publican en la web ni en el release**: no viven en `public/` (Vercel
 no las sirve) y no van al release público. Su único canal es esta carpeta del
