@@ -58,7 +58,13 @@ test('crearPreferencia manda el precio EXACTO del pedido, nunca uno recalculado'
       assert.equal(r.preference_id, 'pref-1');
     }
   );
-  assert.equal(bodyEnviado.items[0].unit_price, 299, 'el monto cobrado tiene que ser el del pedido, no otro');
+  // El monto sale del pedido (no de un recálculo del catálogo), pero se cobra
+  // en UYU: MercadoPago rechaza USD en cuentas de Uruguay ("Cannot operate with
+  // currency id USD in MLU"), así que mandar 299 USD hacía fallar la creación
+  // de la preferencia y el checkout moría con "No pude crear la preferencia".
+  assert.equal(bodyEnviado.items[0].currency_id, 'UYU', 'una cuenta MLU no acepta USD');
+  assert.equal(bodyEnviado.items[0].unit_price, 299 * 42,
+    'el monto cobrado tiene que derivar del pedido, convertido a UYU');
   assert.equal(bodyEnviado.external_reference, 'ORD-99', 'para poder reconciliar el webhook con el pedido correcto');
   assert.equal(bodyEnviado.notification_url, 'https://mv.test/api/pago/mercadopago');
 });
@@ -97,7 +103,8 @@ test('crearPreferenciaCreditos arma la external_reference "credito:cuenta:monto"
     }
   );
   assert.equal(bodyEnviado.external_reference, 'credito:cta-42:15');
-  assert.equal(bodyEnviado.items[0].unit_price, 15);
+  assert.equal(bodyEnviado.items[0].currency_id, 'UYU');
+  assert.equal(bodyEnviado.items[0].unit_price, 15 * 42, 'el pack de créditos también se cobra en UYU');
 });
 
 test('planRecurrente reutiliza el plan ya creado y cacheado si sigue activo (no duplica el cobro mensual)', async () => {

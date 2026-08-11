@@ -639,7 +639,7 @@ app.post('/api/comprar', limitar({ nombre: 'comprar', max: 10, ventanaSeg: 300,
   if (await esBot(req)) return res.status(403).json({ error: 'Acceso denegado.' });
   // Único medio de pago: MercadoPago. Nunca simulamos la compra: o redirigimos
   // al checkout real de MercadoPago (init_point), o devolvemos un error claro.
-  const r = lic.crearPedido({ ...(req.body ?? {}), medio: 'mercadopago' });
+  const r = await lic.crearPedido({ ...(req.body ?? {}), medio: 'mercadopago' });
   if (!r.ok) return res.status(400).json(r);
   if (!mercadopagoActivo()) {
     return res.status(503).json({ ok: false, error: 'El cobro con MercadoPago todavía no está activo. El vendedor debe cargar su Access Token de MercadoPago en la configuración (o env MERCADOPAGO_TOKEN).' });
@@ -666,9 +666,9 @@ async function procesarPreapproval(pre) {
   }
   let licencia = await suscripciones.buscarLicenciaPorPreapproval(pre.id);
   if (!licencia) {
-    const pedido = lic.buscarPedidoPendientePorEmail(pre.payer_email, pre.external_reference || undefined);
+    const pedido = await lic.buscarPedidoPendientePorEmail(pre.payer_email, pre.external_reference || undefined);
     if (pedido) {
-      const confirmado = lic.confirmarPago(pedido.id);
+      const confirmado = await lic.confirmarPago(pedido.id);
       if (confirmado.ok) {
         licencia = confirmado.pedido.licencia;
         await suscripciones.vincularPreapproval(pre.id, licencia);
@@ -693,7 +693,7 @@ app.post('/api/pago/mercadopago', async (req, res) => {
           const r = await acreditar(cuentaId, Number(monto));
           if (r.ok) emails.avisarRecarga(cuentaId, Number(monto), r.saldo).catch(() => {});
         } else {
-          const r = lic.confirmarPago(pago.external_reference);
+          const r = await lic.confirmarPago(pago.external_reference);
           // La licencia también viaja por email (además de verse en /gracias.html)
           if (r.ok && !r.yaEstaba && r.pedido?.email) {
             const base = cfg('sitioUrl') || `${req.protocol}://${req.get('host')}`;
@@ -772,23 +772,23 @@ app.post('/api/licencia/activar', soloAdmin, (req, res) => {
   const r = activarLicencia(req.body?.codigo);
   res.status(r.ok ? 200 : 400).json(r);
 });
-app.get('/api/pedido/:id', (req, res) => {
-  const p = lic.obtenerPedido(req.params.id);
+app.get('/api/pedido/:id', async (req, res) => {
+  const p = await lic.obtenerPedido(req.params.id);
   if (!p) return res.status(404).json({ ok: false, error: 'No existe' });
   res.json({
     ok: true, estado: p.estado, token: p.token, licencia: p.licencia, version: p.version,
     plan: p.plan, planNombre: lic.PLANES[p.plan]?.nombre, total_usd: p.total_usd, medio: p.medio, nombre: p.nombre
   });
 });
-app.post('/api/pago/confirmar', soloAdmin, (req, res) => { const r = lic.confirmarPago(req.body?.id); res.status(r.ok ? 200 : 400).json(r); });
-app.get('/api/licencias', soloAdmin, (_req, res) => res.json(lic.listarPedidos()));
+app.post('/api/pago/confirmar', soloAdmin, async (req, res) => { const r = await lic.confirmarPago(req.body?.id); res.status(r.ok ? 200 : 400).json(r); });
+app.get('/api/licencias', soloAdmin, async (_req, res) => res.json(await lic.listarPedidos()));
 app.post('/api/descarga/generar', soloAdmin, (req, res) => {
   const version = String(req.body?.version || 'pc');
   const token = lic.firmarDescarga(version, Number(req.body?.dias) || 30);
   res.json({ ok: true, version, token, url: `/descargar/${token}` });
 });
-app.get('/descargar/:token', (req, res) => {
-  const conEstado = lic.validarToken(req.params.token);
+app.get('/descargar/:token', async (req, res) => {
+  const conEstado = await lic.validarToken(req.params.token);
   const sinEstado = conEstado ? null : lic.verificarDescarga(req.params.token);
   const version = conEstado?.version || sinEstado?.version;
   if (!version) return res.status(403).send('Descarga no habilitada. Verificá que el pago esté confirmado.');
