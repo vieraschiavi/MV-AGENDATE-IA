@@ -61,6 +61,14 @@ jobs:
       - run: npm run empaquetar-exe-demo
       - run: npm run empaquetar-exe-owner
 
+      # Y las mismas tres en versión PORTABLE (.zip con lanzador .bat, sin
+      # instalador): es la alternativa para los clientes cuya empresa no deja
+      # abrir ejecutables. Van después de los exes porque comparten
+      # dist-protegido/ y cada una lo regenera con los días de SU variante.
+      - name: Paquetes portables (.bat) de las tres variantes
+        shell: bash
+        run: npm run empaquetar-pc-todos
+
       - name: Publicar release (siempre "latest")
         uses: softprops/action-gh-release@v2
         with:
@@ -76,14 +84,19 @@ jobs:
           files: |
             dist-instalador/MV-Agendate-IA-Setup.exe
             dist-instalador/MV-Agendate-IA-Setup-Demo.exe
+            public/descargas/MV-Agendate-IA-PC.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Deja los tres exes recién buildeados committeados en INSTALADOR/ para
-      # que el ZIP del repo (Code → Download ZIP) siempre traiga los
-      # instaladores al día: CLIENTE/ (demo + oficial) y OWNER/ (la del dueño,
-      # sin límite de prueba, que nunca va al release). El push solo toca
-      # INSTALADOR/, que no está en los paths de arriba — no re-dispara esto.
+      # Deja lo recién buildeado committeado en INSTALADOR/ para que el ZIP del
+      # repo (Code → Download ZIP) siempre traiga las entregas al día. De cada
+      # variante van las DOS formas: el instalador .exe y el paquete portable
+      # .zip con lanzador .bat (los .zip ya los dejó en su carpeta el paso
+      # anterior, por eso acá solo se copian los exes).
+      #   CLIENTE/ → oficial + demo, .exe y .zip
+      #   OWNER/   → la del dueño, sin límite de prueba, que nunca va al release
+      # El push solo toca INSTALADOR/, que no está en los paths de arriba — no
+      # re-dispara esto.
       #
       # También refresca public/descargas/: el botón "Descargar para PC" de
       # /instalar.html apunta al archivo estático de esa carpeta, y src/server.js
@@ -91,7 +104,7 @@ jobs:
       # entregando el exe viejo (p.ej. con la prueba de días anterior) por más
       # que el release esté al día. public/descargas/** está excluido de los
       # paths de arriba, así que este commit tampoco re-dispara el build.
-      - name: Actualizar instaladores del repo (INSTALADOR/ + web)
+      - name: Actualizar entregas del repo (INSTALADOR/ + web)
         shell: bash
         run: |
           # GitHub rechaza archivos de 100 MiB o más. Los exes rondan los 97,5

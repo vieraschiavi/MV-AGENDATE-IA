@@ -1,31 +1,62 @@
-========================================
-  MV Agendate IA — Versión PC (prueba)
-========================================
+====================================================================
+ MV AGENDATE IA - {{ETIQUETA}}
+ Version portable para Windows / Mac / Linux (sin instalar nada)
+====================================================================
 
-¡Gracias por probar MV Agendate IA! Esta es la versión completa para
-computadora (Windows / Mac / Linux). Funciona GRATIS por 7 días; después
-te pide la licencia (la comprás una sola vez).
+QUE ES ESTO
+-----------
+El mismo programa que el instalador .exe, pero que se ejecuta desde esta
+carpeta con un archivo .bat, sin instalador. Esta pensado para las
+empresas donde no se pueden abrir instaladores .exe.
 
---------- CÓMO ABRIRLO (2 pasos) ---------
+{{PRUEBA}}
 
-1) Necesitás Node.js instalado (una sola vez, es gratis):
-   descargalo de  https://nodejs.org/es/download  e instalá la versión "LTS".
+COMO SE USA (Windows)
+---------------------
+  1. Descomprimi esta carpeta donde quieras (Escritorio, Documentos, un
+     pendrive, la unidad de red de la empresa).
+  2. Doble clic en:  Iniciar-MV-Agendate.bat
+  3. Se abre una ventana negra (es el motor: DEJALA ABIERTA) y el
+     programa se abre solo en tu navegador, en el panel de trabajo.
+  4. Para cerrar el programa, cerra la ventana negra.
 
-2) Abrí el programa:
-   - Windows:  doble clic en  "Iniciar-MV-Agendate.bat"
-   - Mac:      doble clic en  "Iniciar-MV-Agendate.command"
-               (si Mac lo bloquea: clic derecho -> Abrir -> Abrir)
-   - Linux:    ejecutá  ./Iniciar-MV-Agendate.command  en la terminal
+  Opcional: doble clic en Crear-acceso-directo.bat y te deja el icono de
+  MV Agendate IA en el escritorio y en el menu Inicio, igual que el
+  instalador. Para sacarlos, Quitar-accesos-directos.bat.
 
-La primera vez tarda un par de minutos (baja lo que necesita). Después se
-abre solo en tu navegador, en  http://localhost:3000
+COMO SE USA (Mac / Linux)
+-------------------------
+  Doble clic en Iniciar-MV-Agendate.command (en Mac, la primera vez:
+  clic derecho -> Abrir).
 
---------- PRIMEROS PASOS ---------
+QUE NECESITA
+------------
+  - Node.js instalado (gratis, una sola vez): https://nodejs.org
+    Si no lo tenes, el .bat te abre la pagina de descarga.
+  - NO necesita internet para funcionar: las librerias ya vienen adentro
+    de esta carpeta (node_modules). Internet solo hace falta para que el
+    asistente con IA converse y para cobrar por MercadoPago.
 
-- Entrá a "Configuración" y elegí tu profesión, tu país y tus precios.
-- Para que el chatbot use IA real, pegá tu API key (Claude, ChatGPT o Gemini)
-  en Configuración. Sin key igual podés usar agenda, cotizador, CRM y tableros.
-- Cuando compres, pegá tu código de licencia en Configuración para seguir
-  usándolo después de los 7 días.
+DONDE QUEDAN TUS DATOS
+----------------------
+  En la subcarpeta  data\  de esta misma carpeta: tu agenda, tus
+  clientes, tus precios y tu configuracion. Si copias la carpeta entera
+  a otra computadora, te llevas todo. Si la borras, se borran tus datos:
+  copiate  data\  antes.
 
-Dudas: escribinos desde el botón "Contacto" en la web.
+SI ALGO NO ARRANCA
+------------------
+  - "Falta Node.js": instalalo desde https://nodejs.org (version LTS) y
+    volve a abrir el .bat.
+  - El navegador no abre solo: mira la ventana negra, ahi dice la
+    direccion (algo como http://localhost:3000/app/). Copiala y pegala
+    en el navegador.
+  - El puerto 3000 estaba ocupado: no es problema, el programa toma el
+    siguiente libre y lo avisa en la ventana negra.
+  - Windows pregunta si permitis el acceso a la red: es el programa
+    hablando con tu propio navegador. Podes decir que si (o que no: en
+    red privada anda igual).
+
+SOPORTE
+-------
+  Escribinos desde el boton "Contacto" dentro del programa.

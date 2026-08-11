@@ -19,6 +19,9 @@ const ownerConfig = require('./owner-config.cjs');
 const PUERTO_PEDIDO = Number(process.env.PORT) || 3000;
 const RAIZ = path.join(__dirname, '..');
 const SERVIDOR = path.join(RAIZ, 'src', 'server.js');
+// Pantalla con la que abre el programa instalado: el PANEL de trabajo.
+// El lanzador .bat abre esta misma ruta en el navegador (src/server.js).
+const RUTA_APP = '/app/';
 
 let procesoServidor = null;
 let ventana = null;
@@ -140,7 +143,11 @@ async function crearVentana() {
   ventana.loadURL(CARGANDO_HTML);
   try {
     const puerto = await esperarServidor();
-    if (!ventana.isDestroyed()) ventana.loadURL(`http://localhost:${puerto}/`);
+    // OJO: va a RUTA_APP, no a "/". La raíz es la LANDING DE VENTA (público:
+    // visitantes de la web); el cliente que instaló el programa tiene que ver
+    // el PANEL de trabajo — agenda, cotizador, CRM. Apuntar a "/" abría la
+    // publicidad adentro de la app instalada.
+    if (!ventana.isDestroyed()) ventana.loadURL(`http://localhost:${puerto}${RUTA_APP}`);
   } catch (e) {
     mostrarError('No pude iniciar el servidor.', e.message);
   }

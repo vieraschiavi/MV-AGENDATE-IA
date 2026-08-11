@@ -67,6 +67,12 @@ async function esBot(req) {
 }
 
 const here = dirname(fileURLToPath(import.meta.url));
+
+// Pantalla con la que abre el programa instalado (exe y lanzador .bat): el
+// PANEL de trabajo. La raíz "/" es la landing de venta y NO es lo que tiene
+// que ver un cliente que ya compró — ver electron/main.cjs.
+export const RUTA_APP = '/app/';
+
 const app = express();
 app.set('trust proxy', true);
 
@@ -805,6 +811,9 @@ app.get('/descargar/:token', (req, res) => {
   // Si el .exe no está commiteado en public/descargas/ (ver empaquetar-exe),
   // como respaldo redirigimos al último build publicado en GitHub Releases.
   const urlExterna = cfg('descargaExeUrl');
+  // pc_zip (el portable) queda afuera del respaldo a propósito: esa URL apunta
+  // al .exe del release, y quien pidió el portable justamente no puede abrir
+  // ejecutables — mandarle uno sería peor que avisarle que no está listo.
   const esDesktop = version === 'pc' || version === 'pc_exe' || version === 'todas';
   if (esDesktop && urlExterna) return res.redirect(302, urlExterna);
   res.status(503).send('El paquete aún no está disponible. En el servidor: npm run empaquetar-pc' + (esDesktop ? ' / empaquetar-exe' : ''));
@@ -854,9 +863,14 @@ if (process.env.VERCEL) {
       if (puerto !== Number(PORT)) {
         console.log(`   (el ${PORT} estaba ocupado por otro programa)`);
       }
+      // Primero y separado: es lo que el cliente necesita si el navegador no
+      // abrió solo. La landing va al final — es la página de venta, no el
+      // programa.
+      console.log(`\n   👉  TU PROGRAMA:  ${url}${RUTA_APP}`);
+      console.log('       (si el navegador no se abrió solo, copiá esa dirección)\n');
       console.log(`   Modo: ${enModoDemo() ? 'DEMO (sin API key — cargala en /config.html)' : 'IA real (Claude)'}`);
       console.log('   Configuración/API key: /config.html');
-      console.log('   Landing:  /            Demo chat+voz: /demo.html      Panel: /panel.html');
+      console.log('   Página de venta: /      Demo chat+voz: /demo.html');
       console.log('   Webhooks: /webhook/whatsapp  /webhook/voz  /webhook/voz-premium');
       const ips = ipsLocales();
       if (ips.length) {
@@ -870,7 +884,12 @@ if (process.env.VERCEL) {
       // El navegador lo abre el servidor, no el lanzador .bat: hasta acá no se
       // sabía el puerto final. El .bat abría siempre el 3000 y, si ese puerto
       // era de otra app, le mostraba esa otra app al cliente.
-      if (process.env.MV_ABRIR_NAVEGADOR === '1') abrirNavegador(url);
+      //
+      // Abre el PANEL (RUTA_APP), no la raíz: "/" es la landing de venta, que
+      // es lo que tiene que ver un visitante de la web, no el cliente que ya
+      // compró e instaló el programa. Misma ruta que abre la ventana de
+      // escritorio (electron/main.cjs).
+      if (process.env.MV_ABRIR_NAVEGADOR === '1') abrirNavegador(url + RUTA_APP);
     })
     .catch((e) => {
       console.error(`\n[X] No se pudo abrir el servidor en el puerto ${PORT}: ${e.message}`);

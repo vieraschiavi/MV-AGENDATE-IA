@@ -24,8 +24,7 @@ import { readdirSync, statSync, readFileSync, writeFileSync, mkdirSync, rmSync }
 import { join, dirname, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import JavaScriptObfuscator from 'javascript-obfuscator';
-import { configVariante } from './variante-instalador.js';
-import { DIAS_PRUEBA_CLIENTE } from '../src/store/dias-prueba.js';
+import { configVariante, diasPruebaVariante, diasDeVariante } from './variante-instalador.js';
 
 const RAIZ = dirname(dirname(fileURLToPath(import.meta.url)));
 const SALIDA = join(RAIZ, 'dist-protegido');
@@ -36,10 +35,14 @@ if (ES_OWNER && ES_DEMO) {
   console.error('✘ --owner y --demo son excluyentes: elegí una variante.');
   process.exit(1);
 }
-const OWNER_CONFIG_RUTA = join(RAIZ, 'electron', 'owner-config.cjs');
-// Línea que reemplaza a owner-config.cjs según la variante. Nunca es null: el
-// instalador siempre sale con los días de prueba fijados adentro.
-const CONFIG_VARIANTE = configVariante({ owner: ES_OWNER, demo: ES_DEMO });
+// Los dos archivos que el empaquetador reescribe con los días de la variante.
+// Ninguno queda "sin fijar": la entrega siempre sale con el número adentro, y
+// se cubren las dos formas de arrancar (ventana Electron y paquete .bat).
+const VARIANTE = { owner: ES_OWNER, demo: ES_DEMO };
+const REESCRITOS = new Map([
+  [join(RAIZ, 'electron', 'owner-config.cjs'), configVariante(VARIANTE)],   // lo lee electron/main.cjs
+  [join(RAIZ, 'src', 'store', 'dias-prueba.js'), diasPruebaVariante(VARIANTE)] // lo lee src/store/prueba.js (también en el .bat)
+]);
 
 const OPCIONES = {
   compact: true,
@@ -81,11 +84,9 @@ for (const carpeta of CARPETAS) {
 
     const ext = extname(rutaOrigen);
     if (ext === '.js' || ext === '.cjs' || ext === '.mjs') {
-      const esConfigVariante = rutaOrigen === OWNER_CONFIG_RUTA;
-      if (esConfigVariante) configsEscritas++;
-      const codigo = esConfigVariante
-        ? CONFIG_VARIANTE
-        : readFileSync(rutaOrigen, 'utf8');
+      const reescrito = REESCRITOS.get(rutaOrigen);
+      if (reescrito !== undefined) configsEscritas++;
+      const codigo = reescrito !== undefined ? reescrito : readFileSync(rutaOrigen, 'utf8');
       const resultado = JavaScriptObfuscator.obfuscate(codigo, OPCIONES);
       writeFileSync(rutaDestino, resultado.getObfuscatedCode());
       ofuscados++;
@@ -96,15 +97,19 @@ for (const carpeta of CARPETAS) {
   });
 }
 
-// Sin este chequeo, que electron/owner-config.cjs cambie de ruta o de nombre
-// haría salir el instalador con el archivo del repo (diasPrueba:null) y el
-// candado volvería a depender del DIAS_PRUEBA de la máquina del comprador —
-// en silencio, con el build en verde.
-if (configsEscritas !== 1) {
-  console.error(`✘ Esperaba fijar la config de la variante exactamente 1 vez y la fijé ${configsEscritas}. ` +
-    `¿Se movió ${OWNER_CONFIG_RUTA}? El instalador saldría sin los días de prueba fijados.`);
+// Sin este chequeo, que uno de los dos archivos cambie de ruta o de nombre
+// haría salir la entrega con el archivo del repo (sin fijar) y el candado
+// volvería a depender del DIAS_PRUEBA de la máquina del comprador — en
+// silencio, con el build en verde.
+if (configsEscritas !== REESCRITOS.size) {
+  console.error(`✘ Esperaba fijar los días de la variante en ${REESCRITOS.size} archivos y los fijé en ${configsEscritas}. ` +
+    `¿Se movió alguno de estos?\n  ${[...REESCRITOS.keys()].join('\n  ')}\n` +
+    `La entrega saldría sin los días de prueba fijados.`);
   process.exit(1);
 }
 
-const etiqueta = ES_OWNER ? ' [OWNER — sin límite de prueba]' : ES_DEMO ? ' [DEMO — prueba de 3 días fija]' : ` [CLIENTE — prueba de ${DIAS_PRUEBA_CLIENTE} días fija]`;
+const DIAS = diasDeVariante(VARIANTE);
+const etiqueta = ES_OWNER ? ' [OWNER — sin límite de prueba]'
+  : ES_DEMO ? ` [DEMO — prueba de ${DIAS} días fija]`
+  : ` [CLIENTE — prueba de ${DIAS} días fija]`;
 console.log(`✔ Ofuscados ${ofuscados} archivos .js/.cjs, copiados ${copiados} archivos de datos → ${SALIDA}${etiqueta}`);

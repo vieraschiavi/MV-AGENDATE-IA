@@ -14,12 +14,19 @@
 // marketing y el modo SaaS online, que tiene su propio trial POR CUENTA
 // (14 días, ver store/cuentas.js). El discriminador es process.env.VERCEL.
 import { get as cfg, setConfig } from './config.js';
-import { DIAS_PRUEBA_CLIENTE } from './dias-prueba.js';
+import { DIAS_PRUEBA_CLIENTE, DIAS_FIJADOS } from './dias-prueba.js';
 
 const MS_DIA = 86400000;
 
-/** Días de prueba (env DIAS_PRUEBA, default 7). 0 o negativo = sin límite. */
+/**
+ * Días de prueba. 0 o negativo = sin límite.
+ * Orden: lo que fijó el empaquetador (manda siempre, es lo que hace que el
+ * candado no dependa de la máquina del cliente) → env DIAS_PRUEBA (solo en
+ * desarrollo y tests, donde nada está fijado) → default de la versión que se
+ * vende.
+ */
 function diasPrueba() {
+  if (Number.isFinite(DIAS_FIJADOS)) return DIAS_FIJADOS;
   const n = Number(process.env.DIAS_PRUEBA);
   return Number.isFinite(n) ? n : DIAS_PRUEBA_CLIENTE;
 }

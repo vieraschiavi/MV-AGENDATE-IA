@@ -144,6 +144,9 @@ export function archivoDeVersion(version) {
   return {
     pc: 'MV-Agendate-IA-Setup.exe',
     pc_exe: 'MV-Agendate-IA-Setup.exe',
+    // Portable: mismo programa sin instalador, para los clientes cuya empresa
+    // no deja abrir ejecutables (ver INSTALADOR/README.md).
+    pc_zip: 'MV-Agendate-IA-PC.zip',
     apk: 'MV-Agendate-IA.apk',
     ios: 'MV-Agendate-IA-Setup.exe',
     todas: 'MV-Agendate-IA-Setup.exe',
