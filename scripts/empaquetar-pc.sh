@@ -101,22 +101,43 @@ LEEME_DESTINO="$APP/LEEME.txt" LEEME_ETIQUETA="$ETIQUETA" LEEME_PRUEBA="$TEXTO_P
     .replaceAll('{{PRUEBA}}', process.env.LEEME_PRUEBA), 'utf8');
 "
 
-# Comprimir con lo que haya: `zip` en Linux/Mac, y en los runners de Windows
-# (Git Bash no trae zip) PowerShell o 7z, que sí están.
+# Comprimir con lo que haya: `zip` en Linux/Mac y 7z en los runners de Windows
+# (Git Bash no trae zip).
+#
+# PowerShell (Compress-Archive) va ÚLTIMO y solo como último recurso: escribe
+# los nombres de entrada con contrabarra ("MV-Agendate-IA\LEEME.txt") en vez de
+# la barra que manda el estándar ZIP. Windows lo abre igual, pero el
+# descompresor de macOS y varias herramientas de Linux se comen esos nombres
+# como texto y le dejan al cliente una carpeta rota — y este paquete incluye un
+# lanzador para Mac.
 comprimir() {
   local dir="$1" salida="$2"
   if command -v zip >/dev/null 2>&1; then
     ( cd "$dir" && zip -rq "$salida" MV-Agendate-IA )
+  elif command -v 7z >/dev/null 2>&1; then
+    ( cd "$dir" && 7z a -tzip -bso0 -bsp0 "$salida" MV-Agendate-IA >/dev/null )
   elif command -v powershell >/dev/null 2>&1; then
+    echo "⚠  Sin zip ni 7z: uso Compress-Archive, que escribe rutas con contrabarra."
     powershell -NoProfile -Command \
       "Compress-Archive -Path '$(cd "$dir" && pwd -W 2>/dev/null || echo "$dir")\\MV-Agendate-IA' -DestinationPath '$(cd "$dir" && pwd -W 2>/dev/null || echo "$dir")\\$salida' -Force"
-  elif command -v 7z >/dev/null 2>&1; then
-    ( cd "$dir" && 7z a -tzip -bso0 -bsp0 "$salida" MV-Agendate-IA )
   else
-    echo "✘ No encontré con qué comprimir (zip, powershell ni 7z)."; exit 1
+    echo "✘ No encontré con qué comprimir (zip, 7z ni powershell)."; exit 1
   fi
 }
 comprimir "$STAGE" "$NOMBRE"
+
+# El zip tiene que quedar con rutas estándar (barra), sin importar con qué
+# herramienta se armó. Si sale con contrabarra, el cliente se baja una carpeta
+# que puede no abrirse bien fuera de Windows: mejor que falle el build acá.
+node -e "
+  const { readFileSync } = require('node:fs');
+  const zip = readFileSync(process.argv[1]);
+  if (zip.includes(Buffer.from('MV-Agendate-IA\\\\'))) {
+    console.error('✘ El zip quedó con rutas en contrabarra (no estándar): se rompe al descomprimir fuera de Windows.');
+    process.exit(1);
+  }
+  console.log('   rutas del zip: estándar (barra) ✔');
+" "$STAGE/$NOMBRE"
 
 for destino in "${DESTINOS[@]}"; do
   mkdir -p "$destino"
