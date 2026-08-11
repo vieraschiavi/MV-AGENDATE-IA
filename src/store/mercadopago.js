@@ -11,12 +11,31 @@ const API = 'https://api.mercadopago.com';
 
 export function mercadopagoActivo() { return !!cfg('mercadopagoToken'); }
 
-// --- Suscripciones recurrentes (Preapproval) ---
-// Confirmado contra la cuenta real: MercadoPago RECHAZA cobros recurrentes en
-// USD para cuentas de Uruguay ("Cannot operate with currency id USD in MLU").
-// El precio público sigue en USD; el cobro real es en UYU, convertido acá con
-// un tipo de cambio de referencia (env TIPO_CAMBIO_UYU).
+// --- Moneda de cobro ---
+// Confirmado contra la cuenta real: MercadoPago RECHAZA cobros en USD para
+// cuentas de Uruguay ("Cannot operate with currency id USD in MLU"). Vale para
+// las suscripciones (preapproval) Y para las preferencias de pago único: la
+// API devuelve error y no llega init_point, así que el checkout muere con
+// "No pude crear la preferencia".
+//
+// Esto estaba aplicado sólo en el camino recurrente. Las preferencias de pago
+// único — que son los DOS productos estrella, Básico US$129 y Full US$299 —
+// mandaban currency_id 'USD' igual, ocho líneas debajo del comentario que
+// explica por qué eso no funciona. El precio público sigue en USD; el cobro
+// real va en UYU, convertido acá con un tipo de cambio de referencia
+// (env TIPO_CAMBIO_UYU).
 const tipoCambioUyu = () => Number(process.env.TIPO_CAMBIO_UYU) || 42;
+
+/**
+ * Traduce un precio de lista en USD al monto y la moneda con que se cobra.
+ * Un solo lugar para que los caminos de pago único y recurrente no se
+ * desincronicen otra vez.
+ */
+export function montoDeCobro(precioUsd) {
+  const moneda = process.env.MP_CURRENCY || 'UYU';
+  if (moneda === 'USD') return { currency_id: 'USD', unit_price: Number(precioUsd) };
+  return { currency_id: moneda, unit_price: Math.round(Number(precioUsd) * tipoCambioUyu()) };
+}
 
 /**
  * Crea (o reutiliza, cacheado en config) el plan recurrente de un tier.
@@ -42,14 +61,17 @@ export async function planRecurrente(tier, precioUsd) {
       }
     } catch { /* si falla la relectura, creamos uno nuevo abajo */ }
   }
-  const precioUyu = Math.round(precioUsd * tipoCambioUyu());
+  const cobro = montoDeCobro(precioUsd);
   try {
     const r = await fetch(`${API}/preapproval_plan`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({
         reason: `MV Agendate IA — ${tier}`,
-        auto_recurring: { frequency: 1, frequency_type: 'months', transaction_amount: precioUyu, currency_id: 'UYU' },
+        auto_recurring: {
+          frequency: 1, frequency_type: 'months',
+          transaction_amount: cobro.unit_price, currency_id: cobro.currency_id,
+        },
         back_url: `${cfg('sitioUrl') || ''}/gracias.html`
       })
     });
@@ -94,7 +116,7 @@ export async function crearPreferencia(pedido, baseUrl) {
   const body = {
     items: [{
       title: `MV Agendate IA — Plan ${pedido.plan}`,
-      quantity: 1, currency_id: 'USD', unit_price: Number(pedido.total_usd)
+      quantity: 1, ...montoDeCobro(pedido.total_usd)
     }],
     payer: pedido.email ? { email: pedido.email } : undefined,
     external_reference: pedido.id,
@@ -127,7 +149,7 @@ export async function crearPreferenciaCreditos({ cuentaId, monto, email }, baseU
   if (!token) return { ok: false, error: 'MercadoPago no está configurado (falta el Access Token).' };
   const ref = `credito:${cuentaId}:${monto}`;
   const body = {
-    items: [{ title: `MV Agendate IA — Créditos de IA (US$ ${monto})`, quantity: 1, currency_id: 'USD', unit_price: Number(monto) }],
+    items: [{ title: `MV Agendate IA — Créditos de IA (US$ ${monto})`, quantity: 1, ...montoDeCobro(monto) }],
     payer: email ? { email } : undefined,
     external_reference: ref,
     back_urls: { success: `${baseUrl}/app/#/cuenta`, pending: `${baseUrl}/app/#/cuenta`, failure: `${baseUrl}/app/#/cuenta` },

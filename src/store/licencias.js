@@ -6,10 +6,14 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { randomUUID, randomBytes, createHmac, timingSafeEqual } from 'node:crypto';
+import { redisDisponible, kvGet, kvSet } from './redis.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const DIR = process.env.MV_DATOS_DIR || (process.env.VERCEL ? '/tmp/mvdata' : join(here, '../../data'));
 const FILE = join(DIR, 'licencias.json');
+// Clave única de los pedidos en Redis. Los demás stores del repo (cuentas,
+// creditos, suscripciones…) ya persisten así; éste era el único que no.
+const CLAVE_REDIS = 'mvagendate:pedidos';
 
 // Planes y precios (USD, pago único vía la tienda). Editables. version: 'pc' | 'apk' | 'ios' | 'todas'.
 // Precio de referencia según relevamiento de competencia LATAM/Uruguay (ver README
@@ -40,13 +44,35 @@ export const PLANES = {
 // Único medio de pago: MercadoPago (tarjeta, saldo, etc. dentro de su checkout).
 export const MEDIOS = ['mercadopago'];
 
+// Persistencia. En serverless (Vercel) el pedido se crea en un lambda y el
+// webhook de MercadoPago llega a OTRO: con los pedidos en /tmp, el webhook
+// buscaba el pedido, no lo encontraba y el cliente que ya había pagado se
+// quedaba sin licencia ni email ("No encontré tu pedido" en gracias.html).
+// Por eso van a Redis, que es lo que comparten todas las invocaciones.
 let db = null;
-function cargar() { if (!db) db = existsSync(FILE) ? JSON.parse(readFileSync(FILE, 'utf8')) : { pedidos: {} }; return db; }
-function guardar() { mkdirSync(DIR, { recursive: true }); writeFileSync(FILE, JSON.stringify(db, null, 2)); }
+
+async function cargar() {
+  if (redisDisponible()) {
+    // Siempre se relee: otra invocación pudo haber escrito mientras tanto,
+    // y un caché en memoria acá reintroduce exactamente el bug de arriba.
+    const crudo = await kvGet(CLAVE_REDIS);
+    db = (typeof crudo === 'string' ? JSON.parse(crudo) : crudo) || { pedidos: {} };
+    if (!db.pedidos) db.pedidos = {};
+    return db;
+  }
+  if (!db) db = existsSync(FILE) ? JSON.parse(readFileSync(FILE, 'utf8')) : { pedidos: {} };
+  return db;
+}
+
+async function guardar() {
+  if (redisDisponible()) { await kvSet(CLAVE_REDIS, JSON.stringify(db)); return; }
+  mkdirSync(DIR, { recursive: true });
+  writeFileSync(FILE, JSON.stringify(db, null, 2));
+}
 
 /** Crea un pedido pendiente de pago (siempre MercadoPago). */
-export function crearPedido({ plan, version = 'pc', email, nombre, recurrente }) {
-  cargar();
+export async function crearPedido({ plan, version = 'pc', email, nombre, recurrente }) {
+  await cargar();
   if (!PLANES[plan]) return { ok: false, error: 'Plan inválido.' };
   if (!email) return { ok: false, error: 'Falta el email.' };
   const id = 'ORD-' + randomBytes(4).toString('hex').toUpperCase();
@@ -58,13 +84,13 @@ export function crearPedido({ plan, version = 'pc', email, nombre, recurrente })
     creado: new Date().toISOString(), licencia: null, token: null
   };
   db.pedidos[id] = pedido;
-  guardar();
+  await guardar();
   return { ok: true, pedido };
 }
 
 /** Marca un pedido como pagado y emite licencia + token de descarga. */
-export function confirmarPago(id) {
-  cargar();
+export async function confirmarPago(id) {
+  await cargar();
   const p = db.pedidos[id];
   if (!p) return { ok: false, error: 'Pedido no encontrado.' };
   if (p.estado === 'pagado') return { ok: true, pedido: p, yaEstaba: true };
@@ -73,19 +99,19 @@ export function confirmarPago(id) {
   p.licencia = 'MV-' + p.plan.toUpperCase() + '-' + randomUUID().slice(0, 8).toUpperCase();
   // Token SIN ESTADO (funciona aunque el pedido no persista, ej. serverless).
   p.token = firmarDescarga(p.version);
-  guardar();
+  await guardar();
   return { ok: true, pedido: p };
 }
 
 /** Valida un token de descarga → pedido pagado. */
-export function validarToken(token) {
-  cargar();
+export async function validarToken(token) {
+  await cargar();
   const p = Object.values(db.pedidos).find((x) => x.token === token && x.estado === 'pagado');
   return p || null;
 }
 
-export function obtenerPedido(id) { return cargar().pedidos[id] || null; }
-export function listarPedidos() { return Object.values(cargar().pedidos).sort((a, b) => (b.creado || '').localeCompare(a.creado)); }
+export async function obtenerPedido(id) { return (await cargar()).pedidos[id] || null; }
+export async function listarPedidos() { return Object.values((await cargar()).pedidos).sort((a, b) => (b.creado || '').localeCompare(a.creado)); }
 
 /**
  * Busca el pedido pendiente más reciente de MercadoPago recurrente para un
@@ -95,8 +121,8 @@ export function listarPedidos() { return Object.values(cargar().pedidos).sort((a
  * único dato que MercadoPago nos devuelve para identificar al cliente es el
  * email que tipeó él mismo en su checkout.
  */
-export function buscarPedidoPendientePorEmail(email, plan) {
-  cargar();
+export async function buscarPedidoPendientePorEmail(email, plan) {
+  await cargar();
   const candidatos = Object.values(db.pedidos).filter((p) =>
     p.estado === 'pendiente' && p.medio === 'mercadopago' && p.recurrente &&
     (email ? p.email?.toLowerCase() === String(email).toLowerCase() : true) &&
