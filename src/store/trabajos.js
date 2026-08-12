@@ -214,6 +214,22 @@ export async function obtenerCita(id, cuentaId) {
 
 export async function crearCita(datos, cuentaId) {
   const db = await cargar(cuentaId);
+
+  // El choque se chequea ANTES de tocar la base. Si se hace después, el intento
+  // fallido ya dejó al cliente nuevo agregado —y `db` queda cacheada en memoria,
+  // así que ese cliente aparece en el CRM al instante y se persiste con la
+  // próxima cita que sí entre: un fantasma sin ninguna cita, uno por intento.
+  const profesionalId = datos.profesionalId || listarProfesionales()[0]?.id || 'default';
+  const choque = citaQueSeSuperpone(db.citas, {
+    fecha: datos.fecha, inicio: datos.inicio, fin: datos.fin, profesionalId
+  });
+  if (choque) {
+    const e = new Error(`El horario ${datos.inicio}-${datos.fin} del ${datos.fecha} ya está ocupado por la cita ${choque.id}.`);
+    e.codigo = 'HORARIO_OCUPADO';
+    e.citaExistente = choque;
+    throw e;
+  }
+
   let cliente = datos.clienteId ? db.clientes.find((c) => c.id === datos.clienteId) : null;
   if (!cliente && datos.telefono) cliente = db.clientes.find((c) => c.telefono === datos.telefono);
   if (!cliente) {
@@ -227,9 +243,6 @@ export async function crearCita(datos, cuentaId) {
   }
   const lat = Number.isFinite(datos.lat) ? datos.lat : cliente.lat;
   const lng = Number.isFinite(datos.lng) ? datos.lng : cliente.lng;
-  // Profesional del equipo que atiende (cuentas multi-profesional): si no se
-  // especifica, cae en el único configurado (o el primero de la lista).
-  const profesionalId = datos.profesionalId || listarProfesionales()[0]?.id || 'default';
   const cita = {
     id: nuevoId(db, 'CITA'),
     clienteId: cliente.id,
@@ -253,20 +266,6 @@ export async function crearCita(datos, cuentaId) {
     creado: iso(hoy()),
     actualizada: iso(hoy())
   };
-  // Última defensa contra el doble turno. buscar_horarios_disponibles SUGIERE
-  // huecos libres en el momento de preguntar, pero entre esa sugerencia y esta
-  // confirmación pasan varios turnos de conversación — y puede haber otra
-  // charla en paralelo cerrando el mismo horario. Sin este chequeo, el
-  // profesional se entera de que tiene dos clientes a la misma hora cuando
-  // llega a la puerta del segundo.
-  const choque = citaQueSeSuperpone(db.citas, cita);
-  if (choque) {
-    const e = new Error(`El horario ${cita.inicio}-${cita.fin} del ${cita.fecha} ya está ocupado por la cita ${choque.id}.`);
-    e.codigo = 'HORARIO_OCUPADO';
-    e.citaExistente = choque;
-    throw e;
-  }
-
   db.citas.push(cita);
   await guardar(cuentaId);
   notificarCRM('cita.confirmada', cita);

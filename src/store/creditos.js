@@ -6,7 +6,7 @@
 //
 // Solo aplica cuando la cuenta usa la key del vendedor (no trajo la suya). Si la
 // cuenta cargó SU propia API key, es BYOK: no consume créditos.
-import { kvGet, kvSet } from './redis.js';
+import { kvGet, kvSet, kvIncrBy, kvExpire, kvDel } from './redis.js';
 import { get as cfg } from './config.js';
 import { costoDeLlamada } from './uso.js';
 
@@ -104,22 +104,44 @@ export async function acreditar(cuentaId, montoUsd, pagoId) {
   const monto = Number(montoUsd) || 0;
   if (monto <= 0) return { ok: false, error: 'Monto inválido.' };
 
+  // La marca se toma con un INCR, que es atómico: el primero que llega recibe
+  // 1 y acredita, los demás reciben 2 o más y se van. Con un kvGet + kvSet
+  // había una ventana real entre leer y escribir, y MercadoPago manda los
+  // reintentos con milisegundos de diferencia: dos avisos del mismo pago
+  // podían leer "todavía no está" los dos y acreditar los dos.
   const marca = pagoId ? `credito:pago:${pagoId}` : null;
-  if (marca && await kvGet(marca)) {
-    const actual = await cargar(cuentaId);
-    return { ok: true, saldo: Math.round(actual.saldo * 100) / 100, bonificado: 0, yaEstaba: true };
+  let turno = 1;
+  if (marca) {
+    try {
+      turno = await kvIncrBy(marca, 1);
+      if (turno === 1) await kvExpire(marca, 90 * 86400).catch(() => {});
+    } catch {
+      // Sin Redis no hay forma de garantizar el "una sola vez". Se acredita
+      // igual: perderle una recarga paga a un cliente es peor que el riesgo de
+      // duplicarla, que se ve en el saldo y se corrige.
+      turno = 1;
+    }
+    if (turno > 1) {
+      const actual = await cargar(cuentaId);
+      return { ok: true, saldo: Math.round(actual.saldo * 100) / 100, bonificado: 0, yaEstaba: true };
+    }
   }
 
-  const bonif = bonoDePack(monto);
-  const c = await cargar(cuentaId);
-  c.saldo = Math.round((c.saldo + monto + bonif) * 1e6) / 1e6;
-  c.recargado = (c.recargado || 0) + monto;
-  c.bonificado = Math.round(((c.bonificado || 0) + bonif) * 100) / 100;
-  await kvSet(clave(cuentaId), c);
-  // Después de acreditar: si el proceso muere entre medio, el peor caso es
-  // acreditar dos veces un pago (recuperable), no perder una recarga pagada.
-  if (marca) await kvSet(marca, { cuentaId, monto, fecha: new Date().toISOString() });
-  return { ok: true, saldo: Math.round(c.saldo * 100) / 100, bonificado: bonif };
+  try {
+    const bonif = bonoDePack(monto);
+    const c = await cargar(cuentaId);
+    c.saldo = Math.round((c.saldo + monto + bonif) * 1e6) / 1e6;
+    c.recargado = (c.recargado || 0) + monto;
+    c.bonificado = Math.round(((c.bonificado || 0) + bonif) * 100) / 100;
+    await kvSet(clave(cuentaId), c);
+    return { ok: true, saldo: Math.round(c.saldo * 100) / 100, bonificado: bonif };
+  } catch (e) {
+    // Si la acreditación falla después de haber tomado la marca, hay que
+    // soltarla: si no, el reintento de MercadoPago se encuentra con la marca
+    // puesta, cree que ya se acreditó y el cliente paga sin recibir el saldo.
+    if (marca) await kvDel(marca).catch(() => {});
+    throw e;
+  }
 }
 
 // Packs de recarga (USD) con bonificación creciente: el grande regala +15%

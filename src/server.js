@@ -25,6 +25,7 @@ import { estadoCreditos, acreditar, bonoBienvenida, PACKS as PACKS_CREDITOS } fr
 import * as emails from './store/emails.js';
 import * as resenas from './store/resenas.js';
 import { runConCuenta, runConDemoPais, runConDemoIdioma } from './store/contextoCuenta.js';
+import { kvGet, kvSet } from './store/redis.js';
 import { obtenerOverrides, guardarOverrides, configPublicaCuenta } from './store/configCuentas.js';
 import { fichaCitaHTML, agendaCSV, agendaExcelHTML, clientesCSV, clientesExcelHTML } from './exports/documentos.js';
 import { resumenUso, catalogoConEstado } from './store/uso.js';
@@ -86,8 +87,14 @@ app.set('trust proxy', true);
 //
 // Envolver a mano los ochenta handlers sería ochenta lugares donde olvidarse.
 // Se envuelven de una sola vez los métodos de ruteo, ACÁ ARRIBA: desde este
-// punto, toda ruta que se declare abajo queda cubierta sola, y cualquier
-// rechazo va a parar al error handler del final del archivo.
+// punto, toda ruta declarada con app.get/post/... queda cubierta sola, y
+// cualquier rechazo va a parar al error handler del final del archivo.
+//
+// Alcance real: esto cubre las rutas declaradas SOBRE `app`. Los Router de
+// src/channels/ se montan con app.use y sus handlers internos no pasan por
+// acá, así que cada uno se hace cargo de sus propios errores (ver el
+// try/catch de conCuentaDeLaLlamada en voz.js, que además tiene que responder
+// TwiML y no un 500).
 const envolver = (fn) => (typeof fn !== 'function' || fn.length >= 4 ? fn : function envuelto(req, res, next) {
   try {
     const r = fn.call(this, req, res, next);
@@ -551,9 +558,19 @@ app.post('/api/agenda/chequear-retrasos', soloAdmin, async (_req, res) => {
 // nativos de alta frecuencia). Si configurás CRON_SECRET, protegé la llamada
 // pasando "Authorization: Bearer $CRON_SECRET" desde el servicio externo; sin
 // esa env no se exige nada (uso local/manual).
-app.get('/api/agenda/chequear-retrasos', async (req, res) => {
+app.get('/api/agenda/chequear-retrasos', limitar({ nombre: 'cron-retrasos', max: 20, ventanaSeg: 300 }), async (req, res) => {
   const secreto = process.env.CRON_SECRET;
-  if (secreto && req.headers.authorization !== `Bearer ${secreto}`) return res.status(401).json({ ok: false, error: 'No autorizado.' });
+  if (secreto) {
+    if (!igualSeguro(req.headers.authorization, `Bearer ${secreto}`)) {
+      return res.status(401).json({ ok: false, error: 'No autorizado.' });
+    }
+  } else if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+    // Sin CRON_SECRET esta ruta no puede quedar abierta en un deploy público:
+    // manda WhatsApp REALES a los clientes de TODAS las cuentas, con las
+    // credenciales de cada profesional. Dejarla sin llave es regalar un botón
+    // de "mandale un mensaje a toda la agenda" a cualquiera que sepa la URL.
+    return res.status(401).json({ ok: false, error: 'Configurá CRON_SECRET para exponer este chequeo.' });
+  }
   const avisos = await chequearRetrasosDeHoy();
   res.json({ ok: true, avisos });
 });
@@ -573,14 +590,34 @@ async function chequearRetrasosDeHoy() {
     const revisar = async () => {
       const citas = await trabajos.citasDelDia(hoyStr, cuentaId);
       if (!citas.length) return [];
-      const conUbicacion = citas.map((c) => ({
+
+      // La marca de "a este ya le avisé" que lleva revisarYAvisarAgendaDelDia
+      // vive en el objeto en memoria, y estas citas se releen de cero en cada
+      // pasada: sin persistirla, cada llamada al endpoint le manda el aviso de
+      // nuevo a TODOS. Con la ruta abierta eso era un botón de spam contra los
+      // clientes del profesional, cobrado a su cuenta de Meta.
+      const marca = (c) => `aviso-retraso:${cuentaId}:${c.id}:${hoyStr}`;
+      const yaAvisado = await Promise.all(citas.map((c) => kvGet(marca(c)).catch(() => null)));
+
+      const conUbicacion = citas.map((c, i) => ({
         ...c,
+        avisoRetrasoEnviado: !!yaAvisado[i] || !!c.avisoRetrasoEnviado,
         finEstimado: new Date(`${c.fecha}T${c.fin}:00`),
         inicioPactado: new Date(`${c.fecha}T${c.inicio}:00`),
         ubicacion: { lat: c.lat, lng: c.lng }
       }));
+
       // Dentro del contexto de la cuenta, enviarWhatsApp usa SUS credenciales.
-      return revisarYAvisarAgendaDelDia(conUbicacion, enviarWhatsApp);
+      const propios = await revisarYAvisarAgendaDelDia(conUbicacion, enviarWhatsApp);
+
+      // Se deja la marca de los que efectivamente recibieron el aviso. Vence al
+      // día siguiente: es una agenda diaria, no hace falta guardarla para siempre.
+      await Promise.all(
+        conUbicacion
+          .filter((c) => c.avisoRetrasoEnviado)
+          .map((c) => kvSet(marca(c), { fecha: hoyStr }, { ex: 36 * 3600 }).catch(() => {}))
+      );
+      return propios;
     };
     try {
       const propios = cuentaId === 'default'
