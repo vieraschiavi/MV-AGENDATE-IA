@@ -92,6 +92,13 @@ MV-Agendate-IA/
 Los datos del cliente (agenda, clientes, precios) quedan en la subcarpeta
 `data/` de esa misma carpeta: copiándola se muda todo a otra máquina.
 
+**Para soporte:** el inicio de la prueba NO vive solo ahí. Se guarda también en
+el perfil del usuario (`%USERPROFILE%\.mv-agendate-ia\prueba.json` en Windows) y
+gana la fecha más vieja de las dos. Es a propósito: si viviera solo en `data/`,
+borrar esa carpeta reiniciaría la prueba una y otra vez. Si un cliente reinstala
+y dice que "perdió" días, esa es la razón — y lo correcto es activarle la
+licencia, no borrarle el ancla.
+
 ## Cómo se regeneran (lo hace el CI, pero por si hace falta a mano)
 
 ```

@@ -29,7 +29,7 @@ test('con el puerto pedido ocupado por otra app, el server elige otro y lo anunc
   const datosAislados = mkdtempSync(join(tmpdir(), 'mv-test-puerto-'));
   const hijo = spawn(process.execPath, [join(RAIZ, 'src', 'server.js')], {
     cwd: RAIZ,
-    env: { ...process.env, PORT: String(puertoOcupado), MV_ESCRITORIO: '1', MV_DATOS_DIR: datosAislados },
+    env: { ...process.env, PORT: String(puertoOcupado), MV_ESCRITORIO: '1', MV_DATOS_DIR: datosAislados, MV_ANCLA_DIR: mkdtempSync(join(tmpdir(), 'mv-test-ancla-srv-')) },
     stdio: ['ignore', 'pipe', 'pipe']
   });
   let salida = '';
@@ -37,13 +37,16 @@ test('con el puerto pedido ocupado por otra app, el server elige otro y lo anunc
   hijo.stderr.on('data', (c) => { salida += c.toString('utf8'); });
 
   try {
-    // Esperar la marca MV_PUERTO= (máx ~15s).
+    // Esperar la marca MV_PUERTO= (máx ~60s). El margen es amplio a propósito:
+    // los archivos de test corren en paralelo y en una máquina cargada el
+    // arranque del servidor se pasa de 15s, lo que hacía fallar este test de
+    // vez en cuando por lentitud y no por el bug que cuida.
     let marca = null;
-    for (let i = 0; i < 75 && !marca; i++) {
+    for (let i = 0; i < 300 && !marca; i++) {
       marca = /MV_PUERTO=(\d+)/.exec(salida);
       if (!marca) await esperar(200);
     }
-    assert.ok(marca, `el server nunca anunció MV_PUERTO=. Salida:\n${salida}`);
+    assert.ok(marca, `el server nunca anunció MV_PUERTO= en 60s. Salida:\n${salida}`);
 
     const puertoReal = Number(marca[1]);
     assert.notEqual(puertoReal, puertoOcupado, 'anunció el puerto ocupado por la otra app');

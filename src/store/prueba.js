@@ -13,10 +13,35 @@
 // NO aplica en el sitio hosteado (Vercel): ahí conviven la landing/demo de
 // marketing y el modo SaaS online, que tiene su propio trial POR CUENTA
 // (14 días, ver store/cuentas.js). El discriminador es process.env.VERCEL.
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { dirname, join } from 'node:path';
 import { get as cfg, setConfig } from './config.js';
 import { DIAS_PRUEBA_CLIENTE, DIAS_FIJADOS } from './dias-prueba.js';
 
 const MS_DIA = 86400000;
+
+// --- Ancla del inicio de la prueba, FUERA de la carpeta del programa ---
+// El inicio se guarda en data/config.json, que vive adentro de la carpeta de
+// instalación: borrando ese archivo (o la carpeta data/ entera) la prueba
+// arrancaba de cero, y se podía repetir para siempre. La copia de acá vive en
+// el perfil del usuario, así que borrar los datos del programa ya no regala
+// días nuevos. No es a prueba de todo —quien conozca las dos ubicaciones puede
+// borrar ambas— pero saca el reseteo de "borrar una carpeta a ojo".
+const ANCLA_DIR = () => process.env.MV_ANCLA_DIR || join(homedir(), '.mv-agendate-ia');
+const ANCLA = () => join(ANCLA_DIR(), 'prueba.json');
+
+function leerAncla() {
+  try { return JSON.parse(readFileSync(ANCLA(), 'utf8')).inicio || null; } catch { return null; }
+}
+function escribirAncla(inicio) {
+  // Nunca bloquea el arranque: si el perfil es de solo lectura, la prueba
+  // sigue funcionando con lo que hay en config.json.
+  try {
+    mkdirSync(dirname(ANCLA()), { recursive: true });
+    writeFileSync(ANCLA(), JSON.stringify({ inicio }));
+  } catch { /* sin ancla, el candado igual funciona */ }
+}
 
 /**
  * Días de prueba. 0 o negativo = sin límite.
@@ -66,15 +91,21 @@ export function estadoPrueba() {
   // Prueba desactivada (el vendedor corre su propia copia sin límite).
   if (diasPrueba() <= 0) return base;
 
-  // El inicio se estampa la primera vez. Se re-estampa también cuando lo que
-  // hay guardado no es una fecha usable: sin esto, un PRUEBA_INICIO basura en
-  // el entorno daba NaN (y `NaN <= 0` es false → nunca vencía) y uno con fecha
-  // futura regalaba años de prueba.
-  let inicio = cfg('pruebaInicio');
-  if (!fechaUsable(inicio)) {
-    inicio = new Date().toISOString();
-    setConfig({ pruebaInicio: inicio });
-  }
+  // El inicio se estampa la primera vez. Se descarta lo que no sea una fecha
+  // usable: sin esto, un PRUEBA_INICIO basura en el entorno daba NaN (y
+  // `NaN <= 0` es false → nunca vencía) y uno con fecha futura regalaba años.
+  //
+  // Se miran DOS lugares y gana el MÁS VIEJO: el config del programa y el ancla
+  // en el perfil del usuario. Así, borrar data/config.json ya no reinicia la
+  // prueba — el ancla sigue ahí y vuelve a imponer la fecha original.
+  const guardados = [cfg('pruebaInicio'), leerAncla()]
+    .filter(fechaUsable)
+    .sort((a, b) => new Date(a) - new Date(b));
+  const inicio = guardados[0] || new Date().toISOString();
+  // Se reescriben los dos lados solo si hacía falta (primer arranque, o uno de
+  // los dos borrado/adulterado): sin esto, cada consulta escribiría a disco.
+  if (cfg('pruebaInicio') !== inicio) setConfig({ pruebaInicio: inicio });
+  if (leerAncla() !== inicio) escribirAncla(inicio);
   const transcurridosMs = Date.now() - new Date(inicio).getTime();
   const restantes = diasPrueba() - transcurridosMs / MS_DIA;
   return {

@@ -205,6 +205,14 @@ NO aplica en el host Vercel (marketing + SaaS) ni a cuentas SaaS (que tienen su
 propio trial de 14 días por cuenta). Store: `src/store/prueba.js`, duración en
 `src/store/dias-prueba.js`.
 
+El inicio de la prueba se guarda en **dos lugares** y gana el más viejo:
+`data/config.json` (adentro de la carpeta del programa) y un ancla en el perfil
+del usuario (`~/.mv-agendate-ia/prueba.json`, override `MV_ANCLA_DIR`). Con el
+inicio solo en la carpeta del programa, borrar `data/` reiniciaba la prueba y se
+podía repetir para siempre; con el ancla, borrar los datos ya no regala días.
+Si el perfil no se puede escribir, el candado sigue funcionando con lo que haya
+en `config.json` — el ancla nunca bloquea el arranque.
+
 **Proveedor de IA elegible (Claude / ChatGPT / Gemini):** cada profesional
 elige su proveedor en `/config.html` (campo `proveedorIA`) y pega SU propia API
 key (`anthropicApiKey` / `openaiApiKey` / `geminiApiKey`). El agente funciona
