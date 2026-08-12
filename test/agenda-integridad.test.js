@@ -63,6 +63,24 @@ test('el horario de una cita CANCELADA se puede reusar', async () => {
   assert.ok(reemplazo.id);
 });
 
+test('un choque se detecta aunque la hora venga sin el cero adelante', async () => {
+  // '9:00' < '10:00' es FALSO comparando strings: sin normalizar a minutos,
+  // este choque pasaba de largo.
+  const c = cuenta();
+  await crearCita(citaBase({ inicio: '9:00', fin: '10:30' }), c);
+  await assert.rejects(
+    () => crearCita(citaBase({ inicio: '10:00', fin: '11:00' }), c),
+    (e) => e.codigo === 'HORARIO_OCUPADO'
+  );
+});
+
+test('una cita con horario ilegible se guarda en vez de inventar un choque', async () => {
+  const c = cuenta();
+  await crearCita(citaBase(), c);
+  const rara = await crearCita(citaBase({ inicio: '', fin: '' }), c);
+  assert.ok(rara.id, 'sin horario comparable no se bloquea nada');
+});
+
 test('el mismo horario en otra FECHA entra', async () => {
   const c = cuenta();
   await crearCita(citaBase({ fecha: '2026-09-15' }), c);

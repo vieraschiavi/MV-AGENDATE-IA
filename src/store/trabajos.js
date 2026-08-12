@@ -274,19 +274,36 @@ export async function crearCita(datos, cuentaId) {
 }
 
 /**
+ * Minutos desde medianoche de un "HH:MM", o null si no es una hora.
+ * Comparar los strings directamente no sirve: '9:00' < '10:00' da FALSO, así
+ * que una hora sin cero adelante haría pasar un choque como si no existiera.
+ */
+function enMinutos(hhmm) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm || '').trim());
+  if (!m) return null;
+  const h = Number(m[1]), min = Number(m[2]);
+  if (h > 23 || min > 59) return null;
+  return h * 60 + min;
+}
+
+/**
  * Primera cita viva del mismo profesional que pisa el horario de `nueva`.
  * Dos tramos se superponen si cada uno empieza antes de que termine el otro;
- * que terminen justo cuando arranca el siguiente NO es superponerse.
+ * que uno arranque justo cuando termina el anterior NO es superponerse.
  */
 function citaQueSeSuperpone(citas, nueva) {
-  return citas.find((c) =>
-    c.id !== nueva.id &&
-    c.fecha === nueva.fecha &&
-    c.profesionalId === nueva.profesionalId &&
-    c.estado !== 'cancelada' &&
-    c.inicio < nueva.fin &&
-    nueva.inicio < c.fin
-  ) || null;
+  const desde = enMinutos(nueva.inicio);
+  const hasta = enMinutos(nueva.fin);
+  // Sin horario legible no hay con qué comparar: no se inventa un choque.
+  if (desde == null || hasta == null) return null;
+
+  return citas.find((c) => {
+    if (c.id === nueva.id || c.fecha !== nueva.fecha) return false;
+    if (c.profesionalId !== nueva.profesionalId || c.estado === 'cancelada') return false;
+    const cDesde = enMinutos(c.inicio), cHasta = enMinutos(c.fin);
+    if (cDesde == null || cHasta == null) return false;
+    return cDesde < hasta && desde < cHasta;
+  }) || null;
 }
 
 /**
