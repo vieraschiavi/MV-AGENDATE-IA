@@ -48,6 +48,10 @@ public/descargas/MV-Agendate-IA-Windows.zip
 dist-protegido/
 
 # graft's local graph cache — regenerable, not committed (run `graft build`).
-# Anclado a la raíz: sin la barra inicial también ignoraría .claude/skills/graft/,
-# que sí va commiteado.
-/graft/
+graft/
+# Esa regla la reescribe graft en cada build y solo la da por puesta si está
+# escrita así, sin barra inicial — o sea que también se lleva puesto cualquier
+# directorio "graft" más adentro, incluido el skill que sí va commiteado.
+# Anclarla la duplicaba en cada corrida; la excepción hace lo mismo sin pelearse
+# con la herramienta, y tiene que quedar DESPUÉS para ganarle.
+!.claude/skills/graft/

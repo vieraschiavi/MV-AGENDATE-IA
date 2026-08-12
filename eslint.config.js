@@ -93,6 +93,7 @@ export default [
       'INSTALADOR/**',
       'public/app/**',        // bundle compilado de Vite (React)
       'public/vendor/**',     // código de terceros (botid), no se edita acá
+      '.claude/helpers/**',   // los escribe `graft init` y los pisa al actualizar
       'movil/android-apk/**',
       'promo/**',
       'respaldo/**',
