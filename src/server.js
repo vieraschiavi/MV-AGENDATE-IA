@@ -2,7 +2,7 @@
 // Chatbot/ChatVoice con IA que cotiza y agenda trabajos de cualquier oficio,
 // optimizando traslados y descansos, + CRM y dashboards del profesional.
 import express from 'express';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { networkInterfaces } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -31,7 +31,7 @@ import { resumenUso, catalogoConEstado } from './store/uso.js';
 import * as lic from './store/licencias.js';
 import {
   crearPreferencia, crearPreferenciaCreditos, consultarPago, mercadopagoActivo,
-  planRecurrente, consultarPreapproval, consultarPagoRecurrente
+  planRecurrente, consultarPreapproval, consultarPagoRecurrente, tierDePlanRecurrente
 } from './store/mercadopago.js';
 import * as suscripciones from './store/suscripciones.js';
 import { existsSync } from 'node:fs';
@@ -349,6 +349,14 @@ app.get('/api/demo-estado', (req, res) => {
   res.json({ demoLimitada: demoLimitada(), restantes: usosRestantes(visitante(req)) });
 });
 
+/** Compara dos secretos sin filtrar por timing cuántos caracteres coinciden. */
+function igualSeguro(a, b) {
+  const ba = Buffer.from(String(a ?? ''), 'utf8');
+  const bb = Buffer.from(String(b ?? ''), 'utf8');
+  if (ba.length !== bb.length) return false;
+  return timingSafeEqual(ba, bb);
+}
+
 // --- Zona admin: con una clave configurada exige X-Admin-Key; sin ella queda
 // abierta solo en local (primer arranque/demo). ---
 function soloAdmin(req, res, next) {
@@ -358,7 +366,9 @@ function soloAdmin(req, res, next) {
   if (process.env.MV_ESCRITORIO) return next();
   const clave = cfg('adminKey');
   if (clave) {
-    if (req.headers['x-admin-key'] === clave) return next();
+    // Comparación en tiempo constante, igual que en cuentas.js: con === el
+    // tiempo de respuesta depende de cuántos caracteres coinciden.
+    if (igualSeguro(req.headers['x-admin-key'], clave)) return next();
     return res.status(401).json({ error: 'Clave de administración inválida.' });
   }
   if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
@@ -665,6 +675,12 @@ app.post('/api/comprar', limitar({ nombre: 'comprar', max: 10, ventanaSeg: 300,
     ? await planRecurrente(r.pedido.plan, r.pedido.total_usd)
     : await crearPreferencia(r.pedido, base);
   if (!pago.ok || !pago.init_point) {
+    // El chequeo de arriba cubre "MercadoPago no está configurado", pero la
+    // llamada puede fallar igual con el token puesto (timeout, 5xx, moneda
+    // rechazada) — y entonces el pedido recién creado queda pendiente de un
+    // pago que nunca va a llegar. Es la misma basura que evitamos antes, un
+    // paso más tarde: se descarta acá.
+    await lic.descartarPedidoPendiente(r.pedido.id).catch(() => {});
     return res.status(502).json({ ok: false, error: pago.error || 'No pude iniciar el pago con MercadoPago. Probá de nuevo en unos minutos.' });
   }
   return res.json({ ok: true, pedido: r.pedido, init_point: pago.init_point, recurrente: !!r.pedido.recurrente });
@@ -682,7 +698,13 @@ async function procesarPreapproval(pre) {
   }
   let licencia = await suscripciones.buscarLicenciaPorPreapproval(pre.id);
   if (!licencia) {
-    const pedido = await lic.buscarPedidoPendientePorEmail(pre.payer_email, pre.external_reference || undefined);
+    // El tier sale del plan recurrente que se pagó, NO de external_reference:
+    // el link de suscripción es uno por tier y MercadoPago no nos devuelve una
+    // referencia propia de este comprador. Sin esto, alguien que probó primero
+    // el checkout de un plan y después pagó el otro con el mismo email recibía
+    // la licencia del plan equivocado.
+    const tier = tierDePlanRecurrente(pre.preapproval_plan_id) || pre.external_reference || undefined;
+    const pedido = await lic.buscarPedidoPendientePorEmail(pre.payer_email, tier);
     if (pedido) {
       const confirmado = await lic.confirmarPago(pedido.id);
       if (confirmado.ok) {
@@ -706,8 +728,11 @@ app.post('/api/pago/mercadopago', async (req, res) => {
         // Recarga de créditos de IA: "credito:{cuentaId}:{monto}".
         if (String(pago.external_reference).startsWith('credito:')) {
           const [, cuentaId, monto] = String(pago.external_reference).split(':');
-          const r = await acreditar(cuentaId, Number(monto));
-          if (r.ok) emails.avisarRecarga(cuentaId, Number(monto), r.saldo).catch(() => {});
+          // El id del pago hace la recarga idempotente: MercadoPago reintenta
+          // la notificación y esta ruta es pública, así que sin esa marca el
+          // mismo pago se acreditaba tantas veces como llegara el aviso.
+          const r = await acreditar(cuentaId, Number(monto), dataId);
+          if (r.ok && !r.yaEstaba) emails.avisarRecarga(cuentaId, Number(monto), r.saldo).catch(() => {});
         } else {
           const r = await lic.confirmarPago(pago.external_reference);
           // La licencia también viaja por email (además de verse en /gracias.html)

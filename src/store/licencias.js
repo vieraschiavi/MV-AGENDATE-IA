@@ -103,6 +103,29 @@ export async function confirmarPago(id) {
   return { ok: true, pedido: p };
 }
 
+/**
+ * Borra un pedido que quedó a medias — solo si sigue pendiente.
+ *
+ * Va de la mano de /api/comprar: el pedido se guarda antes de pedirle el link
+ * de pago a MercadoPago, así que si esa llamada falla (timeout, 5xx) el pedido
+ * queda pendiente de algo que nunca va a pasar. Esos huérfanos ensucian
+ * /api/licencias y, peor, buscarPedidoPendientePorEmail los puede elegir
+ * después para reconciliar OTRO pago del mismo email.
+ *
+ * Nunca toca un pedido pagado: si el pago entró por otro lado (el webhook llegó
+ * antes que nuestra respuesta), borrarlo sería quitarle al cliente la licencia
+ * que ya compró.
+ */
+export async function descartarPedidoPendiente(id) {
+  await cargar();
+  const p = db.pedidos[id];
+  if (!p) return { ok: false, error: 'Pedido no encontrado.' };
+  if (p.estado !== 'pendiente') return { ok: false, error: 'El pedido ya no está pendiente.', estado: p.estado };
+  delete db.pedidos[id];
+  await guardar();
+  return { ok: true };
+}
+
 /** Valida un token de descarga → pedido pagado. */
 export async function validarToken(token) {
   await cargar();

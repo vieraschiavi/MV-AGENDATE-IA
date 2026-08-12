@@ -37,6 +37,16 @@ function hashPassword(password) {
   const hash = scryptSync(String(password), salt, 64).toString('hex');
   return `${salt}:${hash}`;
 }
+// Hash de una contraseña que nadie tiene: se verifica contra este cuando el
+// email no existe, para que el login tarde lo mismo en los dos casos.
+// Perezoso a propósito — calcularlo al importar el módulo le sumaría el costo
+// de un scrypt a cada arranque en frío de Vercel, aunque nadie haga login.
+let señuelo = null;
+function hashSeñuelo() {
+  if (!señuelo) señuelo = hashPassword(randomBytes(32).toString('hex'));
+  return señuelo;
+}
+
 function verificarPassword(password, guardado) {
   const [salt, hash] = String(guardado).split(':');
   if (!salt || !hash) return false;
@@ -100,7 +110,13 @@ export async function login({ email, password }) {
   await cargar();
   const mail = String(email || '').trim().toLowerCase();
   const cuenta = db.cuentas.find((c) => c.email === mail);
-  if (!cuenta || !verificarPassword(password, cuenta.password)) {
+  // Con un email que no existe hay que gastar el MISMO tiempo que con uno que
+  // sí: scrypt es lento a propósito, así que saltearlo hacía que la respuesta
+  // volviera mucho antes y permitía averiguar qué emails tienen cuenta
+  // (después vienen el phishing y el relleno de credenciales).
+  const guardado = cuenta ? cuenta.password : hashSeñuelo();
+  const passwordOk = verificarPassword(password, guardado);
+  if (!cuenta || !passwordOk) {
     return { ok: false, error: 'Email o contraseña incorrectos.' };
   }
   return { ok: true, cuenta: publica(cuenta), token: firmarToken(cuenta.id, mail) };

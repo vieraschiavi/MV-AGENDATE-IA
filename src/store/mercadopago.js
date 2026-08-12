@@ -82,6 +82,25 @@ export async function planRecurrente(tier, precioUsd) {
   } catch (e) { return { ok: false, error: 'Error conectando con MercadoPago: ' + e.message }; }
 }
 
+/**
+ * Del id del plan recurrente de MercadoPago de vuelta a nuestro tier.
+ *
+ * Hace falta porque el link de suscripción es UNO por tier, compartido por
+ * todos los compradores: MercadoPago no puede devolvernos un external_reference
+ * propio de ese cliente. Sin esto, la reconciliación por email no sabía qué
+ * plan se pagó y podía confirmar el pedido equivocado del mismo comprador
+ * (cobrarle el SaaS y entregarle una licencia Full, o al revés).
+ *
+ * Devuelve undefined si el plan no es ninguno de los nuestros (o no vino).
+ */
+export function tierDePlanRecurrente(preapprovalPlanId) {
+  if (!preapprovalPlanId) return undefined;
+  for (const [tier, claveCfg] of Object.entries(CLAVE_PLAN_CFG)) {
+    if (cfg(claveCfg) && cfg(claveCfg) === preapprovalPlanId) return tier;
+  }
+  return undefined;
+}
+
 /** Consulta una suscripción (preapproval) por su id. */
 export async function consultarPreapproval(id) {
   const token = cfg('mercadopagoToken');
