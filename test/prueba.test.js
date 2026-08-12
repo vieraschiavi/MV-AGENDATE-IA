@@ -1,6 +1,9 @@
 // Tests de la prueba gratis de la copia descargada (7 días → se corta) — node --test
 import { test, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { rmSync, mkdtempSync, existsSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { estadoPrueba, pruebaBloqueada, activarLicencia } from '../src/store/prueba.js';
 import { DIAS_PRUEBA_CLIENTE } from '../src/store/dias-prueba.js';
 import { setConfig } from '../src/store/config.js';
@@ -8,15 +11,26 @@ import { setConfig } from '../src/store/config.js';
 const DIA = 86400000;
 const envVercel = process.env.VERCEL;
 const envDias = process.env.DIAS_PRUEBA;
+const envAncla = process.env.MV_ANCLA_DIR;
+
+// El ancla del inicio de la prueba vive en el perfil del usuario. Sin aislarla,
+// estos tests escribirían en el HOME real y se contaminarían entre sí (y entre
+// corridas): el primero dejaría una fecha que el siguiente leería como propia.
+const ANCLA_DIR = mkdtempSync(join(tmpdir(), 'mv-test-ancla-'));
+const limpiarAncla = () => rmSync(join(ANCLA_DIR, 'prueba.json'), { force: true });
 
 beforeEach(() => {
   delete process.env.VERCEL;
   process.env.DIAS_PRUEBA = String(DIAS_PRUEBA_CLIENTE);
+  process.env.MV_ANCLA_DIR = ANCLA_DIR;
+  limpiarAncla();
   setConfig({ licenciaLocal: '', pruebaInicio: '' });
 });
 after(() => {
   if (envVercel === undefined) delete process.env.VERCEL; else process.env.VERCEL = envVercel;
   if (envDias === undefined) delete process.env.DIAS_PRUEBA; else process.env.DIAS_PRUEBA = envDias;
+  if (envAncla === undefined) delete process.env.MV_ANCLA_DIR; else process.env.MV_ANCLA_DIR = envAncla;
+  rmSync(ANCLA_DIR, { recursive: true, force: true });
   setConfig({ licenciaLocal: '', pruebaInicio: '' });
 });
 
@@ -94,6 +108,41 @@ test('un inicio adulterado no impide que el candado corte a los 7 días', () => 
   const inicio = new Date(Date.now() - 8 * DIA).toISOString();
   setConfig({ pruebaInicio: inicio });
   assert.equal(pruebaBloqueada(), true);
+});
+
+test('borrar la config del programa NO reinicia la prueba', () => {
+  // El agujero: el inicio vivía solo en data/config.json, adentro de la carpeta
+  // de instalación. Al aparecer el candado, bastaba con borrar ese archivo para
+  // tener otros 7 días, repetible para siempre.
+  setConfig({ pruebaInicio: new Date(Date.now() - 8 * DIA).toISOString() });
+  assert.equal(pruebaBloqueada(), true, 'arranca vencida');
+
+  setConfig({ pruebaInicio: '' });          // el usuario borra data/config.json
+  const e = estadoPrueba();
+  assert.equal(e.vencida, true, 'el ancla del perfil vuelve a imponer la fecha original');
+  assert.equal(pruebaBloqueada(), true);
+});
+
+test('el ancla se escribe sola en el primer arranque', () => {
+  assert.equal(existsSync(join(ANCLA_DIR, 'prueba.json')), false);
+  estadoPrueba();
+  assert.equal(existsSync(join(ANCLA_DIR, 'prueba.json')), true, 'sin ancla, borrar la config regalaría días');
+});
+
+test('si el ancla no se puede escribir, la prueba igual funciona', () => {
+  // Perfil de solo lectura / permisos raros: el candado no puede depender de
+  // eso. Se simula con una ruta cuyo padre es un ARCHIVO (ENOTDIR), que falla
+  // igual en Windows, Mac y Linux.
+  const archivo = join(ANCLA_DIR, 'esto-es-un-archivo');
+  writeFileSync(archivo, 'x');
+  process.env.MV_ANCLA_DIR = join(archivo, 'sub');
+  try {
+    const e = estadoPrueba();
+    assert.equal(e.aplica, true, 'la prueba tiene que seguir andando sin ancla');
+    assert.equal(e.diasRestantes, 7);
+  } finally {
+    process.env.MV_ANCLA_DIR = ANCLA_DIR;
+  }
 });
 
 test('un código de licencia inventado no destraba la copia', () => {

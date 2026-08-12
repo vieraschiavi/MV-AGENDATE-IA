@@ -46,3 +46,12 @@ public/descargas/MV-Agendate-IA-Windows.zip
 # en el instalador en vez del código fuente real. Se regenera sola antes de
 # cada build (npm run empaquetar-exe corre "ofuscar" primero).
 dist-protegido/
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+graft/
+# Esa regla la reescribe graft en cada build y solo la da por puesta si está
+# escrita así, sin barra inicial — o sea que también se lleva puesto cualquier
+# directorio "graft" más adentro, incluido el skill que sí va commiteado.
+# Anclarla la duplicaba en cada corrida; la excepción hace lo mismo sin pelearse
+# con la herramienta, y tiene que quedar DESPUÉS para ganarle.
+!.claude/skills/graft/

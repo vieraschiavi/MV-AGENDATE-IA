@@ -28,7 +28,7 @@
     "empaquetar-exe-owner": "electron-builder --win --x64 --publish never --config.nsis.artifactName=MV-Agendate-IA-Setup-Dueno.exe",
     "dev": "node --watch src/server.js",
     "lint": "eslint .",
-    "test": "node --test"
+    "test": "node --test --import ./scripts/aislar-datos-test.js"
   },
   "engines": {
     "node": ">=20"

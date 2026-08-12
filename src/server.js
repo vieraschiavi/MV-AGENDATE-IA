@@ -645,11 +645,17 @@ app.post('/api/comprar', limitar({ nombre: 'comprar', max: 10, ventanaSeg: 300,
   if (await esBot(req)) return res.status(403).json({ error: 'Acceso denegado.' });
   // Único medio de pago: MercadoPago. Nunca simulamos la compra: o redirigimos
   // al checkout real de MercadoPago (init_point), o devolvemos un error claro.
-  const r = await lic.crearPedido({ ...(req.body ?? {}), medio: 'mercadopago' });
-  if (!r.ok) return res.status(400).json(r);
+  //
+  // El chequeo va ANTES de crear el pedido: si no se puede cobrar, guardarlo
+  // solo deja basura. Con el token sin configurar, cada clic en "Comprar"
+  // dejaba un pedido pendiente que nadie iba a pagar nunca, y esos pendientes
+  // ensucian /api/licencias y la reconciliación por email del webhook de
+  // suscripciones (buscarPedidoPendientePorEmail elige el más reciente).
   if (!mercadopagoActivo()) {
     return res.status(503).json({ ok: false, error: 'El cobro con MercadoPago todavía no está activo. El vendedor debe cargar su Access Token de MercadoPago en la configuración (o env MERCADOPAGO_TOKEN).' });
   }
+  const r = await lic.crearPedido({ ...(req.body ?? {}), medio: 'mercadopago' });
+  if (!r.ok) return res.status(400).json(r);
   const base = `${req.protocol}://${req.get('host')}`;
   const pago = r.pedido.recurrente
     ? await planRecurrente(r.pedido.plan, r.pedido.total_usd)
