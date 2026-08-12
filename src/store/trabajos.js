@@ -253,10 +253,57 @@ export async function crearCita(datos, cuentaId) {
     creado: iso(hoy()),
     actualizada: iso(hoy())
   };
+  // Última defensa contra el doble turno. buscar_horarios_disponibles SUGIERE
+  // huecos libres en el momento de preguntar, pero entre esa sugerencia y esta
+  // confirmación pasan varios turnos de conversación — y puede haber otra
+  // charla en paralelo cerrando el mismo horario. Sin este chequeo, el
+  // profesional se entera de que tiene dos clientes a la misma hora cuando
+  // llega a la puerta del segundo.
+  const choque = citaQueSeSuperpone(db.citas, cita);
+  if (choque) {
+    const e = new Error(`El horario ${cita.inicio}-${cita.fin} del ${cita.fecha} ya está ocupado por la cita ${choque.id}.`);
+    e.codigo = 'HORARIO_OCUPADO';
+    e.citaExistente = choque;
+    throw e;
+  }
+
   db.citas.push(cita);
   await guardar(cuentaId);
   notificarCRM('cita.confirmada', cita);
   return cita;
+}
+
+/**
+ * Minutos desde medianoche de un "HH:MM", o null si no es una hora.
+ * Comparar los strings directamente no sirve: '9:00' < '10:00' da FALSO, así
+ * que una hora sin cero adelante haría pasar un choque como si no existiera.
+ */
+function enMinutos(hhmm) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm || '').trim());
+  if (!m) return null;
+  const h = Number(m[1]), min = Number(m[2]);
+  if (h > 23 || min > 59) return null;
+  return h * 60 + min;
+}
+
+/**
+ * Primera cita viva del mismo profesional que pisa el horario de `nueva`.
+ * Dos tramos se superponen si cada uno empieza antes de que termine el otro;
+ * que uno arranque justo cuando termina el anterior NO es superponerse.
+ */
+function citaQueSeSuperpone(citas, nueva) {
+  const desde = enMinutos(nueva.inicio);
+  const hasta = enMinutos(nueva.fin);
+  // Sin horario legible no hay con qué comparar: no se inventa un choque.
+  if (desde == null || hasta == null) return null;
+
+  return citas.find((c) => {
+    if (c.id === nueva.id || c.fecha !== nueva.fecha) return false;
+    if (c.profesionalId !== nueva.profesionalId || c.estado === 'cancelada') return false;
+    const cDesde = enMinutos(c.inicio), cHasta = enMinutos(c.fin);
+    if (cDesde == null || cHasta == null) return false;
+    return cDesde < hasta && desde < cHasta;
+  }) || null;
 }
 
 /**

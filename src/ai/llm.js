@@ -15,7 +15,11 @@ import { get as cfg } from '../store/config.js';
 export const PROVEEDORES = ['claude', 'openai', 'gemini'];
 
 const MODELOS = {
-  claude: process.env.MODELO_CLAUDE || 'claude-opus-4-8',
+  // Tiene que ser un id de modelo REAL: si no existe, cada llamada del agente
+  // falla con "model not found" y el catch de conversar() la disfraza de
+  // respuesta demo — la IA queda muerta sin que nada se vea roto. Es el mismo
+  // id que ya usan precios.js e impuestos.js.
+  claude: process.env.MODELO_CLAUDE || 'claude-sonnet-5',
   openai: process.env.MODELO_OPENAI || 'gpt-4o',
   gemini: process.env.MODELO_GEMINI || 'gemini-1.5-flash',
 };

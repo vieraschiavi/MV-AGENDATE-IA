@@ -24,6 +24,28 @@ const telefonoProfesional = () => cfg('agenciaTelefono') || '+598 99 000 000';
 
 const profesionalPorSesion = new Map();
 
+// Lo que REALMENTE se cotizó en esta sesión, por trabajo: o el total que
+// calculó el cotizador con el catálogo del profesional, o el que el
+// profesional aprobó a mano desde el Panel.
+//
+// Existe porque el monto que se guarda en la cita NO puede venir del modelo.
+// confirmar_cita recibía un `totalCotizado` suelto y lo escribía tal cual en la
+// agenda: bastaba que el modelo transcribiera mal el número al resumir, o que
+// el cliente insistiera "vos dijiste mil", para que la cita quedara con un
+// precio que el profesional nunca dio. La regla del producto es que la IA no
+// inventa montos, y hasta acá esa regla solo se cumplía en cotizar_trabajo.
+const cotizadoPorSesion = new Map();
+const claveCotizado = (sessionId, trabajo) => `${sessionId}|${trabajo}`;
+
+/** Guarda el monto que vale para esta sesión+trabajo (fuente de la cita). */
+function recordarCotizado(sessionId, trabajo, total, desglose) {
+  if (total == null || !Number.isFinite(Number(total))) return;
+  cotizadoPorSesion.set(claveCotizado(sessionId, trabajo), {
+    total: Number(total),
+    desglose: desglose || undefined
+  });
+}
+
 /** Profesional activo de esta conversación: el único configurado, el que ya
  *  eligió el agente con elegir_profesional, o el primero como fallback. */
 function profesionalActual(sessionId) {
@@ -98,12 +120,10 @@ const confirmarCitaToolDef = {
       direccionConfirmada: { type: 'boolean' },
       lat: { type: 'number', description: 'Latitud del domicilio (de geocodificar_direccion o de la ubicación que compartió el cliente)' },
       lng: { type: 'number', description: 'Longitud del domicilio' },
-      receptor: { type: 'string', description: 'Nombre de quien recibe si no es el titular' },
-      totalCotizado: { type: 'number' },
-      desgloseCotizacion: {
-        type: 'object',
-        properties: { mano_obra: { type: 'number' }, materiales: { type: 'number' }, traslado: { type: 'number' } }
-      }
+      receptor: { type: 'string', description: 'Nombre de quien recibe si no es el titular' }
+      // El monto NO se pide acá a propósito: lo pone el servidor con lo que
+      // cotizó el catálogo o aprobó el profesional. Ver confirmar_cita en
+      // ejecutarHerramienta.
     },
     required: ['clienteNombre', 'telefono', 'trabajo', 'fecha', 'inicio', 'fin', 'direccion']
   }
@@ -138,11 +158,18 @@ async function ejecutarHerramienta(nombre, input, canal, sessionId) {
     }
     case 'cotizar_trabajo': {
       const r = cotizar({ oficio: prof.oficio, ...input });
-      if (r.error || !aprobacionRequerida()) return JSON.stringify(r);
+      if (r.error || !aprobacionRequerida()) {
+        // Sin aprobación manual, el precio bueno es el que acaba de salir del
+        // catálogo: se recuerda acá para que la cita use ESE y no el que
+        // reescriba el modelo más adelante.
+        if (!r.error) recordarCotizado(sessionId, input.trabajo, r.total, r.desglose);
+        return JSON.stringify(r);
+      }
       // El precio calculado es un SUGERIDO interno: el cliente no lo ve hasta
       // que el profesional lo apruebe (o ajuste) desde el Panel.
       const previa = await cotizacionDeSesion(sessionId, input.trabajo, cuenta);
       if (previa?.estado === 'aprobada') {
+        recordarCotizado(sessionId, input.trabajo, previa.totalAprobado, r.desglose);
         return JSON.stringify({
           ...r,
           total: previa.totalAprobado,
@@ -202,10 +229,13 @@ async function ejecutarHerramienta(nombre, input, canal, sessionId) {
     case 'registrar_persona_receptora':
       return JSON.stringify({ registrado: true, ...input });
     case 'confirmar_cita': {
+      const cotizado = cotizadoPorSesion.get(claveCotizado(sessionId, input.trabajo));
       const oficios = listarOficios();
       const datosOficio = oficios.find((o) => o.clave === prof.oficio);
       const trabajoNombre = datosOficio?.trabajos.find((t) => t.clave === input.trabajo)?.nombre || input.trabajo;
-      const cita = await crearCita({
+      let cita;
+      try {
+        cita = await crearCita({
         clienteNombre: input.clienteNombre,
         telefono: input.telefono,
         profesionalId: prof.id,
@@ -221,10 +251,35 @@ async function ejecutarHerramienta(nombre, input, canal, sessionId) {
         lat: input.lat,
         lng: input.lng,
         receptor: input.receptor,
-        cotizacion: input.totalCotizado != null ? { ...input.desgloseCotizacion, total: input.totalCotizado } : null,
-        canal
-      }, cuenta);
-      return JSON.stringify({ ok: true, cita, mensaje: `Cita confirmada para el ${cita.fecha} a las ${cita.inicio}.` });
+        // El monto NO sale de lo que mandó el modelo: sale de lo que el
+        // cotizador calculó con el catálogo, o de lo que el profesional aprobó.
+        // Si no hay ninguno de los dos, la cita se guarda SIN precio — mejor
+        // que quede a acordar y no un número que nadie dio.
+        cotizacion: cotizado ? { ...cotizado.desglose, total: cotizado.total } : null,
+          canal
+        }, cuenta);
+      } catch (e) {
+        // El horario se ocupó mientras se hablaba: no es un error del sistema,
+        // es información que el agente tiene que usar para ofrecer otro turno.
+        if (e.codigo === 'HORARIO_OCUPADO') {
+          return JSON.stringify({
+            ok: false, motivo: 'horario_ocupado',
+            instruccion: 'Ese horario se ocupó recién. Pedile disculpas al cliente, volvé a llamar buscar_horarios_disponibles para ese día y ofrecele las opciones que queden libres.'
+          });
+        }
+        throw e;
+      }
+      // Si el modelo trajo un total distinto del real, se avisa en el log: es
+      // la señal de que estaba por informarle al cliente un precio inventado.
+      if (input.totalCotizado != null && cotizado && Number(input.totalCotizado) !== cotizado.total) {
+        console.warn(`[agente] confirmar_cita traía ${input.totalCotizado} pero el precio cotizado es ${cotizado.total} — se guardó el cotizado.`);
+      }
+      return JSON.stringify({
+        ok: true, cita,
+        total_guardado: cotizado ? cotizado.total : null,
+        mensaje: `Cita confirmada para el ${cita.fecha} a las ${cita.inicio}.`,
+        ...(cotizado ? {} : { aviso: 'La cita quedó SIN monto porque no hay una cotización hecha para este trabajo. No le confirmes ningún precio al cliente.' })
+      });
     }
     default:
       return `Herramienta desconocida: ${nombre}`;

@@ -2,7 +2,7 @@
 // Chatbot/ChatVoice con IA que cotiza y agenda trabajos de cualquier oficio,
 // optimizando traslados y descansos, + CRM y dashboards del profesional.
 import express from 'express';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { networkInterfaces } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -31,7 +31,7 @@ import { resumenUso, catalogoConEstado } from './store/uso.js';
 import * as lic from './store/licencias.js';
 import {
   crearPreferencia, crearPreferenciaCreditos, consultarPago, mercadopagoActivo,
-  planRecurrente, consultarPreapproval, consultarPagoRecurrente
+  planRecurrente, consultarPreapproval, consultarPagoRecurrente, tierDePlanRecurrente
 } from './store/mercadopago.js';
 import * as suscripciones from './store/suscripciones.js';
 import { existsSync } from 'node:fs';
@@ -76,6 +76,35 @@ export const RUTA_APP = '/app/';
 const app = express();
 app.set('trust proxy', true);
 
+// --- Red de contención: que una promesa rechazada no se lleve puesto el proceso ---
+//
+// Express 4 NO atrapa el rechazo de una promesa en un handler `async`: se
+// convierte en un unhandledRejection y Node, desde la v15, termina el proceso.
+// En Vercel eso no es "se cayó ese request": la instancia atiende varias
+// invocaciones a la vez, así que un Redis con hipo mientras un profesional mira
+// su dashboard puede llevarse puestas las requests de OTRAS cuentas.
+//
+// Envolver a mano los ochenta handlers sería ochenta lugares donde olvidarse.
+// Se envuelven de una sola vez los métodos de ruteo, ACÁ ARRIBA: desde este
+// punto, toda ruta que se declare abajo queda cubierta sola, y cualquier
+// rechazo va a parar al error handler del final del archivo.
+const envolver = (fn) => (typeof fn !== 'function' || fn.length >= 4 ? fn : function envuelto(req, res, next) {
+  try {
+    const r = fn.call(this, req, res, next);
+    if (r && typeof r.then === 'function') r.catch(next);
+    return r;
+  } catch (e) { next(e); }
+});
+for (const metodo of ['get', 'post', 'put', 'patch', 'delete', 'all', 'use']) {
+  const original = app[metodo].bind(app);
+  app[metodo] = (...args) => {
+    // app.get('nombre') sin handlers es el LECTOR de settings de Express, no
+    // una ruta: se deja pasar tal cual.
+    if (metodo === 'get' && args.length === 1) return original(...args);
+    return original(...args.map(envolver));
+  };
+}
+
 // CORS abierto para la app Android (APK) y el widget embebido en sitios de terceros
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -85,7 +114,11 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json({ limit: '2mb' }));
+// El cuerpo CRUDO se guarda aparte porque la firma de Meta (X-Hub-Signature-256)
+// es un HMAC sobre esos bytes exactos: volver a serializar el objeto parseado no
+// los reproduce (espacios, orden de claves, escapes) y la verificación fallaría
+// siempre. Ver src/channels/firmas.js.
+app.use(express.json({ limit: '2mb', verify: (req, _res, buf) => { req.rawBody = buf; } }));
 app.use(express.urlencoded({ extended: false })); // webhooks de Twilio llegan como form-encoded
 app.use(express.static(join(here, '../public')));
 app.use('/movil', express.static(join(here, '../movil'))); // app Android (PWA instalable)
@@ -345,6 +378,14 @@ app.get('/api/demo-estado', (req, res) => {
   res.json({ demoLimitada: demoLimitada(), restantes: usosRestantes(visitante(req)) });
 });
 
+/** Compara dos secretos sin filtrar por timing cuántos caracteres coinciden. */
+function igualSeguro(a, b) {
+  const ba = Buffer.from(String(a ?? ''), 'utf8');
+  const bb = Buffer.from(String(b ?? ''), 'utf8');
+  if (ba.length !== bb.length) return false;
+  return timingSafeEqual(ba, bb);
+}
+
 // --- Zona admin: con una clave configurada exige X-Admin-Key; sin ella queda
 // abierta solo en local (primer arranque/demo). ---
 function soloAdmin(req, res, next) {
@@ -354,7 +395,9 @@ function soloAdmin(req, res, next) {
   if (process.env.MV_ESCRITORIO) return next();
   const clave = cfg('adminKey');
   if (clave) {
-    if (req.headers['x-admin-key'] === clave) return next();
+    // Comparación en tiempo constante, igual que en cuentas.js: con === el
+    // tiempo de respuesta depende de cuántos caracteres coinciden.
+    if (igualSeguro(req.headers['x-admin-key'], clave)) return next();
     return res.status(401).json({ error: 'Clave de administración inválida.' });
   }
   if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
@@ -517,14 +560,39 @@ app.get('/api/agenda/chequear-retrasos', async (req, res) => {
 
 async function chequearRetrasosDeHoy() {
   const hoyStr = new Date().toISOString().slice(0, 10);
-  const citas = await trabajos.citasDelDia(hoyStr);
-  const conUbicacion = citas.map((c) => ({
-    ...c,
-    finEstimado: new Date(`${c.fecha}T${c.fin}:00`),
-    inicioPactado: new Date(`${c.fecha}T${c.inicio}:00`),
-    ubicacion: { lat: c.lat, lng: c.lng }
-  }));
-  return revisarYAvisarAgendaDelDia(conUbicacion, enviarWhatsApp);
+
+  // Una pasada por cuenta. Antes miraba solo la agenda de 'default' y avisaba
+  // siempre con las credenciales globales de WhatsApp: en modo SaaS, todas las
+  // demás cuentas se quedaban sin el aviso de retraso —el argumento de venta
+  // "avisa solo"— y ni un error lo delataba, porque no había ninguno.
+  const cuentasSaas = await cuentas.listarCuentaIds().catch(() => []);
+  const todas = ['default', ...cuentasSaas.filter((id) => id !== 'default')];
+
+  const avisos = [];
+  for (const cuentaId of todas) {
+    const revisar = async () => {
+      const citas = await trabajos.citasDelDia(hoyStr, cuentaId);
+      if (!citas.length) return [];
+      const conUbicacion = citas.map((c) => ({
+        ...c,
+        finEstimado: new Date(`${c.fecha}T${c.fin}:00`),
+        inicioPactado: new Date(`${c.fecha}T${c.inicio}:00`),
+        ubicacion: { lat: c.lat, lng: c.lng }
+      }));
+      // Dentro del contexto de la cuenta, enviarWhatsApp usa SUS credenciales.
+      return revisarYAvisarAgendaDelDia(conUbicacion, enviarWhatsApp);
+    };
+    try {
+      const propios = cuentaId === 'default'
+        ? await revisar()
+        : await runConCuenta(cuentaId, await obtenerOverrides(cuentaId).catch(() => ({})), revisar);
+      avisos.push(...(propios || []));
+    } catch (e) {
+      // Que una cuenta falle no puede dejar sin aviso a las demás.
+      console.error(`[retrasos] Falló la revisión de la cuenta ${cuentaId}:`, e.message);
+    }
+  }
+  return avisos;
 }
 
 // ==================== Agenda / clientes / dashboard ====================
@@ -540,7 +608,16 @@ app.post('/api/citas', adminOCuenta, async (req, res) => {
     const geo = await geocodificar(datos.direccion);
     if (geo.ok) { datos.lat = geo.lat; datos.lng = geo.lng; }
   }
-  res.json({ ok: true, cita: await trabajos.crearCita(datos, req.cuentaId) });
+  try {
+    res.json({ ok: true, cita: await trabajos.crearCita(datos, req.cuentaId) });
+  } catch (e) {
+    // Choque de horarios: no es un error del servidor, es un "no": 409 y el
+    // panel muestra con qué cita se pisa.
+    if (e.codigo === 'HORARIO_OCUPADO') {
+      return res.status(409).json({ ok: false, error: e.message, citaExistente: e.citaExistente });
+    }
+    throw e;
+  }
 });
 app.post('/api/citas/:id/estado', adminOCuenta, async (req, res) => { const r = await trabajos.cambiarEstadoCita(req.params.id, req.body?.estado, req.cuentaId); res.status(r.ok ? 200 : 400).json(r); });
 app.post('/api/citas/:id/receptor', adminOCuenta, async (req, res) => { const r = await trabajos.registrarReceptor(req.params.id, req.body?.nombreReceptor, req.cuentaId); res.status(r.ok ? 200 : 400).json(r); });
@@ -661,6 +738,12 @@ app.post('/api/comprar', limitar({ nombre: 'comprar', max: 10, ventanaSeg: 300,
     ? await planRecurrente(r.pedido.plan, r.pedido.total_usd)
     : await crearPreferencia(r.pedido, base);
   if (!pago.ok || !pago.init_point) {
+    // El chequeo de arriba cubre "MercadoPago no está configurado", pero la
+    // llamada puede fallar igual con el token puesto (timeout, 5xx, moneda
+    // rechazada) — y entonces el pedido recién creado queda pendiente de un
+    // pago que nunca va a llegar. Es la misma basura que evitamos antes, un
+    // paso más tarde: se descarta acá.
+    await lic.descartarPedidoPendiente(r.pedido.id).catch(() => {});
     return res.status(502).json({ ok: false, error: pago.error || 'No pude iniciar el pago con MercadoPago. Probá de nuevo en unos minutos.' });
   }
   return res.json({ ok: true, pedido: r.pedido, init_point: pago.init_point, recurrente: !!r.pedido.recurrente });
@@ -678,7 +761,13 @@ async function procesarPreapproval(pre) {
   }
   let licencia = await suscripciones.buscarLicenciaPorPreapproval(pre.id);
   if (!licencia) {
-    const pedido = await lic.buscarPedidoPendientePorEmail(pre.payer_email, pre.external_reference || undefined);
+    // El tier sale del plan recurrente que se pagó, NO de external_reference:
+    // el link de suscripción es uno por tier y MercadoPago no nos devuelve una
+    // referencia propia de este comprador. Sin esto, alguien que probó primero
+    // el checkout de un plan y después pagó el otro con el mismo email recibía
+    // la licencia del plan equivocado.
+    const tier = tierDePlanRecurrente(pre.preapproval_plan_id) || pre.external_reference || undefined;
+    const pedido = await lic.buscarPedidoPendientePorEmail(pre.payer_email, tier);
     if (pedido) {
       const confirmado = await lic.confirmarPago(pedido.id);
       if (confirmado.ok) {
@@ -702,8 +791,11 @@ app.post('/api/pago/mercadopago', async (req, res) => {
         // Recarga de créditos de IA: "credito:{cuentaId}:{monto}".
         if (String(pago.external_reference).startsWith('credito:')) {
           const [, cuentaId, monto] = String(pago.external_reference).split(':');
-          const r = await acreditar(cuentaId, Number(monto));
-          if (r.ok) emails.avisarRecarga(cuentaId, Number(monto), r.saldo).catch(() => {});
+          // El id del pago hace la recarga idempotente: MercadoPago reintenta
+          // la notificación y esta ruta es pública, así que sin esa marca el
+          // mismo pago se acreditaba tantas veces como llegara el aviso.
+          const r = await acreditar(cuentaId, Number(monto), dataId);
+          if (r.ok && !r.yaEstaba) emails.avisarRecarga(cuentaId, Number(monto), r.saldo).catch(() => {});
         } else {
           const r = await lic.confirmarPago(pago.external_reference);
           // La licencia también viaja por email (además de verse en /gracias.html)
@@ -831,6 +923,21 @@ app.use(voz);        // POST /webhook/voz y /webhook/voz/turno (vía rápida)
 app.use(vozPremium); // POST /webhook/voz-premium (pipeline ASR+TTS) + WS /voz-stream
 
 app.get('/salud', (_req, res) => res.json({ ok: true, demo: enModoDemo() }));
+
+// Error handler global. Los 4 argumentos no son decorativos: es por la cantidad
+// que Express distingue un manejador de errores de un middleware común.
+app.use((err, req, res, _next) => {
+  console.error(`[error] ${req.method} ${req.path}:`, err?.stack || err);
+  if (res.headersSent) return;
+  res.status(500).json({ ok: false, error: 'Se nos rompió algo procesando eso. Probá de nuevo en un momento.' });
+});
+
+// Último respaldo: si un rechazo se escapa igual (un `void promesa` suelto, un
+// callback fuera del ciclo del request), se registra en vez de matar al proceso
+// y dejar sin servicio a todas las cuentas.
+process.on('unhandledRejection', (motivo) => {
+  console.error('[unhandledRejection] Promesa sin catch:', motivo?.stack || motivo);
+});
 
 function ipsLocales() {
   const ifaces = networkInterfaces();

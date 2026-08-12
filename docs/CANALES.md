@@ -23,9 +23,12 @@ al instante, sin reiniciar el servidor.
 2. Cargá `whatsappToken`, `whatsappPhoneId` y `whatsappVerifyToken` en
    `/config.html` (o como variables de entorno `WHATSAPP_TOKEN` /
    `WHATSAPP_PHONE_ID` / `WHATSAPP_VERIFY_TOKEN`).
-3. En Meta for Developers → WhatsApp → Configuration, apuntá el webhook a
+3. **Cargá también `whatsappAppSecret`** (`WHATSAPP_APP_SECRET`) — está en Meta
+   → Configuración de la app → Básica → *Clave secreta de la app*. Ver
+   "Firma de los webhooks" más abajo: sin esto el webhook queda abierto.
+4. En Meta for Developers → WhatsApp → Configuration, apuntá el webhook a
    `https://tu-dominio/webhook/whatsapp` con el mismo verify token.
-4. Probá la conexión desde el propio panel (`/config.html` → botón "Probar
+5. Probá la conexión desde el propio panel (`/config.html` → botón "Probar
    conexión de WhatsApp").
 
 **Ventana de 24 horas:** Meta solo permite mandar un mensaje de texto libre si
@@ -41,6 +44,31 @@ nativo de WhatsApp (📎 → Ubicación), el webhook la reconoce (`type:
 geocodificar nada en ese caso. Si en cambio escribe la dirección a mano, el
 agente la geocodifica solo con Nominatim/OSM (`src/ai/geocoding.js`, gratis,
 sin API key) antes de calcular horarios.
+
+## 2.b Firma de los webhooks (importante en producción)
+
+Los webhooks (`/webhook/whatsapp`, `/webhook/voz`, `/webhook/voz-premium`) son
+públicos y deciden **de qué cuenta es el mensaje mirando el propio cuerpo del
+request**: el `phone_number_id` que manda Meta, el campo `To` que manda Twilio.
+
+Eso significa que sin verificar la firma, cualquiera que conozca el número de un
+profesional —que es público, está en su perfil de negocio— puede POStear un
+mensaje falso a su nombre: meterle citas y clientes truchos en el CRM, gastarle
+los créditos de IA y de voz, e inyectarle texto al agente. Sin credenciales y
+sin pasar por Meta ni por Twilio.
+
+La verificación cierra eso: quien POStea puede seguir **diciendo** ser cualquier
+cuenta, pero el HMAC solo cierra si tiene la clave secreta de esa cuenta.
+
+| Canal | Con qué se firma | De dónde sale |
+|---|---|---|
+| WhatsApp | `whatsappAppSecret` / `WHATSAPP_APP_SECRET` | Meta → app → Básica → Clave secreta |
+| Voz (Twilio) | `twilioAuthToken` / `TWILIO_AUTH_TOKEN` | El mismo que ya usás para llamar |
+
+**Mientras no haya secreto cargado, el webhook sigue funcionando** (para no
+romper instalaciones que ya están andando) pero avisa por consola. Con
+`MV_WEBHOOKS_ESTRICTOS=1` se rechaza en vez de pasar — **es lo que conviene
+dejar puesto en un deploy de producción**, una vez cargados los secretos.
 
 ## 3. Teléfono — ChatVoice vía rápida (`src/channels/voz.js`)
 

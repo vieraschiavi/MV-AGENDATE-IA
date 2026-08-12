@@ -92,16 +92,33 @@ function resumenSemana(c) {
 /**
  * Acredita una recarga (USD) — desde el webhook de MercadoPago.
  * Si el monto coincide con un pack, suma su bonificación automáticamente.
+ *
+ * `pagoId` (el id del pago en MercadoPago) hace la operación IDEMPOTENTE, y no
+ * es opcional en la práctica: MercadoPago reintenta la notificación de un mismo
+ * pago, y /api/pago/mercadopago es una ruta pública sin autenticación. Sin esta
+ * marca, cada reintento —o cada POST repetido del mismo id— sumaba saldo otra
+ * vez: un pago real de US$10 se convertía en saldo infinito. Es la misma
+ * protección que confirmarPago() ya tenía para las licencias.
  */
-export async function acreditar(cuentaId, montoUsd) {
+export async function acreditar(cuentaId, montoUsd, pagoId) {
   const monto = Number(montoUsd) || 0;
   if (monto <= 0) return { ok: false, error: 'Monto inválido.' };
+
+  const marca = pagoId ? `credito:pago:${pagoId}` : null;
+  if (marca && await kvGet(marca)) {
+    const actual = await cargar(cuentaId);
+    return { ok: true, saldo: Math.round(actual.saldo * 100) / 100, bonificado: 0, yaEstaba: true };
+  }
+
   const bonif = bonoDePack(monto);
   const c = await cargar(cuentaId);
   c.saldo = Math.round((c.saldo + monto + bonif) * 1e6) / 1e6;
   c.recargado = (c.recargado || 0) + monto;
   c.bonificado = Math.round(((c.bonificado || 0) + bonif) * 100) / 100;
   await kvSet(clave(cuentaId), c);
+  // Después de acreditar: si el proceso muere entre medio, el peor caso es
+  // acreditar dos veces un pago (recuperable), no perder una recarga pagada.
+  if (marca) await kvSet(marca, { cuentaId, monto, fecha: new Date().toISOString() });
   return { ok: true, saldo: Math.round(c.saldo * 100) / 100, bonificado: bonif };
 }
 

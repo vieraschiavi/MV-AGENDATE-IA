@@ -32,17 +32,31 @@ function limpiar(texto) {
   return String(texto).replace(/[*_#`]/g, '').replace(/\p{Extended_Pictographic}/gu, '').replace(/\s+/g, ' ').trim().slice(0, 900);
 }
 
+// Cuánto se le da a piper/ffmpeg antes de darlo por colgado. Sintetizar un
+// turno son milisegundos; si a los 20 s no terminó, no va a terminar.
+const TIMEOUT_MS = 20000;
+
 // Ejecuta un comando alimentando stdin y devuelve el stdout como Buffer.
+//
+// El timeout no es decorativo: sin él, un piper trabado (modelo corrupto,
+// proceso zombie) deja esta promesa sin resolver NUNCA, y arriba eso significa
+// una llamada telefónica muda que no se recupera ni cortando el turno.
 function correr(cmd, args, stdinBuf) {
   return new Promise((resolve, reject) => {
     const p = spawn(cmd, args);
     const out = [], err = [];
+    let listo = false;
+    const terminar = (fn, arg) => { if (!listo) { listo = true; clearTimeout(reloj); fn(arg); } };
+    const reloj = setTimeout(() => {
+      p.kill('SIGKILL');
+      terminar(reject, new Error(`${cmd} no respondió en ${TIMEOUT_MS / 1000}s — se abortó.`));
+    }, TIMEOUT_MS);
     p.stdout.on('data', (d) => out.push(d));
     p.stderr.on('data', (d) => err.push(d));
-    p.on('error', reject);
+    p.on('error', (e) => terminar(reject, e));
     p.on('close', (code) => {
-      if (code === 0) resolve(Buffer.concat(out));
-      else reject(new Error(`${cmd} salió ${code}: ${Buffer.concat(err).toString().slice(0, 300)}`));
+      if (code === 0) terminar(resolve, Buffer.concat(out));
+      else terminar(reject, new Error(`${cmd} salió ${code}: ${Buffer.concat(err).toString().slice(0, 300)}`));
     });
     if (stdinBuf != null) { p.stdin.write(stdinBuf); }
     p.stdin.end();
