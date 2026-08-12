@@ -560,14 +560,39 @@ app.get('/api/agenda/chequear-retrasos', async (req, res) => {
 
 async function chequearRetrasosDeHoy() {
   const hoyStr = new Date().toISOString().slice(0, 10);
-  const citas = await trabajos.citasDelDia(hoyStr);
-  const conUbicacion = citas.map((c) => ({
-    ...c,
-    finEstimado: new Date(`${c.fecha}T${c.fin}:00`),
-    inicioPactado: new Date(`${c.fecha}T${c.inicio}:00`),
-    ubicacion: { lat: c.lat, lng: c.lng }
-  }));
-  return revisarYAvisarAgendaDelDia(conUbicacion, enviarWhatsApp);
+
+  // Una pasada por cuenta. Antes miraba solo la agenda de 'default' y avisaba
+  // siempre con las credenciales globales de WhatsApp: en modo SaaS, todas las
+  // demás cuentas se quedaban sin el aviso de retraso —el argumento de venta
+  // "avisa solo"— y ni un error lo delataba, porque no había ninguno.
+  const cuentasSaas = await cuentas.listarCuentaIds().catch(() => []);
+  const todas = ['default', ...cuentasSaas.filter((id) => id !== 'default')];
+
+  const avisos = [];
+  for (const cuentaId of todas) {
+    const revisar = async () => {
+      const citas = await trabajos.citasDelDia(hoyStr, cuentaId);
+      if (!citas.length) return [];
+      const conUbicacion = citas.map((c) => ({
+        ...c,
+        finEstimado: new Date(`${c.fecha}T${c.fin}:00`),
+        inicioPactado: new Date(`${c.fecha}T${c.inicio}:00`),
+        ubicacion: { lat: c.lat, lng: c.lng }
+      }));
+      // Dentro del contexto de la cuenta, enviarWhatsApp usa SUS credenciales.
+      return revisarYAvisarAgendaDelDia(conUbicacion, enviarWhatsApp);
+    };
+    try {
+      const propios = cuentaId === 'default'
+        ? await revisar()
+        : await runConCuenta(cuentaId, await obtenerOverrides(cuentaId).catch(() => ({})), revisar);
+      avisos.push(...(propios || []));
+    } catch (e) {
+      // Que una cuenta falle no puede dejar sin aviso a las demás.
+      console.error(`[retrasos] Falló la revisión de la cuenta ${cuentaId}:`, e.message);
+    }
+  }
+  return avisos;
 }
 
 // ==================== Agenda / clientes / dashboard ====================
@@ -583,7 +608,16 @@ app.post('/api/citas', adminOCuenta, async (req, res) => {
     const geo = await geocodificar(datos.direccion);
     if (geo.ok) { datos.lat = geo.lat; datos.lng = geo.lng; }
   }
-  res.json({ ok: true, cita: await trabajos.crearCita(datos, req.cuentaId) });
+  try {
+    res.json({ ok: true, cita: await trabajos.crearCita(datos, req.cuentaId) });
+  } catch (e) {
+    // Choque de horarios: no es un error del servidor, es un "no": 409 y el
+    // panel muestra con qué cita se pisa.
+    if (e.codigo === 'HORARIO_OCUPADO') {
+      return res.status(409).json({ ok: false, error: e.message, citaExistente: e.citaExistente });
+    }
+    throw e;
+  }
 });
 app.post('/api/citas/:id/estado', adminOCuenta, async (req, res) => { const r = await trabajos.cambiarEstadoCita(req.params.id, req.body?.estado, req.cuentaId); res.status(r.ok ? 200 : 400).json(r); });
 app.post('/api/citas/:id/receptor', adminOCuenta, async (req, res) => { const r = await trabajos.registrarReceptor(req.params.id, req.body?.nombreReceptor, req.cuentaId); res.status(r.ok ? 200 : 400).json(r); });

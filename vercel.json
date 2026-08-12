@@ -5,7 +5,8 @@
   "outputDirectory": "public",
   "functions": {
     "api/index.js": {
-      "includeFiles": "{src/data,descargas}/**"
+      "includeFiles": "{src/data,descargas}/**",
+      "maxDuration": 60
     }
   },
   "crons": [

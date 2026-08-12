@@ -22,11 +22,30 @@ async function guardar() { await kvSet(CLAVE_DB, db); }
 
 // Secreto de firma de tokens: autogenerado y persistido la primera vez
 // (o JWT_SECRET por entorno si se quiere fijar).
+//
+// OJO con serverless: el autogenerado se persiste vía setConfig, que en Vercel
+// escribe en /tmp — un disco propio de CADA instancia y que además se borra.
+// Ahí, dos instancias frías generan dos secretos distintos y una firma tokens
+// que la otra rechaza: al usuario se le cierra la sesión sola, de a ratos, sin
+// nada en los logs que lo explique y sin forma de reproducirlo en local. Por
+// eso en Vercel se avisa fuerte de que JWT_SECRET tiene que ser una env var
+// real del proyecto (el mismo problema que ya obligó a mover los pedidos a
+// Redis; ver licencias.js).
+let avisadoSecretoEfimero = false;
 function secreto() {
   let s = process.env.JWT_SECRET || cfg('jwtSecret');
   if (!s) {
     s = randomBytes(32).toString('hex');
     setConfig({ jwtSecret: s });
+    if (process.env.VERCEL && !avisadoSecretoEfimero) {
+      avisadoSecretoEfimero = true;
+      console.error(
+        '[cuentas] ⚠️  JWT_SECRET no está configurado y se generó uno al vuelo. ' +
+        'En Vercel cada instancia genera el suyo, así que las sesiones se van a ' +
+        'cerrar solas de forma intermitente. Cargá JWT_SECRET como variable de ' +
+        'entorno del proyecto.'
+      );
+    }
   }
   return s;
 }
