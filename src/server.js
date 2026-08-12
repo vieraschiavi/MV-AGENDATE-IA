@@ -76,6 +76,35 @@ export const RUTA_APP = '/app/';
 const app = express();
 app.set('trust proxy', true);
 
+// --- Red de contención: que una promesa rechazada no se lleve puesto el proceso ---
+//
+// Express 4 NO atrapa el rechazo de una promesa en un handler `async`: se
+// convierte en un unhandledRejection y Node, desde la v15, termina el proceso.
+// En Vercel eso no es "se cayó ese request": la instancia atiende varias
+// invocaciones a la vez, así que un Redis con hipo mientras un profesional mira
+// su dashboard puede llevarse puestas las requests de OTRAS cuentas.
+//
+// Envolver a mano los ochenta handlers sería ochenta lugares donde olvidarse.
+// Se envuelven de una sola vez los métodos de ruteo, ACÁ ARRIBA: desde este
+// punto, toda ruta que se declare abajo queda cubierta sola, y cualquier
+// rechazo va a parar al error handler del final del archivo.
+const envolver = (fn) => (typeof fn !== 'function' || fn.length >= 4 ? fn : function envuelto(req, res, next) {
+  try {
+    const r = fn.call(this, req, res, next);
+    if (r && typeof r.then === 'function') r.catch(next);
+    return r;
+  } catch (e) { next(e); }
+});
+for (const metodo of ['get', 'post', 'put', 'patch', 'delete', 'all', 'use']) {
+  const original = app[metodo].bind(app);
+  app[metodo] = (...args) => {
+    // app.get('nombre') sin handlers es el LECTOR de settings de Express, no
+    // una ruta: se deja pasar tal cual.
+    if (metodo === 'get' && args.length === 1) return original(...args);
+    return original(...args.map(envolver));
+  };
+}
+
 // CORS abierto para la app Android (APK) y el widget embebido en sitios de terceros
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -860,6 +889,21 @@ app.use(voz);        // POST /webhook/voz y /webhook/voz/turno (vía rápida)
 app.use(vozPremium); // POST /webhook/voz-premium (pipeline ASR+TTS) + WS /voz-stream
 
 app.get('/salud', (_req, res) => res.json({ ok: true, demo: enModoDemo() }));
+
+// Error handler global. Los 4 argumentos no son decorativos: es por la cantidad
+// que Express distingue un manejador de errores de un middleware común.
+app.use((err, req, res, _next) => {
+  console.error(`[error] ${req.method} ${req.path}:`, err?.stack || err);
+  if (res.headersSent) return;
+  res.status(500).json({ ok: false, error: 'Se nos rompió algo procesando eso. Probá de nuevo en un momento.' });
+});
+
+// Último respaldo: si un rechazo se escapa igual (un `void promesa` suelto, un
+// callback fuera del ciclo del request), se registra en vez de matar al proceso
+// y dejar sin servicio a todas las cuentas.
+process.on('unhandledRejection', (motivo) => {
+  console.error('[unhandledRejection] Promesa sin catch:', motivo?.stack || motivo);
+});
 
 function ipsLocales() {
   const ifaces = networkInterfaces();

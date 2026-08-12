@@ -253,10 +253,40 @@ export async function crearCita(datos, cuentaId) {
     creado: iso(hoy()),
     actualizada: iso(hoy())
   };
+  // Última defensa contra el doble turno. buscar_horarios_disponibles SUGIERE
+  // huecos libres en el momento de preguntar, pero entre esa sugerencia y esta
+  // confirmación pasan varios turnos de conversación — y puede haber otra
+  // charla en paralelo cerrando el mismo horario. Sin este chequeo, el
+  // profesional se entera de que tiene dos clientes a la misma hora cuando
+  // llega a la puerta del segundo.
+  const choque = citaQueSeSuperpone(db.citas, cita);
+  if (choque) {
+    const e = new Error(`El horario ${cita.inicio}-${cita.fin} del ${cita.fecha} ya está ocupado por la cita ${choque.id}.`);
+    e.codigo = 'HORARIO_OCUPADO';
+    e.citaExistente = choque;
+    throw e;
+  }
+
   db.citas.push(cita);
   await guardar(cuentaId);
   notificarCRM('cita.confirmada', cita);
   return cita;
+}
+
+/**
+ * Primera cita viva del mismo profesional que pisa el horario de `nueva`.
+ * Dos tramos se superponen si cada uno empieza antes de que termine el otro;
+ * que terminen justo cuando arranca el siguiente NO es superponerse.
+ */
+function citaQueSeSuperpone(citas, nueva) {
+  return citas.find((c) =>
+    c.id !== nueva.id &&
+    c.fecha === nueva.fecha &&
+    c.profesionalId === nueva.profesionalId &&
+    c.estado !== 'cancelada' &&
+    c.inicio < nueva.fin &&
+    nueva.inicio < c.fin
+  ) || null;
 }
 
 /**

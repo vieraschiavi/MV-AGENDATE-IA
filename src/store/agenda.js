@@ -84,6 +84,16 @@ function seSuperponeConDescanso(inicioMin, finMin, config) {
  * @param {object} [opts.configuracion] - ver configuracionDescansoPorDefecto
  * @returns {{propuestas: Array<object>, motivo_descarte?: string}}
  */
+/** Día de la semana (0=domingo) de un 'YYYY-MM-DD', o null si no es una fecha. */
+export function diaDeLaFecha(fecha) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(fecha || ''));
+  if (!m) return null;
+  // UTC a propósito: con hora local, un servidor en otro huso puede correr la
+  // fecha un día para atrás o para adelante.
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  return Number.isNaN(d.getTime()) ? null : d.getUTCDay();
+}
+
 export function proponerHorarios({
   fecha,
   diaSemana,
@@ -92,7 +102,13 @@ export function proponerHorarios({
   citasDelDia = [],
   configuracion = configuracionDescansoPorDefecto,
 }) {
-  if (configuracion.dias_libres.includes(diaSemana)) {
+  // El día de la semana se deriva de la fecha, no se cree el que vino: calcular
+  // "qué día cae el 14" es justo lo que un modelo de lenguaje hace mal, y
+  // equivocarse acá significa ofrecer turnos en el día libre del profesional
+  // (o bloquearle un día hábil). La fecha es el dato duro; el resto se calcula.
+  const dia = diaDeLaFecha(fecha) ?? diaSemana;
+
+  if (configuracion.dias_libres.includes(dia)) {
     return { propuestas: [], motivo_descarte: 'Día de descanso configurado por el profesional.' };
   }
 
