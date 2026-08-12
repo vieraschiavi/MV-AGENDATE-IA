@@ -25,17 +25,42 @@ const vozTwilio = () => (idiomaActivo() === 'pt'
   : { lang: 'es-MX', voz: 'Polly.Mia-Neural' });
 import { cuentaPorNumeroVoz } from '../store/configCuentas.js';
 import { listarCuentaIds } from '../store/cuentas.js';
+import { limitar } from '../store/limites.js';
+import { firmaTwilioValida, permitirSinSecreto } from './firmas.js';
+
+// Twilio reintenta y varias llamadas legítimas pueden entrar juntas, así que el
+// tope es holgado: corta el bucle de abuso sin molestar al tráfico real.
+const limiteVoz = () => limitar({ nombre: 'webhook-voz', max: 120, ventanaSeg: 60 });
 
 const router = Router();
 
 // Ruteo multi-cuenta (SaaS): si el número que RECIBIÓ la llamada (campo "To"
 // de Twilio) pertenece a una cuenta, todo el turno (saludo, agente, catálogo,
 // datos, voz) corre con la configuración de ESA cuenta; si no, con la global.
-async function conCuentaDeLaLlamada(req, fn) {
+//
+// El dueño se resuelve ANTES de atender porque de él sale el Auth Token con el
+// que se verifica la firma de Twilio: quien POStea puede decir ser cualquier
+// número, pero sin ese token el HMAC no cierra. Devuelve null cuando el request
+// no está firmado válidamente (el handler ya respondió 403).
+async function conCuentaDeLaLlamada(req, res, fn) {
+  let duenio = null;
   try {
-    const duenio = await cuentaPorNumeroVoz(req.body?.To, await listarCuentaIds());
-    if (duenio) return await runConCuenta(duenio.cuentaId, duenio.overrides, fn);
+    duenio = await cuentaPorNumeroVoz(req.body?.To, await listarCuentaIds());
   } catch { /* sin cuentas o Redis caído: atiende la config global */ }
+
+  const token = duenio?.overrides?.twilioAuthToken || cfg('twilioAuthToken');
+  if (token) {
+    if (!firmaTwilioValida(req, token)) {
+      console.warn(`[voz] Webhook con firma inválida (To: ${req.body?.To || 'desconocido'}) — descartado.`);
+      res.sendStatus(403);
+      return;
+    }
+  } else if (!permitirSinSecreto('voz', 'Cargá el Auth Token de Twilio en /config.html (o TWILIO_AUTH_TOKEN).')) {
+    res.sendStatus(403);
+    return;
+  }
+
+  if (duenio) return runConCuenta(duenio.cuentaId, duenio.overrides, fn);
   return fn();
 }
 const NOMBRE_PROFESIONAL = () => cfg('nombreProfesional') || cfg('agenciaNombre') || 'tu profesional de confianza';
@@ -89,7 +114,7 @@ function gather(req, action, saySay) {
 }
 
 // Llamada entrante: saludo + escucha
-router.post('/webhook/voz', (req, res) => conCuentaDeLaLlamada(req, async () => {
+router.post('/webhook/voz', limiteVoz(), (req, res) => conCuentaDeLaLlamada(req, res, async () => {
   const f = frases();
   res.type('text/xml').send(
     xml(
@@ -100,7 +125,7 @@ router.post('/webhook/voz', (req, res) => conCuentaDeLaLlamada(req, async () => 
 }));
 
 // Cada turno de conversación
-router.post('/webhook/voz/turno', (req, res) => conCuentaDeLaLlamada(req, async () => {
+router.post('/webhook/voz/turno', limiteVoz(), (req, res) => conCuentaDeLaLlamada(req, res, async () => {
   const dicho = req.body?.SpeechResult;
   const llamante = req.body?.From || 'desconocido';
 
@@ -131,7 +156,13 @@ router.post('/webhook/voz/turno', (req, res) => conCuentaDeLaLlamada(req, async 
 // "Devolver la llamada" con un clic (ver src/store/twilio.js#clickToCall):
 // Twilio llama primero al agente humano y, apenas atiende, pide este TwiML
 // para conectarlo con el cliente — el agente no marca nada a mano.
-router.post('/webhook/voz/conectar', (req, res) => {
+router.post('/webhook/voz/conectar', limiteVoz(), (req, res) => {
+  const token = cfg('twilioAuthToken');
+  if (token) {
+    if (!firmaTwilioValida(req, token)) return res.sendStatus(403);
+  } else if (!permitirSinSecreto('voz', 'Cargá el Auth Token de Twilio en /config.html (o TWILIO_AUTH_TOKEN).')) {
+    return res.sendStatus(403);
+  }
   const destino = String(req.query.destino || '').replace(/[^\d+]/g, '');
   if (!destino) return res.type('text/xml').send(xml('<Say language="es-MX">Falta el número de destino.</Say>'));
   res.type('text/xml').send(

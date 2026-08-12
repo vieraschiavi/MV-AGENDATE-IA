@@ -17,6 +17,8 @@ import { get as cfg } from '../store/config.js';
 import { runConCuenta } from '../store/contextoCuenta.js';
 import { cuentaPorNumeroVoz, obtenerOverrides } from '../store/configCuentas.js';
 import { listarCuentaIds } from '../store/cuentas.js';
+import { limitar } from '../store/limites.js';
+import { firmaTwilioValida, permitirSinSecreto } from './firmas.js';
 
 const router = Router();
 
@@ -27,6 +29,8 @@ const EL = () => cfg('elevenlabsApiKey');
 const VOZ_ID = () => cfg('elevenlabsVoiceId');
 const AGENCIA = () => cfg('nombreProfesional') || cfg('agenciaNombre') || 'tu profesional de confianza';
 
+const MAX_REINTENTOS_DG = 6; // ~30 s de backoff antes de rendirse con el ASR
+
 const ttsElevenLabs = () => Boolean(EL() && VOZ_ID());
 // El pipeline vive con Deepgram (ASR) + alguna voz (Piper gratis, o ElevenLabs).
 const disponible = () => Boolean(DG() && (piperDisponible() || ttsElevenLabs()));
@@ -36,8 +40,21 @@ const motorVoz = () => (piperDisponible() ? 'Piper (es_AR-daniela, gratis)' : tt
 // Multi-cuenta (SaaS): si el número llamado ("To") es de una cuenta, la
 // disponibilidad se evalúa con SU config y el stream lleva su cuentaId para
 // que el WebSocket atienda con su asistente.
-router.post('/webhook/voz-premium', async (req, res) => {
+router.post('/webhook/voz-premium', limitar({ nombre: 'webhook-voz-premium', max: 120, ventanaSeg: 60 }), async (req, res) => {
   const duenio = await cuentaPorNumeroVoz(req.body?.To, await listarCuentaIds().catch(() => [])).catch(() => null);
+
+  // Misma verificación que la vía rápida: el "To" dice de quién es la llamada,
+  // la firma prueba que la mandó Twilio y no cualquiera con ese número.
+  const token = duenio?.overrides?.twilioAuthToken || cfg('twilioAuthToken');
+  if (token) {
+    if (!firmaTwilioValida(req, token)) {
+      console.warn(`[voz-premium] Webhook con firma inválida (To: ${req.body?.To || 'desconocido'}) — descartado.`);
+      return res.sendStatus(403);
+    }
+  } else if (!permitirSinSecreto('voz-premium', 'Cargá el Auth Token de Twilio en /config.html (o TWILIO_AUTH_TOKEN).')) {
+    return res.sendStatus(403);
+  }
+
   const responder = () => {
     if (!disponible()) {
       // Fallback a la vía rápida (Twilio <Gather> + voz Polly)
@@ -72,7 +89,12 @@ async function sintetizar(texto) {
         text: limpio,
         model_id: 'eleven_flash_v2_5',
         voice_settings: { stability: 0.5, similarity_boost: 0.8 }
-      })
+      }),
+      // Imprescindible: si ElevenLabs se cuelga sin timeout, este await no
+      // resuelve nunca — no corre ni el catch ni el finally que libera
+      // `respondiendo`, y la llamada queda muda y sorda hasta que el cliente
+      // corta. Con timeout, tira error y el turno se recupera.
+      signal: AbortSignal.timeout(15000)
     }
   );
   if (!resp.ok) throw new Error(`ElevenLabs ${resp.status}: ${await resp.text()}`);
@@ -103,6 +125,7 @@ export function montarVozPremium(httpServer) {
     let dgWs = null;
     let respondiendo = false; // evita pisarse: no procesar ASR mientras habla el agente
     let cerrado = false;
+    let reintentosDg = 0;     // reconexiones seguidas a Deepgram (se resetea al conectar)
     // Cuenta SaaS dueña del número llamado (viene como Parameter del Stream):
     // cada turno corre con SU config (asistente, catálogo, voz, datos).
     let ctxCuenta = null;
@@ -115,6 +138,9 @@ export function montarVozPremium(httpServer) {
         'wss://api.deepgram.com/v1/listen?model=nova-2&language=es&encoding=mulaw&sample_rate=8000' +
         '&punctuate=true&smart_format=true&interim_results=false&endpointing=400';
       dgWs = new WebSocket(url, { headers: { Authorization: `Token ${DG()}` } });
+      // Una conexión que llegó a abrirse limpia la cuenta de reintentos: el
+      // tope es para el que NUNCA conecta, no para una caída puntual.
+      dgWs.on('open', () => { reintentosDg = 0; });
 
       dgWs.on('message', async (data) => {
         if (cerrado || respondiendo) return;
@@ -142,8 +168,17 @@ export function montarVozPremium(httpServer) {
       dgWs.on('error', (e) => console.error('[voz-premium] Deepgram:', e.message));
       dgWs.on('close', () => {
         // Reconexión automática mientras la llamada siga viva (con la config
-        // de la cuenta de la llamada, si corresponde)
-        if (!cerrado) setTimeout(() => enCuenta(abrirDeepgram), 500);
+        // de la cuenta de la llamada, si corresponde). Con backoff y tope: si
+        // la API key es inválida el socket cierra al instante, y reintentar
+        // cada 500 ms sin límite era martillar a Deepgram toda la llamada.
+        if (cerrado) return;
+        if (reintentosDg >= MAX_REINTENTOS_DG) {
+          console.error('[voz-premium] Deepgram no reconecta — se abandona el ASR de esta llamada (¿API key inválida?).');
+          return;
+        }
+        const espera = Math.min(500 * 2 ** reintentosDg, 8000);
+        reintentosDg += 1;
+        setTimeout(() => enCuenta(abrirDeepgram), espera);
       });
     }
 

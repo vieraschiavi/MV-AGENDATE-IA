@@ -50,6 +50,10 @@ const ENV = {
   whatsappToken: 'WHATSAPP_TOKEN',
   whatsappPhoneId: 'WHATSAPP_PHONE_ID',
   whatsappVerifyToken: 'WHATSAPP_VERIFY_TOKEN',
+  // App Secret de la app de Meta: firma cada webhook entrante (X-Hub-Signature-256).
+  // Sin él, el webhook queda abierto y cualquiera puede simular mensajes de tus
+  // clientes. Meta → Configuración de la app → Básica → Clave secreta.
+  whatsappAppSecret: 'WHATSAPP_APP_SECRET',
   twilioAccountSid: 'TWILIO_ACCOUNT_SID',
   twilioAuthToken: 'TWILIO_AUTH_TOKEN',
   // Número de teléfono (E.164) que atiende el ChatVoice. En el modo SaaS,
@@ -104,6 +108,7 @@ const ENV = {
 const CLAVES = Object.keys(ENV);
 const SECRETAS = new Set([
   'anthropicApiKey', 'openaiApiKey', 'geminiApiKey', 'whatsappToken', 'whatsappVerifyToken',
+  'whatsappAppSecret',
   'twilioAuthToken', 'deepgramApiKey', 'elevenlabsApiKey', 'adminKey', 'mercadopagoToken',
   'jwtSecret', 'resendApiKey'
 ]);

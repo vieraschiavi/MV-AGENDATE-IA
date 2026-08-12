@@ -11,11 +11,14 @@ import { get as cfg } from '../store/config.js';
 import { runConCuenta } from '../store/contextoCuenta.js';
 import { cuentaPorPhoneId, obtenerOverrides } from '../store/configCuentas.js';
 import { listarCuentaIds } from '../store/cuentas.js';
+import { limitar } from '../store/limites.js';
+import { firmaMetaValida, permitirSinSecreto } from './firmas.js';
 
 const router = Router();
 
 const TOKEN = () => cfg('whatsappToken');
 const PHONE_ID = () => cfg('whatsappPhoneId');
+const APP_SECRET = () => cfg('whatsappAppSecret');
 const VERIFY = () => cfg('whatsappVerifyToken') || 'mv-agendate-verify';
 
 // Verificación del webhook (la hace Meta una sola vez). Además del verify token
@@ -35,25 +38,43 @@ router.get('/webhook/whatsapp', async (req, res) => {
 });
 
 // Mensajes entrantes
-router.post('/webhook/whatsapp', async (req, res) => {
+router.post('/webhook/whatsapp', limitar({
+  nombre: 'webhook-whatsapp', max: 300, ventanaSeg: 60,
+  mensaje: 'Demasiados mensajes seguidos.'
+}), async (req, res) => {
+  // Ruteo multi-cuenta (fase 2): si el Phone Number ID que recibió el mensaje
+  // pertenece a una cuenta SaaS, TODO el manejo (agente, catálogo, datos,
+  // respuesta) corre con la configuración y los datos de ESA cuenta. Si no
+  // matchea ninguna, es el número global de la instancia (modo clásico).
+  //
+  // Se resuelve ANTES de contestar 200 porque de la cuenta dueña sale el App
+  // Secret con el que se verifica la firma: el atacante puede decir ser
+  // cualquiera, pero sin esa clave el HMAC no cierra.
+  const cambios = req.body?.entry?.flatMap((e) => e.changes ?? []) ?? [];
+  const phoneId = cambios.find((c) => c.value?.metadata?.phone_number_id)?.value?.metadata?.phone_number_id;
+  const duenio = phoneId && phoneId !== PHONE_ID()
+    ? await cuentaPorPhoneId(phoneId, await listarCuentaIds()).catch(() => null)
+    : null;
+
+  const secreto = duenio?.overrides?.whatsappAppSecret || APP_SECRET();
+  if (secreto) {
+    if (!firmaMetaValida(req, secreto)) {
+      console.warn(`[whatsapp] Webhook con firma inválida (phone_number_id: ${phoneId || 'desconocido'}) — descartado.`);
+      return res.sendStatus(403);
+    }
+  } else if (!permitirSinSecreto('whatsapp', 'Cargá el App Secret de Meta en /config.html (o WHATSAPP_APP_SECRET).')) {
+    return res.sendStatus(403);
+  }
+
   res.sendStatus(200); // responder rápido; procesar async
 
   try {
-    const cambios = req.body?.entry?.flatMap((e) => e.changes ?? []) ?? [];
+    const procesar = duenio
+      ? (fn) => runConCuenta(duenio.cuentaId, duenio.overrides, fn)
+      : (fn) => fn();
     for (const c of cambios) {
       const msg = c.value?.messages?.[0];
       if (!msg) continue;
-      // Ruteo multi-cuenta (fase 2): si el Phone Number ID que recibió el
-      // mensaje pertenece a una cuenta SaaS, TODO el manejo (agente, catálogo,
-      // datos, respuesta) corre con la configuración y los datos de ESA cuenta.
-      // Si no matchea ninguna, es el número global de la instancia (modo clásico).
-      const phoneId = c.value?.metadata?.phone_number_id;
-      const duenio = phoneId && phoneId !== PHONE_ID()
-        ? await cuentaPorPhoneId(phoneId, await listarCuentaIds()).catch(() => null)
-        : null;
-      const procesar = duenio
-        ? (fn) => runConCuenta(duenio.cuentaId, duenio.overrides, fn)
-        : (fn) => fn();
       const de = msg.from; // ej: 59899123456
       let texto;
       if (msg.type === 'text') {
@@ -108,16 +129,25 @@ export async function enviarWhatsApp(numero, texto) {
     console.log(`[whatsapp][demo] → ${numero}: ${texto}`);
     return;
   }
-  const resp = await fetch(`https://graph.facebook.com/v21.0/${PHONE_ID()}/messages`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${TOKEN()}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      messaging_product: 'whatsapp',
-      to: numero,
-      type: 'text',
-      text: { body: texto.slice(0, 4096) }
-    })
-  });
+  let resp;
+  try {
+    resp = await fetch(`https://graph.facebook.com/v21.0/${PHONE_ID()}/messages`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${TOKEN()}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to: numero,
+        type: 'text',
+        text: { body: texto.slice(0, 4096) }
+      }),
+      // Sin timeout, una respuesta lenta de Meta deja la promesa colgada para
+      // siempre y el turno del cliente se pierde en silencio.
+      signal: AbortSignal.timeout(15000)
+    });
+  } catch (e) {
+    console.error(`[whatsapp] No se pudo enviar a ${numero}:`, String(e.message || e).slice(0, 200));
+    return;
+  }
   if (!resp.ok) {
     const cuerpo = await resp.text();
     // Código típico de Meta cuando pasaron >24h desde el último mensaje del

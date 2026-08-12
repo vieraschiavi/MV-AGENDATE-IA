@@ -85,7 +85,11 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json({ limit: '2mb' }));
+// El cuerpo CRUDO se guarda aparte porque la firma de Meta (X-Hub-Signature-256)
+// es un HMAC sobre esos bytes exactos: volver a serializar el objeto parseado no
+// los reproduce (espacios, orden de claves, escapes) y la verificación fallaría
+// siempre. Ver src/channels/firmas.js.
+app.use(express.json({ limit: '2mb', verify: (req, _res, buf) => { req.rawBody = buf; } }));
 app.use(express.urlencoded({ extended: false })); // webhooks de Twilio llegan como form-encoded
 app.use(express.static(join(here, '../public')));
 app.use('/movil', express.static(join(here, '../movil'))); // app Android (PWA instalable)
