@@ -55,3 +55,19 @@ graft/
 # Anclarla la duplicaba en cada corrida; la excepción hace lo mismo sin pelearse
 # con la herramienta, y tiene que quedar DESPUÉS para ganarle.
 !.claude/skills/graft/
+
+# --- Nada de la variante DUEÑO entra al repo ---
+# Este repo es PÚBLICO. El instalador del dueño no tiene límite de prueba, así
+# que tenerlo acá era publicar el producto completo gratis: cualquiera lo
+# descargaba con un clic, sin saber nada del código. Lo mismo el .bat que
+# convierte una instalación normal en la del dueño.
+# Se generan a mano cuando hacen falta y no se comparten:
+#   npm run empaquetar-exe-owner
+#   npm run activador-dueno
+INSTALADOR/OWNER/
+!INSTALADOR/OWNER/.gitkeep
+
+# La clave PRIVADA que firma las licencias. Quien la tenga puede fabricar
+# licencias de este producto. Nunca, bajo ninguna circunstancia, al repo.
+scripts/licencia-privada.pem
+*.pem

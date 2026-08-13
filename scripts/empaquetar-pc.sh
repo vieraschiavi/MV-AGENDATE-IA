@@ -27,8 +27,10 @@ case "${1:-}" in
   --owner)
     VARIANTE="--owner"; NOMBRE="MV-Agendate-IA-PC-Dueno.zip"
     ETIQUETA="version del dueno"
-    # NUNCA en public/: esa carpeta la sirve Vercel y esta variante no tiene
-    # límite de prueba. Vive solo en el repo privado, igual que su .exe.
+    # NUNCA en public/: esa carpeta la sirve Vercel y esta variante lleva
+    # adentro la licencia perpetua del dueño. Tampoco al repo: INSTALADOR/OWNER/
+    # está en .gitignore. Antes se commiteaba ahí "porque el repo es privado" —
+    # no lo es, y cualquiera se bajaba la copia completa con un clic.
     DESTINOS=("INSTALADOR/OWNER") ;;
   "") ;;
   *) echo "✘ Opción desconocida: $1 (usá --demo, --owner o nada)"; exit 1 ;;

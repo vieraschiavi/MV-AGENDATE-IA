@@ -16,7 +16,8 @@
 // Variantes del instalador (ver electron/owner-config.cjs):
 //   (sin flag)  cliente pago: prueba de 7 días fijada, se activa con la licencia del pago
 //   --demo      demo: prueba de 3 días fijada explícitamente (ignora DIAS_PRUEBA del entorno)
-//   --owner     dueño: SIN límite de prueba, para uso propio del vendedor
+//   --owner     dueño: lleva adentro una licencia perpetua FIRMADA (necesita la clave privada)
+//   --legado    además acepta los códigos viejos MV-PLAN-XXXXXXXX (transición; no vender así)
 //
 // Las TRES fijan los días adentro del instalador: si el cliente quedara con
 // diasPrueba:null, la variable de entorno DIAS_PRUEBA de su propia máquina
@@ -26,13 +27,18 @@ import { readdirSync, statSync, readFileSync, writeFileSync, mkdirSync, rmSync }
 import { join, dirname, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import JavaScriptObfuscator from 'javascript-obfuscator';
-import { configVariante, diasPruebaVariante, diasDeVariante } from './variante-instalador.js';
+import { configVariante, diasPruebaVariante, diasDeVariante, licenciaVariante } from './variante-instalador.js';
 
 const RAIZ = dirname(dirname(fileURLToPath(import.meta.url)));
 const SALIDA = join(RAIZ, 'dist-protegido');
 const CARPETAS = ['src', 'electron'];
 const ES_OWNER = process.argv.includes('--owner');
 const ES_DEMO = process.argv.includes('--demo');
+// Entrega de TRANSICIÓN: acepta además los códigos viejos (MV-PLAN-XXXXXXXX) de
+// los clientes a los que todavía no se les reemitió una licencia firmada. Ver
+// src/store/licencia-incluida.js: por default va en false porque esos códigos
+// no se pueden verificar en la máquina del cliente.
+const ES_LEGADO = process.argv.includes('--legado');
 if (ES_OWNER && ES_DEMO) {
   console.error('✘ --owner y --demo son excluyentes: elegí una variante.');
   process.exit(1);
@@ -40,10 +46,11 @@ if (ES_OWNER && ES_DEMO) {
 // Los dos archivos que el empaquetador reescribe con los días de la variante.
 // Ninguno queda "sin fijar": la entrega siempre sale con el número adentro, y
 // se cubren las dos formas de arrancar (ventana Electron y paquete .bat).
-const VARIANTE = { owner: ES_OWNER, demo: ES_DEMO };
+const VARIANTE = { owner: ES_OWNER, demo: ES_DEMO, legado: ES_LEGADO };
 const REESCRITOS = new Map([
   [join(RAIZ, 'electron', 'owner-config.cjs'), configVariante(VARIANTE)],   // lo lee electron/main.cjs
-  [join(RAIZ, 'src', 'store', 'dias-prueba.js'), diasPruebaVariante(VARIANTE)] // lo lee src/store/prueba.js (también en el .bat)
+  [join(RAIZ, 'src', 'store', 'dias-prueba.js'), diasPruebaVariante(VARIANTE)], // lo lee src/store/prueba.js (también en el .bat)
+  [join(RAIZ, 'src', 'store', 'licencia-incluida.js'), licenciaVariante(VARIANTE)] // la licencia firmada de la variante dueño
 ]);
 
 const OPCIONES = {
@@ -111,7 +118,13 @@ if (configsEscritas !== REESCRITOS.size) {
 }
 
 const DIAS = diasDeVariante(VARIANTE);
-const etiqueta = ES_OWNER ? ' [OWNER — sin límite de prueba]'
+const etiqueta = ES_OWNER ? ' [OWNER — con licencia perpetua firmada adentro]'
   : ES_DEMO ? ` [DEMO — prueba de ${DIAS} días fija]`
   : ` [CLIENTE — prueba de ${DIAS} días fija]`;
+const aviso = ES_LEGADO
+  ? '  ⚠ --legado: esta entrega TAMBIÉN acepta los códigos viejos MV-PLAN-XXXXXXXX, que no se\n' +
+    '    pueden verificar en la máquina del cliente. Es para la transición de los que ya\n' +
+    '    compraron, no para vender.'
+  : '';
 console.log(`✔ Ofuscados ${ofuscados} archivos .js/.cjs, copiados ${copiados} archivos de datos → ${SALIDA}${etiqueta}`);
+if (aviso) console.log(aviso);

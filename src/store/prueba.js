@@ -17,11 +17,15 @@
 // (14 días, ver store/cuentas.js). El discriminador es process.env.VERCEL.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { get as cfg, setConfig } from './config.js';
 import { DIAS_PRUEBA_CLIENTE, DIAS_FIJADOS } from './dias-prueba.js';
+import { verificarLicencia, sinClavePublica, diasRestantesDe } from './licencia-firma.js';
+import { LICENCIA_INCLUIDA, ACEPTA_LEGADO } from './licencia-incluida.js';
 
 const MS_DIA = 86400000;
+const aqui = dirname(fileURLToPath(import.meta.url));
 
 // --- Ancla del inicio de la prueba, FUERA de la carpeta del programa ---
 // El inicio se guarda en data/config.json, que vive adentro de la carpeta de
@@ -46,7 +50,13 @@ function escribirAncla(inicio) {
 }
 
 /**
- * Días de prueba. 0 o negativo = sin límite.
+ * Días de prueba.
+ *
+ * OJO con el cero: antes significaba "sin límite" y era así como se marcaba la
+ * copia del dueño. Ya no. Cero días es una prueba de cero días — vence
+ * enseguida. La edición dueño es una licencia firmada (licencia-incluida.js),
+ * no un número en un archivo de texto que cualquiera escribe.
+ *
  * Orden: lo que fijó el empaquetador (manda siempre, es lo que hace que el
  * candado no dependa de la máquina del cliente) → env DIAS_PRUEBA (solo en
  * desarrollo y tests, donde nada está fijado) → default de la versión que se
@@ -58,12 +68,61 @@ function diasPrueba() {
   return Number.isFinite(n) ? n : DIAS_PRUEBA_CLIENTE;
 }
 
-/** Largo mínimo de un código de licencia (el que emite la compra es más largo). */
-const MIN_LICENCIA = 6;
+// --- Qué cuenta como licencia de verdad ---
+//
+// EL AGUJERO QUE ESTO CIERRA: acá había un `length >= 6`. Cualquier texto de
+// seis caracteres —"aaaaaa"— pasaba por licencia y levantaba el candado para
+// siempre. El cliente al que se le vencía la prueba se quedaba con el programa
+// completo sin pagar, sin necesitar ninguna herramienta ni leer nada del
+// código: probando en el campo de licencia se caía solo.
+//
+// Ahora la única llave es una firma Ed25519 que sólo puede hacer la clave
+// privada (ver licencia-firma.js). El texto inventado no verifica.
+const FORMATO_LEGADO = /^MV-[A-Z]+-[0-9A-F]{8}$/;
 
-/** true si el código guardado puede ser una licencia de verdad. */
-function licenciaValida(codigo) {
-  return String(codigo || '').trim().length >= MIN_LICENCIA;
+/**
+ * Verifica un código de licencia.
+ * @returns {{ok: boolean, motivo?: string, datos?: object, legado?: boolean}}
+ */
+function chequearLicencia(codigo) {
+  const texto = String(codigo || '').trim();
+  if (!texto) return { ok: false, motivo: 'vacia' };
+
+  const v = verificarLicencia(texto);
+  if (v.ok) return v;
+
+  // Códigos VIEJOS (MV-PLAN-XXXXXXXX), sólo si esta entrega los acepta.
+  //
+  // No se pueden verificar acá: son un HMAC que necesita el secreto del
+  // servidor, y meter ese secreto en el .exe del cliente sería entregarle la
+  // máquina de fabricar licencias. O sea que aceptarlos es aceptar cualquier
+  // texto con esa forma. Por eso ACEPTA_LEGADO viene en false y sólo se
+  // enciende para una entrega de transición, mientras se les reemite una
+  // licencia firmada a los que ya habían comprado.
+  if (ACEPTA_LEGADO && FORMATO_LEGADO.test(texto)) return { ok: true, legado: true, datos: {} };
+
+  return v;
+}
+
+// --- Licencia suelta en un archivo (licencia.txt) ---
+//
+// Existe para que algo externo al programa —el .bat que convierte una copia a
+// la versión dueño— pueda activar una instalación YA HECHA sin reinstalar.
+// Se lee en cada consulta, no una vez al arrancar.
+//
+// No abre ningún agujero: el contenido pasa por la MISMA verificación de firma
+// que un código tecleado. Un licencia.txt escrito a mano no habilita nada.
+function leerLicenciaArchivo() {
+  for (const ruta of [
+    join(process.env.MV_DATOS_DIR || join(aqui, '../../data'), 'licencia.txt'),
+    join(aqui, '../..', 'licencia.txt')   // al lado del programa instalado
+  ]) {
+    try {
+      const texto = readFileSync(ruta, 'utf8').trim();
+      if (texto) return texto;
+    } catch { /* no está: se sigue con el próximo */ }
+  }
+  return '';
 }
 
 /**
@@ -85,13 +144,49 @@ export function estadoPrueba() {
   const base = { aplica: false, licenciada: false, vencida: false, diasRestantes: 0, diasPrueba: diasPrueba(), inicio: null };
   // En el host (Vercel) no hay prueba local: es la vidriera + SaaS por cuenta.
   if (process.env.VERCEL) return base;
-  // Con licencia cargada, la copia está activada (pago único / suscripción).
-  // Se exige el mismo mínimo que activarLicencia: si no, un MV_LICENCIA=x en el
-  // entorno de la máquina alcanzaba para hacer pasar por paga una copia que no
-  // lo está.
-  if (licenciaValida(cfg('licenciaLocal'))) return { ...base, aplica: true, licenciada: true };
-  // Prueba desactivada (el vendedor corre su propia copia sin límite).
-  if (diasPrueba() <= 0) return base;
+
+  // Con licencia FIRMADA la copia está activada. Se prueban tres orígenes, en
+  // este orden: la que activó el usuario a mano, la del licencia.txt suelto (la
+  // que deja el .bat del dueño) y la que viaja dentro del build (variante
+  // dueño). Las tres pasan por la misma verificación de firma.
+  let vencidaPorLicencia = null;
+  for (const codigo of [cfg('licenciaLocal'), leerLicenciaArchivo(), LICENCIA_INCLUIDA]) {
+    if (!codigo) continue;
+    const v = chequearLicencia(codigo);
+    if (v.ok) {
+      return {
+        ...base, aplica: true, licenciada: true,
+        diasRestantes: diasRestantesDe(v.datos) ?? 0,
+        plan: v.datos?.p || '', nombre: v.datos?.n || ''
+      };
+    }
+    // Una licencia que ERA válida y se venció no es lo mismo que una inventada:
+    // hay que decirle al cliente que renueve, no que su código es falso.
+    if (v.motivo === 'vencida' && !vencidaPorLicencia) vencidaPorLicencia = v;
+  }
+  if (vencidaPorLicencia) {
+    return { ...base, aplica: true, vencida: true, licenciaVencida: true, diasRestantes: 0 };
+  }
+
+  // Sin clave pública configurada no se puede verificar ninguna licencia, así
+  // que tampoco se puede vender: es un checkout de desarrollo, y ahí la app no
+  // se bloquea.
+  //
+  // Pero SÓLO corriendo desde el código fuente. En una entrega empaquetada
+  // (DIAS_FIJADOS es un número) que falte la clave pública no es una comodidad
+  // de desarrollo sino un error de empaquetado, y devolver "sin límite" lo
+  // convertiría en el peor final posible: el producto regalado a todo el que lo
+  // descargue, sin que nada se vea roto. Empaquetado y sin clave se cae a la
+  // prueba normal: sigue roto (ninguna licencia va a verificar) pero vence, y
+  // que venza es lo que hace que el error se note.
+  if (sinClavePublica() && !Number.isFinite(DIAS_FIJADOS)) return base;
+
+  // OJO: acá había un `if (diasPrueba() <= 0) return base;` — o sea "cero días
+  // de prueba = sin límite", que era como se marcaba la copia del dueño.
+  // Escribir `diasPrueba: 0` en un archivo de texto de una línea desbloqueaba
+  // el programa entero. Ahora cero días significa lo que dice: una prueba de
+  // cero días, que vence enseguida. La edición dueño es una licencia firmada,
+  // no un número.
 
   // El inicio se estampa la primera vez. Se descarta lo que no sea una fecha
   // usable: sin esto, un PRUEBA_INICIO basura en el entorno daba NaN (y
@@ -133,7 +228,20 @@ export function pruebaBloqueada() {
  */
 export function activarLicencia(codigo) {
   const c = String(codigo || '').trim();
-  if (!licenciaValida(c)) return { ok: false, error: 'Ingresá un código de licencia válido (el que te llegó al comprar).' };
+  const v = chequearLicencia(c);
+  if (!v.ok) return { ok: false, motivo: v.motivo, error: MENSAJE[v.motivo] || MENSAJE.formato };
   setConfig({ licenciaLocal: c });
   return { ok: true, estado: estadoPrueba() };
 }
+
+// Un solo "código inválido" para todo obliga al cliente a adivinar si se
+// equivocó al copiar, si se le venció o si el problema es de la instalación —
+// y en los tres casos escribe a soporte.
+const MENSAJE = {
+  vacia: 'Pegá el código de licencia que te llegó al comprar.',
+  formato: 'Ese código no tiene el formato de una licencia (empieza con MVA1). Copialo completo del mail de la compra, sin espacios.',
+  firma: 'Ese código no es una licencia válida de MV Agendate IA.',
+  vencida: 'Tu licencia venció. Renovala para volver a usar el programa.',
+  invalida: 'El código está incompleto o mal copiado. Copialo entero del mail de la compra.',
+  'sin-clave-publica': 'Esta copia del programa salió mal armada y no puede comprobar licencias. Descargala de nuevo del sitio oficial.'
+};

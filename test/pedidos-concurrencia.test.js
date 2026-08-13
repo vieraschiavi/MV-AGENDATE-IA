@@ -67,11 +67,28 @@ test('dos confirmaciones simultáneas del MISMO pago dan la misma licencia', asy
   assert.equal(guardado.licencia, uno.pedido.licencia, 'y coincidir con la guardada');
 });
 
+test('la licencia emitida al cobrar está FIRMADA y la app la acepta', async () => {
+  // Punta a punta, que es lo único que prueba que la cadena del cobro sirve:
+  // el servidor firma con la privada, el cliente pega el código y su programa
+  // lo verifica con la pública. Si estas dos puntas se desalinean, el cliente
+  // paga, recibe su clave, la pega y el programa se la rechaza — y no hay
+  // ningún test unitario de cada lado que lo note.
+  const p = await nuevoPedido();
+  const r = await lic.confirmarPago(p.pedido.id);
+  assert.match(r.pedido.licencia, /^MVA1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/);
+
+  const { verificarLicencia } = await import('../src/store/licencia-firma.js');
+  const v = verificarLicencia(r.pedido.licencia);
+  assert.equal(v.ok, true, 'el cliente que pagó tiene que poder activar con lo que se le mandó');
+  assert.equal(v.datos.e, p.pedido.email, 'la licencia dice a quién se le emitió');
+  assert.equal(v.datos.x, null, 'el pago único es perpetuo: no puede vencerse solo');
+});
+
 test('la licencia no es adivinable a partir del id del pedido', async () => {
   const p = await nuevoPedido();
   const r = await lic.confirmarPago(p.pedido.id);
-  assert.match(r.pedido.licencia, /^MV-FULL-[0-9A-F]{8}$/);
-  assert.ok(!r.pedido.licencia.includes(p.pedido.id.replace('ORD-', '')), 'no puede ser el id disfrazado');
+  const firma = r.pedido.licencia.split('.')[2];
+  assert.ok(!firma.includes(p.pedido.id.replace('ORD-', '')), 'no puede ser el id disfrazado');
 });
 
 test('descartar un pendiente lo saca también del índice', async () => {

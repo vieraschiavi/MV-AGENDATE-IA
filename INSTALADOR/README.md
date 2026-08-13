@@ -48,34 +48,97 @@ Los días de prueba viajan **fijados adentro** de cada entrega — los escribe
 Sin eso, el comprador podría poner `DIAS_PRUEBA=0` en las variables de entorno
 de su Windows y quedarse con el programa sin pagar.
 
-## OWNER/ — solo para el dueño
+## OWNER/ — solo para el dueño, y ya NO vive en el repo
 
-| Archivo | Qué es |
+> **Esta carpeta está en `.gitignore`.** Antes no lo estaba, y ahí había un
+> problema serio: el repo es **público**. El `MV-Agendate-IA-Setup-Dueno.exe`
+> —la copia sin límite de prueba— estaba commiteado acá, o sea que cualquiera
+> entraba a GitHub, hacía clic en *Download* y se llevaba el producto completo
+> gratis. Sin saber nada del código, sin ninguna herramienta. Lo mismo el `.bat`
+> que convierte una instalación normal en la del dueño.
+>
+> El README decía "repo privado". No lo era. Ahora nada de la variante dueño se
+> commitea ni se publica: se arma en tu máquina cuando lo necesitás.
+
+| Qué | Cómo se arma |
 |---|---|
-| `MV-Agendate-IA-Setup-Dueno.exe` | **Versión del dueño**, instalador: idéntica a la de venta (mismo producto, mismos accesos directos y desinstalador, mismo código ofuscado) pero con la **prueba desactivada** (`diasPrueba: 0`): funciona sin licencia ni límite de días. |
-| `MV-Agendate-IA-PC-Dueno.zip` | **Versión del dueño, portable.** Misma idea, para llevar en un pendrive. |
-| `Convertir-a-version-dueno.bat` | Pasa una copia **ya instalada** (la normal, la que se vende) a versión dueño, sin reinstalar. Se copia a la carpeta donde quedó instalado el programa y se le hace doble clic. |
+| Instalador del dueño | `npm run empaquetar-exe-owner` |
+| Portable del dueño | `npm run empaquetar-pc-owner` |
+| `Convertir-a-version-dueno.bat` | `npm run activador-dueno` (sale en `dist/`) |
 
-### Convertir-a-version-dueno.bat — cuándo sirve y cuándo no
+Las tres cosas necesitan tu **clave privada de firma** (ver abajo): sin ella el
+empaquetador corta en vez de sacar una entrega a medias.
 
-Sirve para no bajar 97 MB cuando ya tenés la versión normal instalada: reemplaza
-los dos archivos donde viaja la edición —`electron/owner-config.cjs` y
-`src/store/dias-prueba.js`, dentro de `resources\app\`— por los de la variante
-dueño, y deja una copia `.original` de cada uno. Corriéndolo de nuevo ofrece
-volver atrás. El resto del programa (incluido el código ofuscado) no se toca.
+### La edición dueño es una licencia firmada, no una bandera
+
+Antes, "versión dueño" era `diasPrueba: 0` en un archivo de texto de una línea.
+O sea que la llave del producto se escribía con el Bloc de notas. El `.bat` no
+hacía nada que un cliente no pudiera hacer solo en treinta segundos.
+
+Ahora la copia del dueño lleva adentro una **licencia perpetua firmada con
+Ed25519**, que el programa verifica exactamente igual que la de un cliente que
+pagó. Escribir el archivo a mano no sirve: sin la firma no verifica. Y poner
+`diasPrueba: 0` ahora **bloquea** la copia en vez de liberarla — cero días de
+prueba es una prueba vencida.
+
+### `Convertir-a-version-dueno.bat` — cuándo sirve
+
+Sirve para no bajar 97 MB cuando ya tenés la versión normal instalada: deja un
+`licencia.txt` con la licencia perpetua firmada adentro de la carpeta del
+programa. Para volver atrás, se borra ese archivo.
+
+**Busca la instalación solo.** El instalador deja elegir carpeta y disco, así
+que puede estar en cualquier lado: mira al lado del propio `.bat`, el
+`InstallLocation` del registro de Windows (HKCU y HKLM), `%LOCALAPPDATA%\Programs`
+y Archivos de programa. Cada candidato lo confirma buscando un archivo del
+programa antes de escribir nada.
 
 **Es la llave maestra de tu propio producto: no lo repartas.** Convierte
-cualquier copia instalada en la versión completa, así que si se filtra a un
-cliente, a un chat o a una captura, cualquiera puede destrabar lo que vendés.
-Por eso vive solo acá, en `INSTALADOR/OWNER/` del repo privado — nunca en
-`public/`, nunca en el release, nunca adentro de un paquete.
+cualquier copia instalada en la versión completa, para siempre. Si se filtra a
+un cliente, a un chat o a una captura, cualquiera destraba lo que vendés.
 
-Si tenés dudas, usá directamente `MV-Agendate-IA-Setup-Dueno.exe`: es el mismo
-resultado sin ningún archivo suelto dando vueltas.
+## Las claves de firma
 
-**Nunca se publican en la web ni en el release**: no viven en `public/` (Vercel
-no las sirve) y no van al release público. Su único canal es esta carpeta del
-repo **privado** — solo quien tiene acceso al repo (vos) puede bajarlas.
+```bash
+node scripts/licencias-firma.js init      # una sola vez: genera el par
+```
+
+- La **privada** queda en `scripts/licencia-privada.pem`, que está en
+  `.gitignore`. **Nunca al repo.** Quien la tenga puede fabricar licencias de tu
+  producto.
+- La **pública** se escribe sola en `src/store/clave-publica.js` y viaja adentro
+  de cada copia entregada. No es secreta: sólo sirve para comprobar, no para
+  firmar.
+- Para que el cobro emita licencias solo, cargá la privada en Vercel como
+  variable de entorno `MV_LICENCIA_PRIVADA_PEM`.
+
+Emitir una licencia a mano (por ejemplo para reemplazarle el código viejo a un
+cliente que ya había comprado):
+
+```bash
+node scripts/licencias-firma.js emitir --email cliente@mail.com --plan full
+node scripts/licencias-firma.js emitir --email cliente@mail.com --dias 365   # con vencimiento
+```
+
+> **`init` una sola vez.** Correrlo de nuevo genera un par nuevo e **invalida
+> todas las licencias ya vendidas**: el cliente que pagó se queda con un código
+> que la app rechaza. Por eso pide `--reemplazar-par` explícito.
+
+### Clientes con códigos viejos (`MV-PLAN-XXXXXXXX`)
+
+Esos códigos no se pueden verificar en la máquina del cliente —son un HMAC que
+necesita el secreto del servidor— así que las entregas nuevas **no los aceptan**.
+Lo correcto es reemitirles una licencia firmada con el comando de arriba.
+
+Si necesitás una entrega de transición mientras tanto:
+
+```bash
+npm run empaquetar-exe-legado
+```
+
+Esa acepta además el formato viejo. Ojo con lo que significa: como no se puede
+comprobar, acepta **cualquier** texto con esa forma. Es para tapar un hueco de
+días, no para vender.
 
 ## Qué trae el portable adentro
 

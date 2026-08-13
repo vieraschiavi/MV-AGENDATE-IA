@@ -7,7 +7,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { randomBytes, createHmac, timingSafeEqual } from 'node:crypto';
+import { randomBytes, createHmac, timingSafeEqual, createPrivateKey, sign } from 'node:crypto';
 import { redisDisponible, kvGet, kvSet, kvDel, kvMGet, kvSAdd, kvSRem, kvSMembers } from './redis.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -159,22 +159,52 @@ export async function crearPedido({ plan, version = 'pc', email, nombre, recurre
 }
 
 /**
- * Código de licencia de un pedido. Determinístico a propósito: sale de un HMAC
- * del id del pedido, no de un random.
+ * Código de licencia de un pedido: una licencia MVA1 FIRMADA con Ed25519.
  *
- * Así, si dos avisos del mismo pago se confirman a la vez, los dos generan
- * EXACTAMENTE la misma licencia y da igual cuál gane — con un random, cada uno
- * emitía un código distinto y el cliente podía quedarse con el que perdió, o
- * sea con una licencia que el servidor no reconoce. No es adivinable sin el
- * secreto, así que seguir el patrón no sirve para fabricarse una.
+ * POR QUÉ CAMBIÓ. Antes era un HMAC (`MV-BASICO-A1B2C3D4`). El HMAC sirve para
+ * lo que hace el servidor consigo mismo, pero tiene un problema de raíz acá:
+ * para comprobarlo hay que tener el secreto, y el que necesita comprobarlo es
+ * el programa instalado en la PC del cliente. Meter ese secreto adentro del
+ * .exe sería entregarle la máquina de fabricar licencias — así que la app nunca
+ * lo comprobó: aceptaba cualquier texto de 6 caracteres. O sea que el código
+ * que se emitía acá era decorativo; el candado no lo miraba.
+ *
+ * Con firma asimétrica eso se acomoda: firma la PRIVADA (que se queda en el
+ * servidor, en MV_LICENCIA_PRIVADA_PEM) y verifica la PÚBLICA, que puede viajar
+ * dentro de cada copia entregada sin ningún riesgo. Ver store/licencia-firma.js.
+ *
+ * SIGUE SIENDO DETERMINÍSTICO, que es lo que ya resolvía el HMAC: Ed25519 firma
+ * de forma determinística (RFC 8032) y el payload se arma sólo con datos fijos
+ * del pedido — nada de Date.now(). Si dos avisos del mismo pago se confirman a
+ * la vez, los dos generan EXACTAMENTE el mismo código y da igual cuál gane; con
+ * un random, el cliente podía quedarse con el que perdió.
  */
 function licenciaDePedido(pedido) {
-  const firma = createHmac('sha256', secretoDescarga())
-    .update(`licencia:${pedido.id}`)
-    .digest('hex')
-    .slice(0, 8)
-    .toUpperCase();
-  return `MV-${pedido.plan.toUpperCase()}-${firma}`;
+  const pem = process.env.MV_LICENCIA_PRIVADA_PEM;
+  if (!pem) {
+    // Sin clave privada no se puede emitir nada que la app vaya a aceptar. Se
+    // devuelve null y el pedido queda "pagado, licencia pendiente": es
+    // preferible eso —que se ve en /api/licencias y se arregla reemitiendo a
+    // mano— que entregarle al cliente un código que su programa va a rechazar.
+    console.error('[licencias] FALTA MV_LICENCIA_PRIVADA_PEM: el pedido ' + pedido.id +
+      ' quedó pagado SIN licencia. Emitila a mano:\n' +
+      '  node scripts/licencias-firma.js emitir --email ' + pedido.email + ' --plan ' + pedido.plan);
+    return null;
+  }
+  const payload = {
+    n: pedido.nombre || pedido.email,
+    e: pedido.email,
+    p: pedido.plan,
+    // Pago único = perpetua. La suscripción se corta aparte, desde el servidor
+    // central (ver store/estadoLicencia.js): no se codifica un vencimiento acá
+    // porque al emitir todavía no se sabe hasta cuándo va a pagar.
+    x: null,
+    i: String(pedido.creado || '').slice(0, 10),   // fijo: el pedido ya existía
+    o: pedido.id
+  };
+  const datos = Buffer.from(JSON.stringify(payload), 'utf8');
+  const firma = sign(null, datos, createPrivateKey(pem.replace(/\\n/g, '\n')));
+  return 'MVA1.' + datos.toString('base64url') + '.' + firma.toString('base64url');
 }
 
 /** Marca un pedido como pagado y emite licencia + token de descarga. */

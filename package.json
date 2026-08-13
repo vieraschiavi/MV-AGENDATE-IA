@@ -17,18 +17,22 @@
     "empaquetar-pc": "bash scripts/empaquetar-pc.sh",
     "empaquetar-pc-demo": "bash scripts/empaquetar-pc.sh --demo",
     "empaquetar-pc-owner": "bash scripts/empaquetar-pc.sh --owner",
-    "empaquetar-pc-todos": "npm run empaquetar-pc && npm run empaquetar-pc-demo && npm run empaquetar-pc-owner",
+    "empaquetar-pc-todos": "npm run empaquetar-pc && npm run empaquetar-pc-demo",
     "ofuscar": "node scripts/ofuscar.js",
     "preempaquetar-exe": "node scripts/ofuscar.js",
     "empaquetar-exe": "electron-builder --win --x64 --publish never",
     "preempaquetar-exe-demo": "node scripts/ofuscar.js --demo",
     "empaquetar-exe-demo": "electron-builder --win --x64 --publish never --config.appId=com.mv.agendateia.demo --config.productName=\"MV Agendate IA (Demo)\" --config.nsis.artifactName=MV-Agendate-IA-Setup-Demo.exe --config.nsis.shortcutName=\"MV Agendate IA (Demo)\" --config.nsis.uninstallDisplayName=\"MV Agendate IA (Demo)\"",
-    "empaquetar-exe-todos": "npm run empaquetar-exe && npm run empaquetar-exe-demo && npm run empaquetar-exe-owner",
+    "empaquetar-exe-todos": "npm run empaquetar-exe && npm run empaquetar-exe-demo",
     "preempaquetar-exe-owner": "node scripts/ofuscar.js --owner",
     "empaquetar-exe-owner": "electron-builder --win --x64 --publish never --config.nsis.artifactName=MV-Agendate-IA-Setup-Dueno.exe",
+    "activador-dueno": "node scripts/licencias-firma.js activador",
+    "licencias": "node scripts/licencias-firma.js",
     "dev": "node --watch src/server.js",
     "lint": "eslint .",
-    "test": "node --test --import ./scripts/aislar-datos-test.js"
+    "test": "node --test --import ./scripts/aislar-datos-test.js",
+    "preempaquetar-exe-legado": "node scripts/ofuscar.js --legado",
+    "empaquetar-exe-legado": "electron-builder --win --x64 --publish never --config.nsis.artifactName=MV-Agendate-IA-Setup-Legado.exe"
   },
   "engines": {
     "node": ">=20"

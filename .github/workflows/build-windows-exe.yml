@@ -59,7 +59,9 @@ jobs:
       # con la config de su variante, por eso van en serie y no en paralelo).
       - run: npm run empaquetar-exe
       - run: npm run empaquetar-exe-demo
-      - run: npm run empaquetar-exe-owner
+      # La variante del dueño NO se construye acá: necesita la clave privada que
+      # firma su licencia, y esa clave no entra a un runner. Se arma a mano en la
+      # máquina del dueño con  npm run empaquetar-exe-owner.
 
       # Y las mismas tres en versión PORTABLE (.zip con lanzador .bat, sin
       # instalador): es la alternativa para los clientes cuya empresa no deja
@@ -67,7 +69,7 @@ jobs:
       # dist-protegido/ y cada una lo regenera con los días de SU variante.
       - name: Paquetes portables (.bat) de las tres variantes
         shell: bash
-        run: npm run empaquetar-pc-todos
+        run: npm run empaquetar-pc && npm run empaquetar-pc-demo
 
       - name: Publicar release (siempre "latest")
         uses: softprops/action-gh-release@v2
@@ -77,10 +79,12 @@ jobs:
           make_latest: true
           body: Generado automáticamente por GitHub Actions desde el último commit de `main`. No editar a mano — se reemplaza en cada build.
           # OJO: acá van SOLO las variantes vendibles/públicas. La variante del
-          # dueño (sin límite de prueba) NUNCA se publica en el release: vive
-          # committeada en INSTALADOR/OWNER/ del repo privado (paso siguiente).
-          # No se sube como artifact porque el storage de Actions tiene cupo
-          # y ya reventó una vez.
+          # dueño NO se publica en ningún lado — ni en el release ni en el repo.
+          # Antes se commiteaba en INSTALADOR/OWNER/ con la idea de que el repo
+          # era privado. NO LO ES: cualquiera entraba a GitHub y se bajaba, con
+          # un clic y sin saber nada del código, la copia sin límite de prueba.
+          # Ahora ese .exe se arma a mano cuando hace falta y no sale de la
+          # máquina del dueño (npm run empaquetar-exe-owner).
           files: |
             dist-instalador/MV-Agendate-IA-Setup.exe
             dist-instalador/MV-Agendate-IA-Setup-Demo.exe
@@ -94,7 +98,8 @@ jobs:
       # .zip con lanzador .bat (los .zip ya los dejó en su carpeta el paso
       # anterior, por eso acá solo se copian los exes).
       #   CLIENTE/ → oficial + demo, .exe y .zip
-      #   OWNER/   → la del dueño, sin límite de prueba, que nunca va al release
+      # La variante del dueño NO se copia acá a propósito: ver el comentario del
+      # paso anterior. Publicarla era regalar el producto.
       # El push solo toca INSTALADOR/, que no está en los paths de arriba — no
       # re-dispara esto.
       #
@@ -120,10 +125,9 @@ jobs:
               exit 1
             fi
           done
-          mkdir -p INSTALADOR/CLIENTE INSTALADOR/OWNER public/descargas
+          mkdir -p INSTALADOR/CLIENTE public/descargas
           cp dist-instalador/MV-Agendate-IA-Setup.exe      INSTALADOR/CLIENTE/
           cp dist-instalador/MV-Agendate-IA-Setup-Demo.exe INSTALADOR/CLIENTE/
-          cp dist-instalador/MV-Agendate-IA-Setup-Dueno.exe INSTALADOR/OWNER/
           cp dist-instalador/MV-Agendate-IA-Setup.exe      public/descargas/
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
