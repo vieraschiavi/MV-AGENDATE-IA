@@ -131,7 +131,20 @@ function cargar() {
   const embebida = leerEmbebida();
   cache = {};
   // Prioridad: config.json (runtime) > variable de entorno > clave embebida.
-  for (const k of CLAVES) cache[k] = archivo[k] ?? process.env[ENV[k]] ?? embebida[k] ?? '';
+  //
+  // Un valor VACÍO en el archivo cuenta como "nunca se configuró", no como
+  // "configurado en vacío". La diferencia importa porque setConfig guarda las
+  // 49 claves de una, incluidas las que nadie tocó: con `??` (que solo cae en
+  // null/undefined) esas cadenas vacías pisaban a la variable de entorno para
+  // siempre. O sea el camino más normal del mundo —arrancar la app, ver que
+  // falta configurar algo, cargar las claves en .env, reiniciar— dejaba de
+  // funcionar en silencio, y no había nada en pantalla que lo explicara.
+  for (const k of CLAVES) {
+    const guardado = archivo[k];
+    cache[k] = (guardado != null && String(guardado) !== '')
+      ? guardado
+      : (process.env[ENV[k]] ?? embebida[k] ?? '');
+  }
   return cache;
 }
 

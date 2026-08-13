@@ -15,8 +15,18 @@ const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TO
 const cliente = (url && token) ? new Redis({ url, token }) : null;
 const memoria = new Map();
 
-/** true si hay una base de datos Redis real conectada (no memoria volátil). */
-export function redisDisponible() { return !!cliente; }
+/**
+ * true si hay un almacén COMPARTIDO entre invocaciones (Redis real).
+ *
+ * MV_KV_MEMORIA=1 hace que el fallback en memoria cuente como tal. Es la única
+ * forma de ejercitar en los tests el camino de almacén compartido —claves por
+ * pedido, índice, migración—, que en serverless es justamente donde aparecen
+ * las carreras; sin esto, los tests corren siempre por el camino de archivo y
+ * ese código no lo prueba nadie.
+ */
+export function redisDisponible() {
+  return !!cliente || process.env.MV_KV_MEMORIA === '1';
+}
 
 export async function kvGet(clave) {
   if (cliente) return await cliente.get(clave);
@@ -48,4 +58,37 @@ export async function kvDel(clave) {
   if (cliente) return await cliente.del(clave);
   memoria.delete(clave);
   return 1;
+}
+
+/** Varias claves de una: devuelve un array alineado con `claves`. */
+export async function kvMGet(claves) {
+  if (!claves.length) return [];
+  if (cliente) return await cliente.mget(...claves);
+  return claves.map((c) => (memoria.has(c) ? memoria.get(c) : null));
+}
+
+// --- Conjuntos ---
+// Sirven de índice sin carrera: agregar y sacar un miembro son operaciones
+// atómicas del servidor, así que dos invocaciones simultáneas no se pisan la
+// lista entera como pasaría leyendo, modificando y reescribiendo un array.
+
+export async function kvSAdd(clave, miembro) {
+  if (cliente) return await cliente.sadd(clave, miembro);
+  const s = memoria.get(clave) instanceof Set ? memoria.get(clave) : new Set();
+  s.add(miembro);
+  memoria.set(clave, s);
+  return 1;
+}
+
+export async function kvSRem(clave, miembro) {
+  if (cliente) return await cliente.srem(clave, miembro);
+  const s = memoria.get(clave);
+  if (s instanceof Set) s.delete(miembro);
+  return 1;
+}
+
+export async function kvSMembers(clave) {
+  if (cliente) return (await cliente.smembers(clave)) || [];
+  const s = memoria.get(clave);
+  return s instanceof Set ? [...s] : [];
 }

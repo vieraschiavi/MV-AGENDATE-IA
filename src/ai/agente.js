@@ -169,7 +169,11 @@ async function ejecutarHerramienta(nombre, input, canal, sessionId) {
       // que el profesional lo apruebe (o ajuste) desde el Panel.
       const previa = await cotizacionDeSesion(sessionId, input.trabajo, cuenta);
       if (previa?.estado === 'aprobada') {
-        recordarCotizado(sessionId, input.trabajo, previa.totalAprobado, r.desglose);
+        // Sin el desglose calculado: el profesional ajustó el TOTAL a mano, así
+        // que las partes viejas ya no suman ese número. Guardarlas igual le
+        // daba al cliente un comprobante donde mano de obra + materiales dan
+        // 1000 y el total dice 1500.
+        recordarCotizado(sessionId, input.trabajo, previa.totalAprobado, null);
         return JSON.stringify({
           ...r,
           total: previa.totalAprobado,
@@ -229,7 +233,18 @@ async function ejecutarHerramienta(nombre, input, canal, sessionId) {
     case 'registrar_persona_receptora':
       return JSON.stringify({ registrado: true, ...input });
     case 'confirmar_cita': {
-      const cotizado = cotizadoPorSesion.get(claveCotizado(sessionId, input.trabajo));
+      // Primero la memoria de esta sesión; si no está, la cotización aprobada
+      // que sí quedó guardada. Sin este respaldo, un cliente que cotiza el
+      // lunes y confirma el martes —o que cae en otra instancia de Vercel—
+      // perdía el precio que el profesional ya había aprobado y comunicado, y
+      // la cita se guardaba sin monto.
+      let cotizado = cotizadoPorSesion.get(claveCotizado(sessionId, input.trabajo));
+      if (!cotizado) {
+        const guardada = await cotizacionDeSesion(sessionId, input.trabajo, cuenta).catch(() => null);
+        if (guardada?.estado === 'aprobada' && guardada.totalAprobado != null) {
+          cotizado = { total: Number(guardada.totalAprobado) };
+        }
+      }
       const oficios = listarOficios();
       const datosOficio = oficios.find((o) => o.clave === prof.oficio);
       const trabajoNombre = datosOficio?.trabajos.find((t) => t.clave === input.trabajo)?.nombre || input.trabajo;
