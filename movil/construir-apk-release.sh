@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# © 2026 Martín Viera. Todos los derechos reservados.
 # Compila MV Agendate IA como APK RELEASE firmado (no debuggable), listo para
 # distribuir a los teléfonos. Firma v1+v2+v3 con un keystore propio del
 # negocio. Requiere JDK 17, Android SDK (platform 34 + build-tools 34) y Node.

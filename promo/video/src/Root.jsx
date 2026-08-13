@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 import { Composition } from 'remotion';
 import { Launch, FPS, DURATION_IN_FRAMES, WIDTH, HEIGHT } from './Launch.jsx';
 

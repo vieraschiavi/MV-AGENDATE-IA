@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# © 2026 Martín Viera. Todos los derechos reservados.
 # Compila y firma la APK de MV Agendate IA sin Gradle: aapt2 + javac + d8 + apksigner.
 # Requisitos: Android SDK (build-tools 34 + platform 34) y JDK 11+.
 #   ANDROID_SDK=/opt/android-sdk ./build-apk.sh

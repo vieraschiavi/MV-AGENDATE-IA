@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# © 2026 Martín Viera. Todos los derechos reservados.
 # Genera el paquete PORTABLE (.zip con lanzador .bat, sin instalador) para la
 # variante que se le pida. Es la alternativa al instalador .exe, pensada para
 # las empresas donde no se pueden abrir ejecutables.

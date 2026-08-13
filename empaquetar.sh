@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# © 2026 Martín Viera. Todos los derechos reservados.
 # Empaqueta el producto en carpetas separadas por versión:
 #   dist/MV-PC/   → programa de escritorio/servidor (Node) para el profesional
 #   dist/MV-APK/  → app Android (APK + guía + fuentes)
