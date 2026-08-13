@@ -7,7 +7,7 @@
 //   node scripts/licencias-firma.js init [--reemplazar-par]
 //   node scripts/licencias-firma.js emitir --email cliente@mail.com [--nombre "..."] [--plan full] [--dias 365]
 //   node scripts/licencias-firma.js propia [--nombre "..."]
-//   node scripts/licencias-firma.js activador [--salida dist/Convertir-a-version-dueno.bat]
+//   node scripts/licencias-firma.js activador [--salida dist/]
 //
 // La clave PRIVADA es lo que vale: quien la tenga puede fabricar licencias de
 // tu producto. Se guarda en scripts/licencia-privada.pem, que está en
@@ -17,10 +17,15 @@
 // La PÚBLICA no es secreta: se escribe en src/store/clave-publica.js y viaja
 // dentro de cada copia entregada.
 // ============================================================
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { generateKeyPairSync } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import { PEM_FILE, PUB_FILE, clavePrivada, firmarLicencia, payloadLicencia } from './firmar-licencia.js';
+
+const RAIZ = dirname(dirname(fileURLToPath(import.meta.url)));
+// El hueco que la plantilla del conversor tiene reservado para la licencia.
+const MARCA_LICENCIA = '@@LICENCIA_MVA1@@';
 
 const argv = process.argv.slice(2);
 const comando = argv[0] || '';
@@ -107,12 +112,36 @@ if (comando === 'activador') {
   const codigo = firmar(payloadDe({
     nombre: arg('nombre', 'Uso propio'), email: 'uso-propio@local', plan: 'full', dias: null
   }));
-  const salida = resolve(process.cwd(), arg('salida', join('dist', 'Convertir-a-version-dueno.bat')));
-  mkdirSync(dirname(salida), { recursive: true });
-  writeFileSync(salida, batActivador(codigo).replace(/\n/g, '\r\n'));  // CRLF: los bloques ( ) de batch fallan con LF
-  console.log('OK: ' + salida);
-  console.log('    Lleva adentro una licencia PERPETUA firmada y verificada.');
-  console.log('    NO lo repartas: activa cualquier instalación, para siempre.');
+
+  // El conversor son DOS archivos que viajan juntos: el .bat (punto de entrada,
+  // sin nada adentro) y el .ps1 (el motor de deteccion, que SI lleva la
+  // licencia). Por eso el .bat vive en el repo y el .ps1 se genera: commitear
+  // un .ps1 con la licencia adentro seria publicar la version completa, y este
+  // repo es publico.
+  const destino = resolve(process.cwd(), arg('salida', 'dist'));
+  mkdirSync(destino, { recursive: true });
+
+  const plantilla = readFileSync(join(RAIZ, 'scripts', 'plantillas', 'convertir-a-version-dueno.ps1'), 'utf8');
+  if (!plantilla.includes(MARCA_LICENCIA)) {
+    salir('✘ La plantilla del conversor no tiene el marcador ' + MARCA_LICENCIA + '.',
+      '  Sin eso saldria un .ps1 sin licencia adentro, que no activa nada.');
+  }
+  // CRLF: los archivos de Windows que el cliente puede llegar a abrir con el
+  // Bloc de notas viejo quedan ilegibles con LF.
+  writeFileSync(join(destino, 'Convertir-a-version-dueno.ps1'),
+    plantilla.replaceAll(MARCA_LICENCIA, codigo).replace(/\r?\n/g, '\r\n'));
+  const batOrigen = join(RAIZ, 'INSTALADOR', 'OWNER', 'Convertir-a-version-dueno.bat');
+  if (!existsSync(batOrigen)) {
+    salir('✘ Falta ' + batOrigen + '.',
+      '  El .ps1 solo no sirve: el punto de entrada es el .bat, y tienen que viajar juntos.');
+  }
+  copyFileSync(batOrigen, join(destino, 'Convertir-a-version-dueno.bat'));
+
+  console.log('OK: ' + destino);
+  console.log('    Convertir-a-version-dueno.bat  (punto de entrada)');
+  console.log('    Convertir-a-version-dueno.ps1  (lleva la licencia PERPETUA firmada)');
+  console.log('    Tienen que viajar juntos, en la misma carpeta.');
+  console.log('    NO los repartas: activan cualquier instalacion, para siempre.');
   process.exit(0);
 }
 
@@ -120,131 +149,4 @@ salir('Uso:',
   '  node scripts/licencias-firma.js init [--reemplazar-par]',
   '  node scripts/licencias-firma.js emitir --email cliente@mail.com [--nombre "..."] [--plan full] [--dias 365]',
   '  node scripts/licencias-firma.js propia [--nombre "..."]',
-  '  node scripts/licencias-firma.js activador [--salida dist/Convertir-a-version-dueno.bat]');
-
-// ---------------------------------------------------------------------------
-// El .bat que convierte una instalación ya hecha en la versión dueño.
-//
-// Antes escribía `module.exports = { diasPrueba: 0 };` — o sea que la "llave"
-// era un archivo de texto que cualquiera reproducía con el Bloc de notas.
-// Ahora deja un licencia.txt con una licencia perpetua FIRMADA adentro, que la
-// app verifica igual que la de un cliente que pagó.
-//
-// Busca solo dónde quedó instalado el programa (registro de Windows incluido):
-// el instalador deja elegir carpeta y disco, así que puede estar en cualquier
-// lado. Cada candidato se confirma con un archivo del programa antes de
-// escribir nada.
-// ---------------------------------------------------------------------------
-function batActivador(licencia) {
-  return `@echo off
-rem ============================================================
-rem  MV Agendate IA - ACTIVAR VERSION DUENO
-rem
-rem  Doble clic. Nada mas: busca solo donde quedo instalado el programa.
-rem
-rem  DONDE BUSCA, en este orden:
-rem    1. Al lado de este archivo   -> si ya lo copiaste, sigue andando
-rem    2. El registro de Windows    -> la carpeta que ELEGISTE al instalar
-rem    3. %%LOCALAPPDATA%%\\Programs   -> el lugar por defecto
-rem    4. Archivos de programa      -> por si se instalo para todos
-rem  Cada candidato se CONFIRMA con un archivo del programa antes de escribir.
-rem
-rem  Lo que deja es una LICENCIA PERPETUA FIRMADA (Ed25519), no una bandera.
-rem  Antes esto escribia "diasPrueba: 0" en un archivo de texto: cualquiera lo
-rem  hacia con el Bloc de notas y tenia el producto completo gratis.
-rem
-rem  NO lo repartas: activa cualquier instalacion, para siempre.
-rem ============================================================
-setlocal
-cd /d "%~dp0"
-title Activar MV Agendate IA - version dueno
-
-set "MARCA=electron\\owner-config.cjs"
-set "APP="
-
-echo.
-echo  Buscando la instalacion...
-
-call :probar "resources\\app"
-if not defined APP call :probar "..\\resources\\app"
-if not defined APP call :probar "."
-if not defined APP call :registro "HKCU"
-if not defined APP call :registro "HKLM"
-if not defined APP if exist "%LOCALAPPDATA%\\Programs" for /d %%D in ("%LOCALAPPDATA%\\Programs\\*") do if not defined APP call :probar "%%~fD\\resources\\app"
-if not defined APP if exist "%ProgramFiles%" for /d %%D in ("%ProgramFiles%\\*") do if not defined APP call :probar "%%~fD\\resources\\app"
-if not defined APP if exist "%ProgramFiles(x86)%" for /d %%D in ("%ProgramFiles(x86)%\\*") do if not defined APP call :probar "%%~fD\\resources\\app"
-
-if not defined APP goto :no_encontre
-
-echo  [OK] Encontrada en:
-echo       %APP%
-echo.
-pause
-
-rem El programa lee la licencia al arrancar: con la ventana abierta el cambio no
-rem se ve hasta reiniciarlo. Se cierra aca en vez de pedirselo al usuario.
-taskkill /F /IM "MV Agendate IA.exe" /T >nul 2>&1
-
-> "%APP%\\licencia.txt" echo ${licencia}
-findstr /c:"MVA1." "%APP%\\licencia.txt" >nul 2>nul
-if errorlevel 1 goto :fallo
-
-echo.
-echo  ============================================================
-echo   LISTO. Esta copia quedo en version DUENO, sin vencimiento.
-echo  ============================================================
-echo   - No pide clave de licencia.
-echo   - No tiene limite de dias.
-echo.
-echo   Para volver a la version normal: borra este archivo
-echo     %APP%\\licencia.txt
-echo.
-pause
-exit /b 0
-
-:probar
-if defined APP exit /b 0
-if exist "%~1\\%MARCA%" set "APP=%~1"
-exit /b 0
-
-:registro
-for /f "tokens=2,*" %%A in ('reg query "%~1\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall" /s /v InstallLocation 2^>nul ^| findstr /i "REG_SZ"') do (
-  if not defined APP call :probar "%%B\\resources\\app"
-  if not defined APP call :probar "%%B"
-)
-exit /b 0
-
-:no_encontre
-echo.
-echo  [X] No encontre MV Agendate IA instalado en esta PC.
-echo.
-echo      Busque al lado de este archivo, en el registro de Windows, en
-echo      %%LOCALAPPDATA%%\\Programs y en Archivos de programa.
-echo.
-echo      Las dos razones habituales:
-echo        - Todavia no esta instalado: instalalo primero y volve a correr esto.
-echo        - Lo instalaste en una carpeta suelta (un disco externo, una carpeta
-echo          propia). Copia ESTE archivo adentro de esa carpeta y volve a
-echo          hacer doble clic.
-echo.
-echo      Para encontrarla: clic derecho en el acceso directo del escritorio
-echo      -^> "Abrir ubicacion del archivo".
-echo.
-pause
-exit /b 1
-
-:fallo
-echo.
-echo  [X] No pude escribir la licencia en:
-echo      %APP%
-echo.
-echo      Suele ser una de estas:
-echo        - Se instalo en "Archivos de programa" y hace falta ejecutar este
-echo          .bat como administrador (clic derecho -^> "Ejecutar como
-echo          administrador").
-echo        - El antivirus bloquea la escritura en esa carpeta.
-echo.
-pause
-exit /b 1
-`;
-}
+  '  node scripts/licencias-firma.js activador [--salida dist/]');

@@ -64,7 +64,7 @@ de su Windows y quedarse con el programa sin pagar.
 |---|---|
 | Instalador del dueño | `npm run empaquetar-exe-owner` |
 | Portable del dueño | `npm run empaquetar-pc-owner` |
-| `Convertir-a-version-dueno.bat` | `npm run activador-dueno` (sale en `dist/`) |
+| El conversor (`.bat` + `.ps1`) | `npm run activador-dueno` (sale en `dist/`) |
 
 Las tres cosas necesitan tu **clave privada de firma** (ver abajo): sin ella el
 empaquetador corta en vez de sacar una entrega a medias.
@@ -72,8 +72,7 @@ empaquetador corta en vez de sacar una entrega a medias.
 ### La edición dueño es una licencia firmada, no una bandera
 
 Antes, "versión dueño" era `diasPrueba: 0` en un archivo de texto de una línea.
-O sea que la llave del producto se escribía con el Bloc de notas. El `.bat` no
-hacía nada que un cliente no pudiera hacer solo en treinta segundos.
+O sea que la llave del producto se escribía con el Bloc de notas.
 
 Ahora la copia del dueño lleva adentro una **licencia perpetua firmada con
 Ed25519**, que el programa verifica exactamente igual que la de un cliente que
@@ -81,22 +80,43 @@ pagó. Escribir el archivo a mano no sirve: sin la firma no verifica. Y poner
 `diasPrueba: 0` ahora **bloquea** la copia en vez de liberarla — cero días de
 prueba es una prueba vencida.
 
-### `Convertir-a-version-dueno.bat` — cuándo sirve
+### El conversor: `.bat` + `.ps1`, y por qué uno se genera
 
-Sirve para no bajar 97 MB cuando ya tenés la versión normal instalada: deja un
+Sirve para no bajar 97 MB cuando ya tenés una copia normal instalada. Deja un
 `licencia.txt` con la licencia perpetua firmada adentro de la carpeta del
-programa. Para volver atrás, se borra ese archivo.
+programa. Para volver atrás, se borra ese archivo — no toca ningún archivo del
+programa, así que no hay backups `.original` que puedan faltar o pisarse.
 
-**Busca la instalación solo.** El instalador deja elegir carpeta y disco, así
-que puede estar en cualquier lado: mira al lado del propio `.bat`, el
-`InstallLocation` del registro de Windows (HKCU y HKLM), `%LOCALAPPDATA%\Programs`
-y Archivos de programa. Cada candidato lo confirma buscando un archivo del
-programa antes de escribir nada.
+| Archivo | Dónde vive | Por qué |
+|---|---|---|
+| `Convertir-a-version-dueno.bat` | en el repo | es sólo el punto de entrada: no lleva nada adentro |
+| `Convertir-a-version-dueno.ps1` | **se genera** en `dist/` | lleva la licencia firmada; commitearlo en un repo público es publicar la versión completa |
+
+En el repo queda la **plantilla** del `.ps1`
+(`scripts/plantillas/convertir-a-version-dueno.ps1`), con un hueco donde va la
+licencia. Si alguien la corre tal cual, se planta: no activa nada.
+
+**Detecta sola cualquier tipo de instalación**, sin que haya que decirle dónde
+está ni copiar nada a la carpeta del programa:
+
+- **Instalada con el `.exe`** (oficial o demo): el instalador NSIS anota la
+  carpeta elegida en el Registro de Windows (la misma info que ve "Agregar o
+  quitar programas"), aunque el cliente haya cambiado la carpeta por defecto.
+  El `.ps1` la lee de ahí.
+- **Portable (`.zip`)**: no toca el registro a propósito (ver más abajo), así
+  que se rastrea por el acceso directo que arma `Crear-acceso-directo.bat` (si
+  se corrió) y, si no hay acceso directo, por una búsqueda acotada en las
+  carpetas típicas donde se descomprime un zip (Escritorio, Descargas,
+  Documentos, raíz del usuario, raíz de cada disco — nunca el disco entero).
+- Si ninguna de las dos encuentra algo, el propio script pide la carpeta a
+  mano, o se le puede arrastrar la carpeta encima del `.bat`.
+
+Si hay más de una copia instalada (por ejemplo la oficial y la demo, que
+conviven porque tienen identidad distinta), el script las lista y pregunta
+cuál convertir.
 
 **Es la llave maestra de tu propio producto: no lo repartas.** Convierte
-cualquier copia instalada en la versión completa, para siempre. Si se filtra a
-un cliente, a un chat o a una captura, cualquiera destraba lo que vendés.
-
+cualquier copia instalada en la versión completa, para siempre.
 ## Las claves de firma
 
 ```bash
@@ -139,6 +159,14 @@ npm run empaquetar-exe-legado
 Esa acepta además el formato viejo. Ojo con lo que significa: como no se puede
 comprobar, acepta **cualquier** texto con esa forma. Es para tapar un hueco de
 días, no para vender.
+
+> **Sin probar en Windows real.** Este repo se desarrolla en un entorno sin
+> Windows ni PowerShell disponibles, así que `Convertir-a-version-dueno.ps1`
+> no se pudo ejecutar de punta a punta antes de subirlo — solo se validó
+> estáticamente (sintaxis balanceada, mismo contenido que escribe el
+> empaquetador para la variante dueño, sin caracteres que puedan salir mal en
+> la consola). Antes de confiarle una instalación real, probalo vos una vez
+> en tu máquina.
 
 ## Qué trae el portable adentro
 
