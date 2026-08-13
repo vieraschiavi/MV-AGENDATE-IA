@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Tests de lo que va adentro de cada entrega (instalador .exe y paquete
 // portable .bat) — node --test
 import { test } from 'node:test';

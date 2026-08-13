@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Arranque local del programa (PC/escritorio): elegir un puerto que esté libre
 // y abrir el navegador en la dirección correcta.
 //

@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Tests de los lanzadores de Windows (.bat) que usa el cliente en su PC.
 // Existen porque estos archivos NO los corre nadie en CI —solo el cliente, en
 // su máquina, cuando ya compró— así que un error acá se descubre tarde y mal.

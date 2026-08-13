@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // ChatVoice premium — pipeline en tiempo real:
 //   Twilio Media Streams (audio mulaw 8k por WebSocket)
 //     → Deepgram nova (ASR streaming en español, endpointing automático)

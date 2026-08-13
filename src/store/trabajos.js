@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // CRM de MV Agendate IA: clientes, citas/trabajos y dashboard.
 // Persiste en Redis (Upstash) — en Vercel cualquier dato en memoria/archivo se
 // pierde en cada cold start; con Redis sobrevive entre invocaciones serverless.

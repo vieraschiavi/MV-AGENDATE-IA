@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Créditos de IA por cuenta (modo SaaS) — MV Agendate IA.
 // El vendedor pone UNA API key (la global de la instancia) y a cada cuenta le
 // vende "créditos": un saldo prepago en USD del que se descuenta el costo real

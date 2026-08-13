@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Catálogo de proveedores de IA y sus modelos disponibles.
 //
 // Por qué existe: el modelo lo elige el profesional, no el programa. Entre el

@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Síntesis de voz premium (ElevenLabs) para ChatVoice — vía REST, sin streaming.
 //
 // La versión anterior de la voz clonada dependía de un WebSocket persistente

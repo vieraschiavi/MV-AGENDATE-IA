@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Adaptador multi-proveedor de IA — MV Agendate IA.
 // El profesional elige su proveedor (Claude / ChatGPT-OpenAI / Gemini) y pega
 // SU propia API key en /config.html; el agente conversacional funciona igual

@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Cuentas del modo SaaS multi-cliente — MV Agendate IA.
 // Registro/login con email+contraseña (scrypt de node:crypto, sin libs) y
 // tokens JWT firmados con HMAC-SHA256. Cada cuenta aísla sus datos del

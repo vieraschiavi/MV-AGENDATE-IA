@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Pedidos en el almacén compartido: un pedido por clave, sin pisarse.
 //
 // El bug que cuida: antes TODOS los pedidos vivían en una sola clave de Redis y

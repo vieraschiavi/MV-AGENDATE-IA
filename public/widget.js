@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Widget de chat embebible — MV Agendate IA
 // Uso en el sitio web del profesional:
 //   <script src="https://TU-DOMINIO/widget.js" data-servidor="https://TU-DOMINIO" defer></script>

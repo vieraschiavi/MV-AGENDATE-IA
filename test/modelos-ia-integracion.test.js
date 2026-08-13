@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // El selector de modelos contra el SERVIDOR REAL, no contra las funciones sueltas.
 //
 // Existe además de test/modelos-ia.test.js porque la lección anterior fue esa:

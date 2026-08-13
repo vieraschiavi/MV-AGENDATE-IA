@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Motor de agenda con optimización de traslados — MV Agendate IA
 //
 // Dado el mapa de citas de un día (con dirección/coordenadas y duración),

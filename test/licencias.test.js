@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Tests del módulo de pedidos/pagos/licencias (el que toca dinero real: precio,
 // emisión de licencia y token de descarga) — node --test.
 import { test } from 'node:test';

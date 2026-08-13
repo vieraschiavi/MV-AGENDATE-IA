@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Una clave guardada VACÍA no puede tapar a su variable de entorno.
 //
 // setConfig persiste las 49 claves de una sola vez, incluidas las que nadie

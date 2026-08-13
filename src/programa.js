@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Punto de entrada del PROGRAMA (lo que arranca INICIAR.bat / npm start).
 // Si todavía no hay una API key de Claude cargada y estamos en una consola
 // interactiva, la pide una vez acá mismo (no en una web). Después levanta la

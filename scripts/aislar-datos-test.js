@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Aísla la persistencia de CADA archivo de test.
 //
 // Se precarga con `node --test --import ./scripts/aislar-datos-test.js` (ver el script

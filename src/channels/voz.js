@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Canal de voz (ChatVoice) — atención telefónica con el mismo agente.
 //
 // Twilio Voice con <Gather input="speech"> hace el reconocimiento de voz

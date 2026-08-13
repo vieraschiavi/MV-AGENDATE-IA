@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Tests del módulo de MercadoPago (checkout, preferencias, suscripción
 // recurrente) — node --test. Mockea fetch para no depender de la red real ni
 // de una cuenta de MercadoPago de verdad.
