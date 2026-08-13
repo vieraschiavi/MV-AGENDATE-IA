@@ -9,6 +9,11 @@ import { dirname, join } from 'node:path';
 import { conversar, enModoDemo, listarOficios } from './ai/agente.js';
 import { responderAyuda } from './ai/ayuda.js';
 import { cotizar, monedaActiva, oficiosActivos } from './ai/cotizador.js';
+import { proveedorActivo } from './ai/llm.js';
+import {
+  IDS_PROVEEDORES, datosProveedor, modeloDe, listarModelos,
+  modelosCacheados, fusionarCache
+} from './ai/modelos.js';
 import { sugerirPrecios } from './ai/precios.js';
 import { estimarImpuestos } from './ai/impuestos.js';
 import { listarPaises } from './data/paises.js';
@@ -311,6 +316,74 @@ app.delete('/api/oficios/:clave', adminOCuenta, async (req, res) => {
 app.post('/api/precios/sugerir', adminOCuenta, async (req, res) => {
   const r = await sugerirPrecios(String(req.body?.oficio || ''));
   res.status(r.ok ? 200 : 400).json(r);
+});
+
+// --- IA: qué modelos puede elegir el profesional, y con cuál está trabajando ---
+//
+// El modelo lo elige él, no el programa: entre el más caro y el más barato de
+// un mismo proveedor hay 10× o más por token, y para cotizar y agendar suele
+// alcanzar el barato. Devuelve lo último que contestó cada proveedor (caché),
+// para que el desplegable tenga opciones sin salir a internet en cada carga.
+app.get('/api/ia/modelos', adminOCuenta, (_req, res) => {
+  const cache = modelosCacheados();
+  res.json({
+    ok: true,
+    proveedorActivo: proveedorActivo(),
+    proveedores: IDS_PROVEEDORES.map((id) => {
+      const p = datosProveedor(id);
+      return {
+        id,
+        nombre: p.nombre,
+        consola: p.consola || '',
+        claveApi: p.claveApi,
+        claveModelo: p.claveModelo,
+        claveBaseUrl: p.claveBaseUrl || '',
+        // Nunca la key: solo si ya hay una cargada, para poder avisar en la UI.
+        tieneClave: !!cfg(p.claveApi),
+        modeloElegido: cfg(p.claveModelo) || '',
+        modeloPorDefecto: p.porDefecto,
+        enUso: modeloDe(id),
+        modelos: cache[id]?.modelos || [],
+        actualizado: cache[id]?.actualizado || null,
+      };
+    }),
+  });
+});
+
+// El botón "Actualizar": le pregunta a la API de cada proveedor con clave
+// cargada qué modelos tiene HOY. Una lista escrita en el código nacería
+// vencida — los proveedores sacan modelos nuevos y jubilan viejos seguido.
+app.post('/api/ia/modelos/actualizar', adminOCuenta, limitar({
+  nombre: 'modelos-ia', max: 10, ventanaSeg: 60,
+  mensaje: 'Muchas actualizaciones seguidas. Esperá un momento.'
+}), async (req, res) => {
+  // Se puede pedir uno solo (el que el profesional está mirando) o todos los
+  // que tengan clave cargada.
+  const pedido = String(req.body?.proveedor || '').trim();
+  const objetivo = pedido && IDS_PROVEEDORES.includes(pedido)
+    ? [pedido]
+    : IDS_PROVEEDORES.filter((id) => !!cfg(datosProveedor(id).claveApi));
+
+  if (!objetivo.length) {
+    return res.status(400).json({ ok: false, error: 'Cargá primero la API key del proveedor que quieras consultar.' });
+  }
+
+  const resultados = {};
+  await Promise.all(objetivo.map(async (id) => { resultados[id] = await listarModelos(id); }));
+
+  // Se cachea donde corresponda: en modo SaaS, en los overrides de ESA cuenta.
+  const fusionado = fusionarCache(modelosCacheados(), resultados);
+  await guardarConfigSegunCuenta(req, { modelosDisponibles: JSON.stringify(fusionado) }).catch(() => {});
+
+  res.json({
+    ok: Object.values(resultados).some((r) => r.ok),
+    proveedores: Object.fromEntries(objetivo.map((id) => [id, {
+      ok: resultados[id].ok,
+      error: resultados[id].error || null,
+      modelos: fusionado[id]?.modelos || [],
+      actualizado: fusionado[id]?.actualizado || null,
+    }])),
+  });
 });
 
 // --- IA: estimador de impuestos según la ley del país configurado ---

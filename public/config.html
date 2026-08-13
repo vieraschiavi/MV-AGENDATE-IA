@@ -141,6 +141,9 @@
       <option value="claude">Claude (Anthropic) — recomendado</option>
       <option value="openai">ChatGPT (OpenAI)</option>
       <option value="gemini">Gemini (Google)</option>
+      <option value="grok">Grok (xAI)</option>
+      <option value="copilot">GitHub Models (Copilot)</option>
+      <option value="compatible">Otro compatible con OpenAI</option>
     </select>
     <div id="iaClaude" class="ia-campo">
       <label>Claude — API key</label>
@@ -157,7 +160,42 @@
       <input id="geminiApiKey" type="password" placeholder="AIza... (dejá vacío para no cambiarla)" autocomplete="off">
       <div class="hint">Conseguila en <a class="link" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">aistudio.google.com/app/apikey</a>.</div>
     </div>
-    <div class="hint">Se guarda en tu servidor, nunca se expone al cliente. Al guardar con una key válida, el chatbot pasa de "modo demo" a IA real automáticamente. <strong>Copilot</strong> no ofrece una API general para este uso; si trabajás con modelos de Microsoft/Azure, usá la opción OpenAI con tu endpoint.</div>
+    <div id="iaGrok" class="ia-campo" style="display:none;">
+      <label>Grok (xAI) — API key</label>
+      <input id="grokApiKey" type="password" placeholder="xai-... (dejá vacío para no cambiarla)" autocomplete="off">
+      <div class="hint">Conseguila en <a class="link" href="https://console.x.ai" target="_blank" rel="noopener">console.x.ai</a>.</div>
+    </div>
+    <div id="iaCopilot" class="ia-campo" style="display:none;">
+      <label>GitHub Models — token de GitHub</label>
+      <input id="copilotApiKey" type="password" placeholder="github_pat_... (dejá vacío para no cambiarlo)" autocomplete="off">
+      <div class="hint">
+        Copilot en sí es un asistente dentro del editor y <strong>no expone una API</strong> que otra app pueda usar para conversar.
+        Lo que sí podés usar con tu cuenta de GitHub es <strong>GitHub Models</strong>, que da acceso a modelos de OpenAI, Meta y Mistral.
+        Generá un token en <a class="link" href="https://github.com/settings/tokens" target="_blank" rel="noopener">github.com/settings/tokens</a>.
+      </div>
+    </div>
+    <div id="iaCompatible" class="ia-campo" style="display:none;">
+      <label>URL base del proveedor</label>
+      <input id="compatibleBaseUrl" placeholder="https://api.deepseek.com/v1" autocomplete="off">
+      <label>API key</label>
+      <input id="compatibleApiKey" type="password" placeholder="(dejá vacío para no cambiarla)" autocomplete="off">
+      <div class="hint">
+        Para cualquier proveedor que hable el mismo protocolo que OpenAI: DeepSeek, Groq, Mistral, OpenRouter, Together,
+        o un servidor propio (Ollama, LM Studio). Poné la URL que termina en <code>/v1</code>.
+      </div>
+    </div>
+
+    <label style="margin-top:12px;">Modelo a usar <span style="font-weight:400;color:#7a8a9a;">— acá controlás cuánto gastás</span></label>
+    <div style="display:flex;gap:8px;align-items:flex-start;">
+      <select id="modeloIA" style="flex:1;margin:0;"></select>
+      <button class="btn" type="button" id="btnActualizarModelos" style="margin:0;width:auto;white-space:nowrap;">🔄 Actualizar</button>
+    </div>
+    <div class="hint" id="modelosHint">
+      Entre el modelo más caro y el más barato de un mismo proveedor hay <strong>10× o más de diferencia por token</strong>,
+      y para cotizar y agendar casi siempre alcanza el barato. "Actualizar" le pregunta a tu proveedor qué modelos tiene
+      disponibles hoy con tu clave — así no te quedás con una lista vieja cuando saquen versiones nuevas.
+    </div>
+    <div class="hint">Se guarda en tu servidor, nunca se expone al cliente. Al guardar con una key válida, el chatbot pasa de "modo demo" a IA real automáticamente.</div>
 
     <div class="solo-vendedor">
     <h3 style="margin:14px 0 4px;">💳 Créditos de IA (solo para el vendedor)</h3>
@@ -333,7 +371,7 @@ const $ = (s) => document.querySelector(s);
 // IA y nombres que carga el profesional. Implementación centralizada en
 // public/js/seguro.js (con test de regresión en test/seguro.test.js).
 const esc = window.escaparHtml;
-const CAMPOS = ['proveedorIA','anthropicApiKey','openaiApiKey','geminiApiKey','creditosSaas','creditosMargen','creditosBono','nombreProfesional','oficioProfesional','pais','moneda','aprobarCotizaciones','agenciaNombre','agenciaTelefono','logoUrl','horarioInicio','horarioFin','almuerzoInicio','almuerzoFin','diasLibres','whatsappToken','whatsappPhoneId','whatsappVerifyToken','twilioAccountSid','twilioAuthToken','twilioNumero','deepgramApiKey','elevenlabsApiKey','elevenlabsVoiceId','crmWebhookUrl','mercadopagoToken','resendApiKey','emailFrom','demoLimite','demoMaxUsos','licenciaLocal'];
+const CAMPOS = ['proveedorIA','anthropicApiKey','openaiApiKey','geminiApiKey','grokApiKey','copilotApiKey','compatibleApiKey','compatibleBaseUrl','creditosSaas','creditosMargen','creditosBono','nombreProfesional','oficioProfesional','pais','moneda','aprobarCotizaciones','agenciaNombre','agenciaTelefono','logoUrl','horarioInicio','horarioFin','almuerzoInicio','almuerzoFin','diasLibres','whatsappToken','whatsappPhoneId','whatsappVerifyToken','twilioAccountSid','twilioAuthToken','twilioNumero','deepgramApiKey','elevenlabsApiKey','elevenlabsVoiceId','crmWebhookUrl','mercadopagoToken','resendApiKey','emailFrom','demoLimite','demoMaxUsos','licenciaLocal'];
 
 // Combo de oficios (cargado desde el catálogo del cotizador) + chips de días libres.
 const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -528,16 +566,123 @@ document.addEventListener('change', (e) => {
   fr.onload = () => { document.querySelector('#logoUrl').value = fr.result; const pv = document.querySelector('#logoPrev'); pv.src = fr.result; pv.style.display = 'block'; };
   fr.readAsDataURL(f);
 });
-const SECRETOS = ['anthropicApiKey','openaiApiKey','geminiApiKey','whatsappToken','whatsappVerifyToken','twilioAuthToken','deepgramApiKey','elevenlabsApiKey'];
+const SECRETOS = ['anthropicApiKey','openaiApiKey','geminiApiKey','grokApiKey','copilotApiKey','compatibleApiKey','whatsappToken','whatsappVerifyToken','twilioAuthToken','deepgramApiKey','elevenlabsApiKey'];
+
+// --- Proveedor de IA y elección de modelo ---
+// Qué bloque de credenciales corresponde a cada proveedor.
+const CAMPOS_IA = {
+  claude: '#iaClaude', openai: '#iaOpenai', gemini: '#iaGemini',
+  grok: '#iaGrok', copilot: '#iaCopilot', compatible: '#iaCompatible',
+};
+// Lo que devolvió /api/ia/modelos, por proveedor.
+let MODELOS_IA = {};
+
+function proveedorElegido() { return document.querySelector('#proveedorIA').value || 'claude'; }
 
 // Muestra solo el campo de key del proveedor de IA elegido.
 function toggleProveedorIA() {
-  const p = document.querySelector('#proveedorIA').value || 'claude';
-  document.querySelector('#iaClaude').style.display = p === 'claude' ? '' : 'none';
-  document.querySelector('#iaOpenai').style.display = p === 'openai' ? '' : 'none';
-  document.querySelector('#iaGemini').style.display = p === 'gemini' ? '' : 'none';
+  const p = proveedorElegido();
+  for (const [id, sel] of Object.entries(CAMPOS_IA)) {
+    const el = document.querySelector(sel);
+    if (el) el.style.display = id === p ? '' : 'none';
+  }
+  pintarModelos();
 }
+
+/**
+ * Llena el desplegable con los modelos del proveedor activo.
+ * Si el profesional ya eligió uno que no está en la lista (porque todavía no
+ * actualizó, o porque el proveedor lo jubiló), se agrega igual para no
+ * borrárselo en silencio al guardar.
+ */
+function pintarModelos() {
+  const p = proveedorElegido();
+  const datos = MODELOS_IA[p] || {};
+  const sel = document.querySelector('#modeloIA');
+  const elegido = datos.modeloElegido || '';
+  sel.textContent = '';
+
+  const porDefecto = datos.modeloPorDefecto || '';
+  const opcionAuto = document.createElement('option');
+  opcionAuto.value = '';
+  opcionAuto.textContent = porDefecto ? `Automático (${porDefecto})` : 'Automático';
+  sel.appendChild(opcionAuto);
+
+  const lista = datos.modelos || [];
+  for (const m of lista) {
+    const o = document.createElement('option');
+    o.value = m.id;
+    o.textContent = m.nombre && m.nombre !== m.id ? `${m.nombre} — ${m.id}` : m.id;
+    sel.appendChild(o);
+  }
+  if (elegido && !lista.some((m) => m.id === elegido)) {
+    const o = document.createElement('option');
+    o.value = elegido;
+    o.textContent = `${elegido} (elegido)`;
+    sel.appendChild(o);
+  }
+  sel.value = elegido;
+
+  const hint = document.querySelector('#modelosHint');
+  if (!lista.length) {
+    hint.innerHTML = datos.tieneClave
+      ? 'Todavía no consultamos los modelos de este proveedor. Tocá <strong>Actualizar</strong> para traer los que tenés disponibles hoy.'
+      : 'Cargá y <strong>guardá</strong> la API key de este proveedor y después tocá <strong>Actualizar</strong> para ver sus modelos.';
+  } else {
+    const cuando = datos.actualizado ? new Date(datos.actualizado).toLocaleString('es') : '';
+    hint.innerHTML = `${lista.length} modelo${lista.length === 1 ? '' : 's'} disponible${lista.length === 1 ? '' : 's'}` +
+      (cuando ? ` · actualizado el ${esc(cuando)}` : '') +
+      '. Elegí uno más barato para gastar menos por token: para cotizar y agendar casi siempre alcanza.';
+  }
+}
+
+/** Trae del servidor la selección actual y los modelos ya conocidos. */
+async function cargarModelosIA() {
+  try {
+    const r = await fetch('/api/ia/modelos', { headers: headers() });
+    if (!r.ok) return;
+    const d = await r.json();
+    MODELOS_IA = Object.fromEntries((d.proveedores || []).map((p) => [p.id, p]));
+    pintarModelos();
+  } catch { /* sin conexión: el desplegable queda con lo que haya */ }
+}
+
 document.querySelector('#proveedorIA').addEventListener('change', toggleProveedorIA);
+// El modelo elegido se guarda en la clave propia de ESE proveedor
+// (modeloClaude, modeloOpenai…), así cambiar de proveedor no pisa la elección
+// que ya tenías hecha en el otro.
+document.querySelector('#modeloIA').addEventListener('change', () => {
+  const p = proveedorElegido();
+  if (MODELOS_IA[p]) MODELOS_IA[p].modeloElegido = document.querySelector('#modeloIA').value;
+});
+
+document.querySelector('#btnActualizarModelos').onclick = async () => {
+  const btn = document.querySelector('#btnActualizarModelos');
+  const p = proveedorElegido();
+  const hint = document.querySelector('#modelosHint');
+  btn.disabled = true;
+  const textoPrevio = btn.textContent;
+  btn.textContent = '⏳ Consultando…';
+  try {
+    const r = await fetch('/api/ia/modelos/actualizar', {
+      method: 'POST', headers: headers(), body: JSON.stringify({ proveedor: p })
+    });
+    const d = await r.json();
+    const resultado = d.proveedores?.[p];
+    if (!r.ok || !resultado?.ok) {
+      hint.innerHTML = `<span style="color:#c0392b;">No pude traer los modelos: ${esc(resultado?.error || d.error || 'error desconocido')}</span>`;
+      return;
+    }
+    // Se recarga entero para que el desplegable quede coherente con lo que el
+    // servidor guardó, en vez de confiar en el estado del navegador.
+    await cargarModelosIA();
+  } catch {
+    hint.innerHTML = '<span style="color:#c0392b;">Error de red consultando los modelos.</span>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = textoPrevio;
+  }
+};
 
 function headers() {
   const h = { 'Content-Type':'application/json' };
@@ -579,6 +724,7 @@ async function cargar() {
       else el.value = c[campo] || '';
     }
     if (c.diasLibres) { diasLibresSet = new Set(c.diasLibres.split(',').map(Number)); pintarDiasLibres(); }
+    await cargarModelosIA();   // antes del toggle: pinta el desplegable con lo ya conocido
     toggleProveedorIA();
     pintarBadges(c.estado);
     // App de escritorio: la clave de admin nunca se pide (server.js la
@@ -600,6 +746,13 @@ $('#form').addEventListener('submit', async (e) => {
     const v = el.value.trim();
     if (v) body[campo] = v;            // vacío = no cambiar (conserva la clave existente)
   }
+  // El modelo va SIEMPRE, aunque esté vacío: vacío es "Automático", y es la
+  // única forma de volver atrás una elección anterior. Si se saltara como el
+  // resto de los campos, el modelo viejo quedaría pegado para siempre.
+  const provIA = proveedorElegido();
+  const claveModelo = MODELOS_IA[provIA]?.claveModelo;
+  if (claveModelo) body[claveModelo] = $('#modeloIA').value || '';
+
   const elAdminNew = $('#adminKeyNew');
   const nuevaAdmin = elAdminNew ? elAdminNew.value.trim() : '';
   if (nuevaAdmin) body.adminKey = nuevaAdmin;

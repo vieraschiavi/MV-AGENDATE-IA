@@ -21,6 +21,26 @@ const ENV = {
   anthropicApiKey: 'ANTHROPIC_API_KEY',
   openaiApiKey: 'OPENAI_API_KEY',   // ChatGPT (OpenAI)
   geminiApiKey: 'GEMINI_API_KEY',   // Gemini (Google)
+  grokApiKey: 'GROK_API_KEY',       // Grok (xAI)
+  // GitHub Models (lo usable de "Copilot": token de GitHub, protocolo OpenAI)
+  copilotApiKey: 'COPILOT_API_KEY',
+  // Comodín para cualquier proveedor con API compatible con OpenAI (DeepSeek,
+  // Groq, Mistral, OpenRouter, un Ollama local…): su clave y su URL base.
+  compatibleApiKey: 'COMPATIBLE_API_KEY',
+  compatibleBaseUrl: 'COMPATIBLE_BASE_URL',
+  // Modelo elegido por el profesional para cada proveedor. Vacío = el default
+  // del código. Es lo que le permite bajar el gasto por token sin redeployar:
+  // entre el modelo más caro y el más barato de un mismo proveedor hay 10× o
+  // más de diferencia, y para cotizar y agendar suele alcanzar el barato.
+  modeloClaude: 'MODELO_CLAUDE',
+  modeloOpenai: 'MODELO_OPENAI',
+  modeloGemini: 'MODELO_GEMINI',
+  modeloGrok: 'MODELO_GROK',
+  modeloCopilot: 'MODELO_COPILOT',
+  modeloCompatible: 'MODELO_COMPATIBLE',
+  // Último listado de modelos que devolvió cada proveedor (JSON), para que el
+  // desplegable del panel tenga opciones sin salir a internet en cada carga.
+  modelosDisponibles: 'MODELOS_DISPONIBLES',
   nombreProfesional: 'NOMBRE_PROFESIONAL', // a quién representa el agente (ej: "Juan Pérez")
   oficioProfesional: 'OFICIO_PROFESIONAL', // clave de src/data/oficios.json (ej: "electricista")
   pais: 'PAIS',                            // clave de src/data/paises.js (ej: "uy", "ar", "mx")
@@ -107,7 +127,8 @@ const ENV = {
 };
 const CLAVES = Object.keys(ENV);
 const SECRETAS = new Set([
-  'anthropicApiKey', 'openaiApiKey', 'geminiApiKey', 'whatsappToken', 'whatsappVerifyToken',
+  'anthropicApiKey', 'openaiApiKey', 'geminiApiKey', 'grokApiKey', 'copilotApiKey',
+  'compatibleApiKey', 'whatsappToken', 'whatsappVerifyToken',
   'whatsappAppSecret',
   'twilioAuthToken', 'deepgramApiKey', 'elevenlabsApiKey', 'adminKey', 'mercadopagoToken',
   'jwtSecret', 'resendApiKey'

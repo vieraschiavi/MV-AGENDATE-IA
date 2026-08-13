@@ -6,10 +6,13 @@
 // ajustarlos a su zona y su experiencia antes de aplicarlos.
 import Anthropic from '@anthropic-ai/sdk';
 import { get as cfg } from '../store/config.js';
+import { modeloDe } from './modelos.js';
 import { registrarUso } from '../store/uso.js';
 import { oficiosActivos, monedaActiva } from './cotizador.js';
 
-const MODEL = 'claude-sonnet-5';
+// Sigue el modelo de Claude que eligió el profesional en la configuración: si
+// bajó a uno más barato para gastar menos por token, esta llamada también.
+const MODEL = () => modeloDe('claude');
 
 let _client = null, _clientKey = null;
 function getClient() {
@@ -79,7 +82,7 @@ Reglas: valores típicos de mercado (ni el más caro ni el más barato), número
 
   try {
     const r = await client.messages.create({
-      model: MODEL,
+      model: MODEL(),
       max_tokens: 4000,
       tools: [sugerenciaToolDef],
       tool_choice: { type: 'tool', name: 'entregar_sugerencia_precios' },

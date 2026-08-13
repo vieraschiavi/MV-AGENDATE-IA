@@ -10,6 +10,10 @@ import { kvGet, kvSet } from './redis.js';
 // Subset de claves de store/config.js que una cuenta puede definir para sí.
 export const CLAVES_CUENTA = [
   'proveedorIA', 'anthropicApiKey', 'openaiApiKey', 'geminiApiKey',
+  'grokApiKey', 'copilotApiKey', 'compatibleApiKey', 'compatibleBaseUrl',
+  // Cada cuenta elige SU modelo: es su gasto de tokens, no el de la instancia.
+  'modeloClaude', 'modeloOpenai', 'modeloGemini', 'modeloGrok', 'modeloCopilot',
+  'modeloCompatible', 'modelosDisponibles',
   'nombreProfesional', 'oficioProfesional',
   'pais', 'moneda', 'oficiosCustom', 'aprobarCotizaciones',
   'agenciaNombre', 'agenciaTelefono', 'logoUrl',
@@ -21,7 +25,8 @@ export const CLAVES_CUENTA = [
   'crmWebhookUrl'
 ];
 const SECRETAS = new Set([
-  'anthropicApiKey', 'openaiApiKey', 'geminiApiKey', 'whatsappToken', 'whatsappVerifyToken',
+  'anthropicApiKey', 'openaiApiKey', 'geminiApiKey', 'grokApiKey', 'copilotApiKey',
+  'compatibleApiKey', 'whatsappToken', 'whatsappVerifyToken',
   'twilioAuthToken', 'deepgramApiKey', 'elevenlabsApiKey'
 ]);
 
