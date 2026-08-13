@@ -6,10 +6,12 @@
 // SIEMPRE con descargo: es una orientación, no asesoramiento fiscal.
 import Anthropic from '@anthropic-ai/sdk';
 import { get as cfg } from '../store/config.js';
+import { modeloDe } from './modelos.js';
 import { registrarUso } from '../store/uso.js';
 import { monedaActiva } from './cotizador.js';
 
-const MODEL = 'claude-sonnet-5';
+// Sigue el modelo de Claude elegido en la configuración (ver ai/modelos.js).
+const MODEL = () => modeloDe('claude');
 
 let _client = null, _clientKey = null;
 function getClient() {
@@ -109,7 +111,7 @@ Según la ley tributaria vigente de ${nombrePais}: elegí el régimen más conve
 
   try {
     const r = await client.messages.create({
-      model: MODEL,
+      model: MODEL(),
       max_tokens: 2000,
       tools: [estimacionToolDef],
       tool_choice: { type: 'tool', name: 'entregar_estimacion_impuestos' },

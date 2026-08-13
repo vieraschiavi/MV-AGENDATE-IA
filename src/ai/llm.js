@@ -11,18 +11,9 @@
 // Android, porque corre en el mismo servidor.
 import Anthropic from '@anthropic-ai/sdk';
 import { get as cfg } from '../store/config.js';
+import { PROVEEDORES as CATALOGO, IDS_PROVEEDORES, modeloDe, baseUrlDe } from './modelos.js';
 
-export const PROVEEDORES = ['claude', 'openai', 'gemini'];
-
-const MODELOS = {
-  // Tiene que ser un id de modelo REAL: si no existe, cada llamada del agente
-  // falla con "model not found" y el catch de conversar() la disfraza de
-  // respuesta demo — la IA queda muerta sin que nada se vea roto. Es el mismo
-  // id que ya usan precios.js e impuestos.js.
-  claude: process.env.MODELO_CLAUDE || 'claude-sonnet-5',
-  openai: process.env.MODELO_OPENAI || 'gpt-4o',
-  gemini: process.env.MODELO_GEMINI || 'gemini-1.5-flash',
-};
+export const PROVEEDORES = IDS_PROVEEDORES;
 
 export class LLMError extends Error {}
 
@@ -34,23 +25,24 @@ export function proveedorActivo() {
 
 /** API key del proveedor indicado (o del activo). */
 export function claveProveedor(p = proveedorActivo()) {
-  if (p === 'openai') return cfg('openaiApiKey');
-  if (p === 'gemini') return cfg('geminiApiKey');
-  return cfg('anthropicApiKey');
+  const datos = CATALOGO[p] || CATALOGO.claude;
+  return cfg(datos.claveApi);
 }
 
 /** true si hay IA lista para usar con el proveedor activo. */
 export function iaConfigurada() { return !!claveProveedor(); }
 
 /** Nombre lindo del proveedor, para mostrar en la UI. */
-export const NOMBRE_PROVEEDOR = { claude: 'Claude (Anthropic)', openai: 'ChatGPT (OpenAI)', gemini: 'Gemini (Google)' };
+export const NOMBRE_PROVEEDOR = Object.fromEntries(
+  Object.entries(CATALOGO).map(([id, p]) => [id, p.nombre])
+);
 
 // ==================== Claude (SDK) ====================
 const _anthropic = new Map();
 async function chatClaude(key, { system, tools, mensajes }) {
   if (!_anthropic.has(key)) _anthropic.set(key, new Anthropic({ apiKey: key }));
   const r = await _anthropic.get(key).messages.create({
-    model: MODELOS.claude,
+    model: modeloDe('claude'),
     max_tokens: 8000,
     system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
     tools,
@@ -84,14 +76,25 @@ function mensajesOpenAI(system, mensajes) {
   }
   return out;
 }
-async function chatOpenAI(key, { system, tools, mensajes }) {
-  const r = await fetch('https://api.openai.com/v1/chat/completions', {
+/**
+ * Un turno con cualquier proveedor que hable el protocolo de OpenAI.
+ *
+ * Sirve para OpenAI, Grok (xAI), GitHub Models y el comodín "compatible": lo
+ * único que cambia entre ellos es la URL base y el modelo, así que un solo
+ * adaptador los cubre a todos en vez de copiar esta función cuatro veces.
+ */
+async function chatOpenAI(key, { system, tools, mensajes }, proveedor = 'openai') {
+  const base = baseUrlDe(proveedor);
+  if (!base) throw new LLMError(`Falta la URL base de ${NOMBRE_PROVEEDOR[proveedor] || proveedor}.`);
+  const modelo = modeloDe(proveedor);
+  if (!modelo) throw new LLMError(`Elegí un modelo para ${NOMBRE_PROVEEDOR[proveedor] || proveedor} en la configuración.`);
+  const r = await fetch(`${base}/chat/completions`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: MODELOS.openai, messages: mensajesOpenAI(system, mensajes), tools: toolsOpenAI(tools), tool_choice: 'auto', max_tokens: 4096 }),
+    body: JSON.stringify({ model: modelo, messages: mensajesOpenAI(system, mensajes), tools: toolsOpenAI(tools), tool_choice: 'auto', max_tokens: 4096 }),
     signal: AbortSignal.timeout(60000),
   });
-  if (!r.ok) throw new LLMError(`OpenAI ${r.status}: ${(await r.text()).slice(0, 300)}`);
+  if (!r.ok) throw new LLMError(`${NOMBRE_PROVEEDOR[proveedor] || proveedor} ${r.status}: ${(await r.text()).slice(0, 300)}`);
   const d = await r.json();
   const m = d.choices?.[0]?.message || {};
   const content = [];
@@ -137,7 +140,7 @@ function contenidosGemini(mensajes) {
   return contents;
 }
 async function chatGemini(key, { system, tools, mensajes }) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELOS.gemini}:generateContent?key=${encodeURIComponent(key)}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modeloDe('gemini')}:generateContent?key=${encodeURIComponent(key)}`;
   const r = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -168,9 +171,10 @@ export async function chatearLLM(opts) {
   const p = proveedorActivo();
   const key = claveProveedor(p);
   if (!key) throw new LLMError('No hay una API key de IA configurada.');
-  if (p === 'openai') return chatOpenAI(key, opts);
   if (p === 'gemini') return chatGemini(key, opts);
-  return chatClaude(key, opts);
+  if (p === 'claude') return chatClaude(key, opts);
+  // openai, grok, copilot y el comodín: todos hablan el protocolo de OpenAI.
+  return chatOpenAI(key, opts, p);
 }
 
 // Exportados para tests de los traductores.
