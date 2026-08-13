@@ -54,21 +54,41 @@ de su Windows y quedarse con el programa sin pagar.
 |---|---|
 | `MV-Agendate-IA-Setup-Dueno.exe` | **Versión del dueño**, instalador: idéntica a la de venta (mismo producto, mismos accesos directos y desinstalador, mismo código ofuscado) pero con la **prueba desactivada** (`diasPrueba: 0`): funciona sin licencia ni límite de días. |
 | `MV-Agendate-IA-PC-Dueno.zip` | **Versión del dueño, portable.** Misma idea, para llevar en un pendrive. |
-| `Convertir-a-version-dueno.bat` | Pasa una copia **ya instalada** (la normal, la que se vende) a versión dueño, sin reinstalar. Se copia a la carpeta donde quedó instalado el programa y se le hace doble clic. |
+| `Convertir-a-version-dueno.bat` + `Convertir-a-version-dueno.ps1` | Pasa una copia **ya instalada** (la normal, la que se vende) a versión dueño, sin reinstalar. **Detecta sola** dónde está instalado el programa — no hace falta copiarlo a ningún lado. Los dos archivos viajan siempre juntos. |
 
-### Convertir-a-version-dueno.bat — cuándo sirve y cuándo no
+### Convertir-a-version-dueno — cuándo sirve y cuándo no
 
-Sirve para no bajar 97 MB cuando ya tenés la versión normal instalada: reemplaza
-los dos archivos donde viaja la edición —`electron/owner-config.cjs` y
-`src/store/dias-prueba.js`, dentro de `resources\app\`— por los de la variante
-dueño, y deja una copia `.original` de cada uno. Corriéndolo de nuevo ofrece
-volver atrás. El resto del programa (incluido el código ofuscado) no se toca.
+Sirve para no bajar 97 MB cuando ya tenés una copia normal instalada:
+reemplaza los archivos donde viaja la edición —`electron/owner-config.cjs` y
+`src/store/dias-prueba.js`— por los de la variante dueño, y deja una copia
+`.original` de cada uno. Corriéndolo de nuevo ofrece volver atrás. El resto
+del programa (incluido el código ofuscado) no se toca.
+
+**Detecta sola cualquier tipo de instalación**, sin que haya que decirle dónde
+está ni copiar nada a la carpeta del programa:
+
+- **Instalada con el `.exe`** (oficial o demo): el instalador NSIS anota la
+  carpeta elegida en el Registro de Windows (la misma info que ve "Agregar o
+  quitar programas"), aunque el cliente haya cambiado la carpeta por defecto.
+  El `.ps1` la lee de ahí.
+- **Portable (`.zip`)**: no toca el registro a propósito (ver más abajo), así
+  que se rastrea por el acceso directo que arma `Crear-acceso-directo.bat` (si
+  se corrió) y, si no hay acceso directo, por una búsqueda acotada en las
+  carpetas típicas donde se descomprime un zip (Escritorio, Descargas,
+  Documentos, raíz del usuario, raíz de cada disco — nunca el disco entero).
+- Si ninguna de las dos encuentra algo, el propio script pide la carpeta a
+  mano, o se le puede arrastrar la carpeta encima del `.bat`.
+
+Si hay más de una copia instalada (por ejemplo la oficial y la demo, que
+conviven porque tienen identidad distinta), el script las lista y pregunta
+cuál convertir.
 
 **Es la llave maestra de tu propio producto: no lo repartas.** Convierte
 cualquier copia instalada en la versión completa, así que si se filtra a un
 cliente, a un chat o a una captura, cualquiera puede destrabar lo que vendés.
-Por eso vive solo acá, en `INSTALADOR/OWNER/` del repo privado — nunca en
-`public/`, nunca en el release, nunca adentro de un paquete.
+Por eso los dos archivos viven solo acá, en `INSTALADOR/OWNER/` del repo
+privado — nunca en `public/`, nunca en el release, nunca adentro de un
+paquete (verificado con test: `test/convertir-owner.test.js`).
 
 Si tenés dudas, usá directamente `MV-Agendate-IA-Setup-Dueno.exe`: es el mismo
 resultado sin ningún archivo suelto dando vueltas.
@@ -76,6 +96,14 @@ resultado sin ningún archivo suelto dando vueltas.
 **Nunca se publican en la web ni en el release**: no viven en `public/` (Vercel
 no las sirve) y no van al release público. Su único canal es esta carpeta del
 repo **privado** — solo quien tiene acceso al repo (vos) puede bajarlas.
+
+> **Sin probar en Windows real.** Este repo se desarrolla en un entorno sin
+> Windows ni PowerShell disponibles, así que `Convertir-a-version-dueno.ps1`
+> no se pudo ejecutar de punta a punta antes de subirlo — solo se validó
+> estáticamente (sintaxis balanceada, mismo contenido que escribe el
+> empaquetador para la variante dueño, sin caracteres que puedan salir mal en
+> la consola). Antes de confiarle una instalación real, probalo vos una vez
+> en tu máquina.
 
 ## Qué trae el portable adentro
 
