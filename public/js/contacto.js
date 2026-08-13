@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Buzón de contacto — botón flotante + formulario.
 // Envía la consulta a vieraschiavi@gmail.com (asunto + pregunta + datos de contacto).
 // Funciona en la web, en el programa PC y en la APK (abre el correo con mailto).

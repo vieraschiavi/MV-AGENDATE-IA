@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Tests de la fase 2 del modo SaaS: configuración propia por cuenta resuelta
 // por contexto (AsyncLocalStorage) y ruteo de canales por cuenta — node --test
 import { test, after } from 'node:test';

@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Geocoding gratuito (Nominatim / OpenStreetMap).
 //
 // Convierte una dirección de texto en coordenadas {lat, lng} (geocoding

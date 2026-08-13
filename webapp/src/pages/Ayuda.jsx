@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 import React, { useRef, useState } from 'react';
 import { t as i18nT } from '../i18n.js';
 

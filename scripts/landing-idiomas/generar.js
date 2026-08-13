@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Genera /pt/index.html y /en/index.html: copias reales de la landing con
 // meta tags (title, description, og:*, twitter:*, canonical, hreflang) en su
 // propio idioma. Necesario porque el selector de idioma de la landing es

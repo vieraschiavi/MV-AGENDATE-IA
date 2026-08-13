@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Tests de reseñas del producto — node --test
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';

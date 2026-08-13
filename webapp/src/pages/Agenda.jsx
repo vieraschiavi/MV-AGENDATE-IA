@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 import React, { useEffect, useState, useCallback } from 'react';
 import { fetchAdmin, getJSON, dinero } from '../api.js';
 import { t, idioma } from '../i18n.js';

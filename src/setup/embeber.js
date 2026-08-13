@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Embeber la API key del VENDEDOR dentro del producto, oculta (base64).
 // Lo corre el vendedor UNA vez antes de empaquetar/vender: la clave queda
 // dentro de src/clave-embebida.b64 y viaja con el producto sin quedar a la

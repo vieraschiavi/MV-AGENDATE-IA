@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Tests de la prueba gratis de la copia descargada (7 días → se corta) — node --test
 import { test, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';

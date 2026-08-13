@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 import React from 'react';
 
 // Evita que un error de render de una página deje la app en blanco (y, sobre

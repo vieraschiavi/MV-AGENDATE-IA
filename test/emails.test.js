@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Tests de los emails transaccionales — node --test
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';

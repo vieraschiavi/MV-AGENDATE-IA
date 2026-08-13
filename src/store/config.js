@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Configuración en caliente del servidor MV.
 // Permite que el profesional cargue su propia API key de Claude y sus datos
 // desde el panel de administración, sin editar archivos ni reiniciar el
@@ -22,6 +23,26 @@ const ENV = {
   anthropicApiKey: 'ANTHROPIC_API_KEY',
   openaiApiKey: 'OPENAI_API_KEY',   // ChatGPT (OpenAI)
   geminiApiKey: 'GEMINI_API_KEY',   // Gemini (Google)
+  grokApiKey: 'GROK_API_KEY',       // Grok (xAI)
+  // GitHub Models (lo usable de "Copilot": token de GitHub, protocolo OpenAI)
+  copilotApiKey: 'COPILOT_API_KEY',
+  // Comodín para cualquier proveedor con API compatible con OpenAI (DeepSeek,
+  // Groq, Mistral, OpenRouter, un Ollama local…): su clave y su URL base.
+  compatibleApiKey: 'COMPATIBLE_API_KEY',
+  compatibleBaseUrl: 'COMPATIBLE_BASE_URL',
+  // Modelo elegido por el profesional para cada proveedor. Vacío = el default
+  // del código. Es lo que le permite bajar el gasto por token sin redeployar:
+  // entre el modelo más caro y el más barato de un mismo proveedor hay 10× o
+  // más de diferencia, y para cotizar y agendar suele alcanzar el barato.
+  modeloClaude: 'MODELO_CLAUDE',
+  modeloOpenai: 'MODELO_OPENAI',
+  modeloGemini: 'MODELO_GEMINI',
+  modeloGrok: 'MODELO_GROK',
+  modeloCopilot: 'MODELO_COPILOT',
+  modeloCompatible: 'MODELO_COMPATIBLE',
+  // Último listado de modelos que devolvió cada proveedor (JSON), para que el
+  // desplegable del panel tenga opciones sin salir a internet en cada carga.
+  modelosDisponibles: 'MODELOS_DISPONIBLES',
   nombreProfesional: 'NOMBRE_PROFESIONAL', // a quién representa el agente (ej: "Juan Pérez")
   oficioProfesional: 'OFICIO_PROFESIONAL', // clave de src/data/oficios.json (ej: "electricista")
   pais: 'PAIS',                            // clave de src/data/paises.js (ej: "uy", "ar", "mx")
@@ -108,7 +129,8 @@ const ENV = {
 };
 const CLAVES = Object.keys(ENV);
 const SECRETAS = new Set([
-  'anthropicApiKey', 'openaiApiKey', 'geminiApiKey', 'whatsappToken', 'whatsappVerifyToken',
+  'anthropicApiKey', 'openaiApiKey', 'geminiApiKey', 'grokApiKey', 'copilotApiKey',
+  'compatibleApiKey', 'whatsappToken', 'whatsappVerifyToken',
   'whatsappAppSecret',
   'twilioAuthToken', 'deepgramApiKey', 'elevenlabsApiKey', 'adminKey', 'mercadopagoToken',
   'jwtSecret', 'resendApiKey'
@@ -132,7 +154,20 @@ function cargar() {
   const embebida = leerEmbebida();
   cache = {};
   // Prioridad: config.json (runtime) > variable de entorno > clave embebida.
-  for (const k of CLAVES) cache[k] = archivo[k] ?? process.env[ENV[k]] ?? embebida[k] ?? '';
+  //
+  // Un valor VACÍO en el archivo cuenta como "nunca se configuró", no como
+  // "configurado en vacío". La diferencia importa porque setConfig guarda las
+  // 49 claves de una, incluidas las que nadie tocó: con `??` (que solo cae en
+  // null/undefined) esas cadenas vacías pisaban a la variable de entorno para
+  // siempre. O sea el camino más normal del mundo —arrancar la app, ver que
+  // falta configurar algo, cargar las claves en .env, reiniciar— dejaba de
+  // funcionar en silencio, y no había nada en pantalla que lo explicara.
+  for (const k of CLAVES) {
+    const guardado = archivo[k];
+    cache[k] = (guardado != null && String(guardado) !== '')
+      ? guardado
+      : (process.env[ENV[k]] ?? embebida[k] ?? '');
+  }
   return cache;
 }
 

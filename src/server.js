@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // MV Agendate IA — servidor principal
 // Chatbot/ChatVoice con IA que cotiza y agenda trabajos de cualquier oficio,
 // optimizando traslados y descansos, + CRM y dashboards del profesional.
@@ -10,6 +11,11 @@ import { dirname, join } from 'node:path';
 import { conversar, enModoDemo, listarOficios } from './ai/agente.js';
 import { responderAyuda } from './ai/ayuda.js';
 import { cotizar, monedaActiva, oficiosActivos } from './ai/cotizador.js';
+import { proveedorActivo } from './ai/llm.js';
+import {
+  IDS_PROVEEDORES, datosProveedor, modeloDe, listarModelos,
+  modelosCacheados, fusionarCache
+} from './ai/modelos.js';
 import { sugerirPrecios } from './ai/precios.js';
 import { estimarImpuestos } from './ai/impuestos.js';
 import { listarPaises } from './data/paises.js';
@@ -26,6 +32,7 @@ import { estadoCreditos, acreditar, bonoBienvenida, PACKS as PACKS_CREDITOS } fr
 import * as emails from './store/emails.js';
 import * as resenas from './store/resenas.js';
 import { runConCuenta, runConDemoPais, runConDemoIdioma } from './store/contextoCuenta.js';
+import { kvGet, kvSet } from './store/redis.js';
 import { obtenerOverrides, guardarOverrides, configPublicaCuenta } from './store/configCuentas.js';
 import { fichaCitaHTML, agendaCSV, agendaExcelHTML, clientesCSV, clientesExcelHTML } from './exports/documentos.js';
 import { resumenUso, catalogoConEstado } from './store/uso.js';
@@ -87,8 +94,14 @@ app.set('trust proxy', true);
 //
 // Envolver a mano los ochenta handlers sería ochenta lugares donde olvidarse.
 // Se envuelven de una sola vez los métodos de ruteo, ACÁ ARRIBA: desde este
-// punto, toda ruta que se declare abajo queda cubierta sola, y cualquier
-// rechazo va a parar al error handler del final del archivo.
+// punto, toda ruta declarada con app.get/post/... queda cubierta sola, y
+// cualquier rechazo va a parar al error handler del final del archivo.
+//
+// Alcance real: esto cubre las rutas declaradas SOBRE `app`. Los Router de
+// src/channels/ se montan con app.use y sus handlers internos no pasan por
+// acá, así que cada uno se hace cargo de sus propios errores (ver el
+// try/catch de conCuentaDeLaLlamada en voz.js, que además tiene que responder
+// TwiML y no un 500).
 const envolver = (fn) => (typeof fn !== 'function' || fn.length >= 4 ? fn : function envuelto(req, res, next) {
   try {
     const r = fn.call(this, req, res, next);
@@ -305,6 +318,74 @@ app.delete('/api/oficios/:clave', adminOCuenta, async (req, res) => {
 app.post('/api/precios/sugerir', adminOCuenta, async (req, res) => {
   const r = await sugerirPrecios(String(req.body?.oficio || ''));
   res.status(r.ok ? 200 : 400).json(r);
+});
+
+// --- IA: qué modelos puede elegir el profesional, y con cuál está trabajando ---
+//
+// El modelo lo elige él, no el programa: entre el más caro y el más barato de
+// un mismo proveedor hay 10× o más por token, y para cotizar y agendar suele
+// alcanzar el barato. Devuelve lo último que contestó cada proveedor (caché),
+// para que el desplegable tenga opciones sin salir a internet en cada carga.
+app.get('/api/ia/modelos', adminOCuenta, (_req, res) => {
+  const cache = modelosCacheados();
+  res.json({
+    ok: true,
+    proveedorActivo: proveedorActivo(),
+    proveedores: IDS_PROVEEDORES.map((id) => {
+      const p = datosProveedor(id);
+      return {
+        id,
+        nombre: p.nombre,
+        consola: p.consola || '',
+        claveApi: p.claveApi,
+        claveModelo: p.claveModelo,
+        claveBaseUrl: p.claveBaseUrl || '',
+        // Nunca la key: solo si ya hay una cargada, para poder avisar en la UI.
+        tieneClave: !!cfg(p.claveApi),
+        modeloElegido: cfg(p.claveModelo) || '',
+        modeloPorDefecto: p.porDefecto,
+        enUso: modeloDe(id),
+        modelos: cache[id]?.modelos || [],
+        actualizado: cache[id]?.actualizado || null,
+      };
+    }),
+  });
+});
+
+// El botón "Actualizar": le pregunta a la API de cada proveedor con clave
+// cargada qué modelos tiene HOY. Una lista escrita en el código nacería
+// vencida — los proveedores sacan modelos nuevos y jubilan viejos seguido.
+app.post('/api/ia/modelos/actualizar', adminOCuenta, limitar({
+  nombre: 'modelos-ia', max: 10, ventanaSeg: 60,
+  mensaje: 'Muchas actualizaciones seguidas. Esperá un momento.'
+}), async (req, res) => {
+  // Se puede pedir uno solo (el que el profesional está mirando) o todos los
+  // que tengan clave cargada.
+  const pedido = String(req.body?.proveedor || '').trim();
+  const objetivo = pedido && IDS_PROVEEDORES.includes(pedido)
+    ? [pedido]
+    : IDS_PROVEEDORES.filter((id) => !!cfg(datosProveedor(id).claveApi));
+
+  if (!objetivo.length) {
+    return res.status(400).json({ ok: false, error: 'Cargá primero la API key del proveedor que quieras consultar.' });
+  }
+
+  const resultados = {};
+  await Promise.all(objetivo.map(async (id) => { resultados[id] = await listarModelos(id); }));
+
+  // Se cachea donde corresponda: en modo SaaS, en los overrides de ESA cuenta.
+  const fusionado = fusionarCache(modelosCacheados(), resultados);
+  await guardarConfigSegunCuenta(req, { modelosDisponibles: JSON.stringify(fusionado) }).catch(() => {});
+
+  res.json({
+    ok: Object.values(resultados).some((r) => r.ok),
+    proveedores: Object.fromEntries(objetivo.map((id) => [id, {
+      ok: resultados[id].ok,
+      error: resultados[id].error || null,
+      modelos: fusionado[id]?.modelos || [],
+      actualizado: fusionado[id]?.actualizado || null,
+    }])),
+  });
 });
 
 // --- IA: estimador de impuestos según la ley del país configurado ---
@@ -552,9 +633,19 @@ app.post('/api/agenda/chequear-retrasos', soloAdmin, async (_req, res) => {
 // nativos de alta frecuencia). Si configurás CRON_SECRET, protegé la llamada
 // pasando "Authorization: Bearer $CRON_SECRET" desde el servicio externo; sin
 // esa env no se exige nada (uso local/manual).
-app.get('/api/agenda/chequear-retrasos', async (req, res) => {
+app.get('/api/agenda/chequear-retrasos', limitar({ nombre: 'cron-retrasos', max: 20, ventanaSeg: 300 }), async (req, res) => {
   const secreto = process.env.CRON_SECRET;
-  if (secreto && req.headers.authorization !== `Bearer ${secreto}`) return res.status(401).json({ ok: false, error: 'No autorizado.' });
+  if (secreto) {
+    if (!igualSeguro(req.headers.authorization, `Bearer ${secreto}`)) {
+      return res.status(401).json({ ok: false, error: 'No autorizado.' });
+    }
+  } else if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+    // Sin CRON_SECRET esta ruta no puede quedar abierta en un deploy público:
+    // manda WhatsApp REALES a los clientes de TODAS las cuentas, con las
+    // credenciales de cada profesional. Dejarla sin llave es regalar un botón
+    // de "mandale un mensaje a toda la agenda" a cualquiera que sepa la URL.
+    return res.status(401).json({ ok: false, error: 'Configurá CRON_SECRET para exponer este chequeo.' });
+  }
   const avisos = await chequearRetrasosDeHoy();
   res.json({ ok: true, avisos });
 });
@@ -574,14 +665,34 @@ async function chequearRetrasosDeHoy() {
     const revisar = async () => {
       const citas = await trabajos.citasDelDia(hoyStr, cuentaId);
       if (!citas.length) return [];
-      const conUbicacion = citas.map((c) => ({
+
+      // La marca de "a este ya le avisé" que lleva revisarYAvisarAgendaDelDia
+      // vive en el objeto en memoria, y estas citas se releen de cero en cada
+      // pasada: sin persistirla, cada llamada al endpoint le manda el aviso de
+      // nuevo a TODOS. Con la ruta abierta eso era un botón de spam contra los
+      // clientes del profesional, cobrado a su cuenta de Meta.
+      const marca = (c) => `aviso-retraso:${cuentaId}:${c.id}:${hoyStr}`;
+      const yaAvisado = await Promise.all(citas.map((c) => kvGet(marca(c)).catch(() => null)));
+
+      const conUbicacion = citas.map((c, i) => ({
         ...c,
+        avisoRetrasoEnviado: !!yaAvisado[i] || !!c.avisoRetrasoEnviado,
         finEstimado: new Date(`${c.fecha}T${c.fin}:00`),
         inicioPactado: new Date(`${c.fecha}T${c.inicio}:00`),
         ubicacion: { lat: c.lat, lng: c.lng }
       }));
+
       // Dentro del contexto de la cuenta, enviarWhatsApp usa SUS credenciales.
-      return revisarYAvisarAgendaDelDia(conUbicacion, enviarWhatsApp);
+      const propios = await revisarYAvisarAgendaDelDia(conUbicacion, enviarWhatsApp);
+
+      // Se deja la marca de los que efectivamente recibieron el aviso. Vence al
+      // día siguiente: es una agenda diaria, no hace falta guardarla para siempre.
+      await Promise.all(
+        conUbicacion
+          .filter((c) => c.avisoRetrasoEnviado)
+          .map((c) => kvSet(marca(c), { fecha: hoyStr }, { ex: 36 * 3600 }).catch(() => {}))
+      );
+      return propios;
     };
     try {
       const propios = cuentaId === 'default'

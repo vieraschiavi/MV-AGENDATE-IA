@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Prueba gratis de la copia DESCARGADA (PC/APK) — MV Agendate IA.
 // Modelo: al primer arranque se estampa la fecha de inicio; la app funciona
 // completa durante DIAS_PRUEBA días (default 7) y después se BLOQUEA (el panel/

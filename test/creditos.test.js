@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Tests de los créditos de IA por cuenta SaaS — node --test
 import { test, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';

@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Instalación de MV Agendate IA como app (PWA). Registra el service worker y
 // engancha el evento beforeinstallprompt a cualquier botón con [data-instalar].
 // Mientras no se pueda instalar (o ya esté instalada), esos botones muestran

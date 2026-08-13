@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Escape HTML centralizado — la única función que debe usarse en public/ para
 // insertar en el DOM cualquier dato que no sea texto propio hardcodeado:
 // respuestas de la API, texto redactado por el modelo de IA, nombres que carga

@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Países de LATAM soportados: moneda local, símbolo y locale de formateo.
 // El profesional elige su país en /config.html; la moneda de cotización sale
 // de acá (o USD, si prefiere facturar en dólares — común en varios rubros).

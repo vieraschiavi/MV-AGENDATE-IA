@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Multiidioma del workspace (es/pt/en).
 // Patrón: t('texto en español') devuelve la traducción al idioma activo; si la
 // clave no está en el diccionario (o el idioma es 'es') devuelve el texto tal

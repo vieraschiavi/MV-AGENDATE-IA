@@ -138,6 +138,7 @@ test/                   Suite de tests (cotizador, agenda, aviso de retraso, age
 - `GET /api/oficios` · `GET /api/oficios/:clave` · `POST /api/cotizar` — catálogo y cotización directa
 - `POST /api/oficios` · `DELETE /api/oficios/:clave` — crear/borrar profesiones propias (cualquier rubro)
 - `GET /api/paises` · `GET /api/parametros` — países LATAM y moneda activa
+- `GET /api/ia/modelos` · `POST /api/ia/modelos/actualizar` — proveedores de IA disponibles, qué modelo usa cada uno y consulta en vivo de los modelos que ofrece cada API con la clave del profesional
 - `POST /api/precios/sugerir` — IA: qué se cobra en el mercado del país por cada trabajo
 - `POST /api/impuestos/estimar` — IA: carga impositiva según la ley del país + neto estimado
 - `POST /api/agenda/proponer` — horarios propuestos considerando traslados

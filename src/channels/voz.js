@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Canal de voz (ChatVoice) — atención telefónica con el mismo agente.
 //
 // Twilio Voice con <Gather input="speech"> hace el reconocimiento de voz
@@ -44,6 +45,25 @@ const router = Router();
 // número, pero sin ese token el HMAC no cierra. Devuelve null cuando el request
 // no está firmado válidamente (el handler ya respondió 403).
 async function conCuentaDeLaLlamada(req, res, fn) {
+  // Este router se monta con app.use, así que NO lo alcanza el envoltorio de
+  // errores del server (que envuelve app.get/post/use, no los handlers de un
+  // Router). Sin este try/catch, un rechazo acá —un kvSet contra un Redis
+  // lento, por ejemplo— no devuelve TwiML: Twilio se queda esperando y le
+  // corta la llamada al cliente en silencio.
+  const atender = async () => {
+    try {
+      return await fn();
+    } catch (err) {
+      console.error('[voz] Error atendiendo la llamada:', err?.stack || err);
+      // <Say> pelado a propósito: si lo que falló fue la síntesis de voz,
+      // volver a pasar por decir() fallaría igual.
+      if (!res.headersSent) {
+        const { lang, voz } = vozTwilio();
+        res.type('text/xml').send(xml(`<Say language="${lang}" voice="${voz}">${esc(frases().error)}</Say>`));
+      }
+    }
+  };
+
   let duenio = null;
   try {
     duenio = await cuentaPorNumeroVoz(req.body?.To, await listarCuentaIds());
@@ -61,8 +81,8 @@ async function conCuentaDeLaLlamada(req, res, fn) {
     return;
   }
 
-  if (duenio) return runConCuenta(duenio.cuentaId, duenio.overrides, fn);
-  return fn();
+  if (duenio) return runConCuenta(duenio.cuentaId, duenio.overrides, atender);
+  return atender();
 }
 const NOMBRE_PROFESIONAL = () => cfg('nombreProfesional') || cfg('agenciaNombre') || 'tu profesional de confianza';
 const TTL_AUDIO = 300; // 5 min — de sobra para que Twilio lo pida apenas generado
@@ -157,8 +177,13 @@ router.post('/webhook/voz/turno', limiteVoz(), (req, res) => conCuentaDeLaLlamad
 // "Devolver la llamada" con un clic (ver src/store/twilio.js#clickToCall):
 // Twilio llama primero al agente humano y, apenas atiende, pide este TwiML
 // para conectarlo con el cliente — el agente no marca nada a mano.
-router.post('/webhook/voz/conectar', limiteVoz(), (req, res) => {
-  const token = cfg('twilioAuthToken');
+router.post('/webhook/voz/conectar', limiteVoz(), async (req, res) => {
+  // Igual que las otras dos rutas, el token puede ser el de la cuenta dueña del
+  // número y no el global: en una instalación SaaS pura no hay token global, y
+  // mirando solo ese esta ruta quedaba sin verificar. Es justo la que arma un
+  // <Dial> a un número que viene del query string.
+  const duenio = await cuentaPorNumeroVoz(req.body?.To, await listarCuentaIds()).catch(() => null);
+  const token = duenio?.overrides?.twilioAuthToken || cfg('twilioAuthToken');
   if (token) {
     if (!firmaTwilioValida(req, token)) return res.sendStatus(403);
   } else if (!permitirSinSecreto('voz', 'Cargá el Auth Token de Twilio en /config.html (o TWILIO_AUTH_TOKEN).')) {

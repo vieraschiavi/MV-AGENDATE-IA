@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Pedidos, pagos y licencias de descarga.
 // Flujo: el cliente crea un pedido (elige plan/versión y medio de pago) → paga
 // (tarjeta vía PSP, MercadoPago o transferencia a Itaú) → al confirmarse el pago
@@ -6,8 +7,8 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { randomUUID, randomBytes, createHmac, timingSafeEqual } from 'node:crypto';
-import { redisDisponible, kvGet, kvSet } from './redis.js';
+import { randomBytes, createHmac, timingSafeEqual } from 'node:crypto';
+import { redisDisponible, kvGet, kvSet, kvDel, kvMGet, kvSAdd, kvSRem, kvSMembers } from './redis.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const DIR = process.env.MV_DATOS_DIR || (process.env.VERCEL ? '/tmp/mvdata' : join(here, '../../data'));
@@ -50,30 +51,99 @@ export const MEDIOS = ['mercadopago'];
 // buscaba el pedido, no lo encontraba y el cliente que ya había pagado se
 // quedaba sin licencia ni email ("No encontré tu pedido" en gracias.html).
 // Por eso van a Redis, que es lo que comparten todas las invocaciones.
+//
+// UN PEDIDO POR CLAVE, no todos en un blob. Con el blob único, guardar era
+// leer-modificar-reescribir TODO: mientras el webhook confirmaba un pago,
+// otra invocación creando un pedido distinto leía la versión de antes y la
+// reescribía encima. El pago confirmado volvía a 'pendiente' — el cliente
+// pagaba, gracias.html le decía que no encontraba su pedido, y no le llegaba
+// ni el email ni la licencia. Con una clave por pedido, dos pedidos distintos
+// no pueden pisarse nunca; el índice es un SET de Redis, donde agregar y sacar
+// también son atómicos.
+//
+// Sin Redis (la copia descargada) sigue siendo un archivo con todo junto: ahí
+// hay un solo proceso y ninguna carrera que evitar.
+const clavePedido = (id) => `mvagendate:pedido:${id}`;
+const CLAVE_INDICE = 'mvagendate:pedidos:ids';
+
 let db = null;
 
-async function cargar() {
-  if (redisDisponible()) {
-    // Siempre se relee: otra invocación pudo haber escrito mientras tanto,
-    // y un caché en memoria acá reintroduce exactamente el bug de arriba.
-    const crudo = await kvGet(CLAVE_REDIS);
-    db = (typeof crudo === 'string' ? JSON.parse(crudo) : crudo) || { pedidos: {} };
-    if (!db.pedidos) db.pedidos = {};
-    return db;
-  }
+/** Modo archivo (sin Redis): carga perezosa del JSON local. */
+function cargarArchivo() {
   if (!db) db = existsSync(FILE) ? JSON.parse(readFileSync(FILE, 'utf8')) : { pedidos: {} };
   return db;
 }
 
-async function guardar() {
-  if (redisDisponible()) { await kvSet(CLAVE_REDIS, JSON.stringify(db)); return; }
+function guardarArchivo() {
   mkdirSync(DIR, { recursive: true });
   writeFileSync(FILE, JSON.stringify(db, null, 2));
 }
 
+// Migración del blob viejo a claves por pedido. Corre una vez por proceso y es
+// segura si dos instancias la hacen a la vez: cada pedido se escribe con su
+// propio contenido y nunca pisa uno que ya exista (que sería más nuevo).
+// Se guarda la PROMESA, no un booleano: con un flag, el segundo request que
+// entra mientras la migración está a mitad de camino la daría por hecha y
+// leería pedidos que todavía no se escribieron. Así todos esperan la misma.
+let migracion = null;
+function migrarBlobSiHaceFalta() {
+  if (!migracion) {
+    migracion = (async () => {
+      try {
+        const crudo = await kvGet(CLAVE_REDIS);
+        if (!crudo) return;
+        const viejo = (typeof crudo === 'string' ? JSON.parse(crudo) : crudo) || {};
+        for (const [id, p] of Object.entries(viejo.pedidos || {})) {
+          if (!(await kvGet(clavePedido(id)))) await kvSet(clavePedido(id), JSON.stringify(p));
+          await kvSAdd(CLAVE_INDICE, id);
+        }
+        await kvDel(CLAVE_REDIS);
+      } catch (e) {
+        console.error('[licencias] No pude migrar los pedidos al formato nuevo:', e.message);
+        // Se limpia para que el próximo request lo reintente: dejarla marcada
+        // como hecha escondería los pedidos viejos hasta el próximo reinicio.
+        migracion = null;
+      }
+    })();
+  }
+  return migracion;
+}
+
+const parsear = (crudo) => (typeof crudo === 'string' ? JSON.parse(crudo) : crudo) || null;
+
+async function leerPedido(id) {
+  if (!redisDisponible()) return cargarArchivo().pedidos[id] || null;
+  await migrarBlobSiHaceFalta();
+  try { return parsear(await kvGet(clavePedido(id))); } catch { return null; }
+}
+
+async function escribirPedido(p) {
+  if (!redisDisponible()) { cargarArchivo().pedidos[p.id] = p; guardarArchivo(); return; }
+  // El pedido primero y el índice después: si algo falla en el medio, queda un
+  // pedido que no aparece listado (recuperable) y no una entrada del índice
+  // apuntando a algo que no existe.
+  await kvSet(clavePedido(p.id), JSON.stringify(p));
+  await kvSAdd(CLAVE_INDICE, p.id);
+}
+
+async function borrarPedido(id) {
+  if (!redisDisponible()) { delete cargarArchivo().pedidos[id]; guardarArchivo(); return; }
+  await kvSRem(CLAVE_INDICE, id);
+  await kvDel(clavePedido(id));
+}
+
+/** Todos los pedidos, sin garantía de orden. */
+async function todosLosPedidos() {
+  if (!redisDisponible()) return Object.values(cargarArchivo().pedidos);
+  await migrarBlobSiHaceFalta();
+  const ids = await kvSMembers(CLAVE_INDICE);
+  if (!ids.length) return [];
+  const crudos = await kvMGet(ids.map(clavePedido));
+  return crudos.map((c) => { try { return parsear(c); } catch { return null; } }).filter(Boolean);
+}
+
 /** Crea un pedido pendiente de pago (siempre MercadoPago). */
 export async function crearPedido({ plan, version = 'pc', email, nombre, recurrente }) {
-  await cargar();
   if (!PLANES[plan]) return { ok: false, error: 'Plan inválido.' };
   if (!email) return { ok: false, error: 'Falta el email.' };
   const id = 'ORD-' + randomBytes(4).toString('hex').toUpperCase();
@@ -84,23 +154,40 @@ export async function crearPedido({ plan, version = 'pc', email, nombre, recurre
     total_usd: PLANES[plan].precio, estado: 'pendiente',
     creado: new Date().toISOString(), licencia: null, token: null
   };
-  db.pedidos[id] = pedido;
-  await guardar();
+  await escribirPedido(pedido);
   return { ok: true, pedido };
+}
+
+/**
+ * Código de licencia de un pedido. Determinístico a propósito: sale de un HMAC
+ * del id del pedido, no de un random.
+ *
+ * Así, si dos avisos del mismo pago se confirman a la vez, los dos generan
+ * EXACTAMENTE la misma licencia y da igual cuál gane — con un random, cada uno
+ * emitía un código distinto y el cliente podía quedarse con el que perdió, o
+ * sea con una licencia que el servidor no reconoce. No es adivinable sin el
+ * secreto, así que seguir el patrón no sirve para fabricarse una.
+ */
+function licenciaDePedido(pedido) {
+  const firma = createHmac('sha256', secretoDescarga())
+    .update(`licencia:${pedido.id}`)
+    .digest('hex')
+    .slice(0, 8)
+    .toUpperCase();
+  return `MV-${pedido.plan.toUpperCase()}-${firma}`;
 }
 
 /** Marca un pedido como pagado y emite licencia + token de descarga. */
 export async function confirmarPago(id) {
-  await cargar();
-  const p = db.pedidos[id];
+  const p = await leerPedido(id);
   if (!p) return { ok: false, error: 'Pedido no encontrado.' };
   if (p.estado === 'pagado') return { ok: true, pedido: p, yaEstaba: true };
   p.estado = 'pagado';
   p.pagado = new Date().toISOString();
-  p.licencia = 'MV-' + p.plan.toUpperCase() + '-' + randomUUID().slice(0, 8).toUpperCase();
+  p.licencia = licenciaDePedido(p);
   // Token SIN ESTADO (funciona aunque el pedido no persista, ej. serverless).
   p.token = firmarDescarga(p.version);
-  await guardar();
+  await escribirPedido(p);
   return { ok: true, pedido: p };
 }
 
@@ -118,24 +205,23 @@ export async function confirmarPago(id) {
  * que ya compró.
  */
 export async function descartarPedidoPendiente(id) {
-  await cargar();
-  const p = db.pedidos[id];
+  const p = await leerPedido(id);
   if (!p) return { ok: false, error: 'Pedido no encontrado.' };
   if (p.estado !== 'pendiente') return { ok: false, error: 'El pedido ya no está pendiente.', estado: p.estado };
-  delete db.pedidos[id];
-  await guardar();
+  await borrarPedido(id);
   return { ok: true };
 }
 
 /** Valida un token de descarga → pedido pagado. */
 export async function validarToken(token) {
-  await cargar();
-  const p = Object.values(db.pedidos).find((x) => x.token === token && x.estado === 'pagado');
-  return p || null;
+  const todos = await todosLosPedidos();
+  return todos.find((x) => x.token === token && x.estado === 'pagado') || null;
 }
 
-export async function obtenerPedido(id) { return (await cargar()).pedidos[id] || null; }
-export async function listarPedidos() { return Object.values((await cargar()).pedidos).sort((a, b) => (b.creado || '').localeCompare(a.creado)); }
+export async function obtenerPedido(id) { return await leerPedido(id); }
+export async function listarPedidos() {
+  return (await todosLosPedidos()).sort((a, b) => (b.creado || '').localeCompare(a.creado));
+}
 
 /**
  * Busca el pedido pendiente más reciente de MercadoPago recurrente para un
@@ -146,8 +232,7 @@ export async function listarPedidos() { return Object.values((await cargar()).pe
  * email que tipeó él mismo en su checkout.
  */
 export async function buscarPedidoPendientePorEmail(email, plan) {
-  await cargar();
-  const candidatos = Object.values(db.pedidos).filter((p) =>
+  const candidatos = (await todosLosPedidos()).filter((p) =>
     p.estado === 'pendiente' && p.medio === 'mercadopago' && p.recurrente &&
     (email ? p.email?.toLowerCase() === String(email).toLowerCase() : true) &&
     (plan ? p.plan === plan : true)

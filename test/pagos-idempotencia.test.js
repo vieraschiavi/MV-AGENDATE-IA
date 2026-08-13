@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Dos formas de perder plata en el cobro, cada una con su gate.
 //
 // 1) Acreditar el mismo pago más de una vez: MercadoPago REINTENTA la

@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Configuración PROPIA de cada cuenta SaaS (fase 2) — persiste en Redis.
 // Cada cuenta online guarda sus overrides (oficio, país/moneda, horarios,
 // equipo, catálogo custom, aprobación de cotizaciones, credenciales de sus
@@ -11,6 +12,10 @@ import { kvGet, kvSet } from './redis.js';
 // Subset de claves de store/config.js que una cuenta puede definir para sí.
 export const CLAVES_CUENTA = [
   'proveedorIA', 'anthropicApiKey', 'openaiApiKey', 'geminiApiKey',
+  'grokApiKey', 'copilotApiKey', 'compatibleApiKey', 'compatibleBaseUrl',
+  // Cada cuenta elige SU modelo: es su gasto de tokens, no el de la instancia.
+  'modeloClaude', 'modeloOpenai', 'modeloGemini', 'modeloGrok', 'modeloCopilot',
+  'modeloCompatible', 'modelosDisponibles',
   'nombreProfesional', 'oficioProfesional',
   'pais', 'moneda', 'oficiosCustom', 'aprobarCotizaciones',
   'agenciaNombre', 'agenciaTelefono', 'logoUrl',
@@ -22,7 +27,8 @@ export const CLAVES_CUENTA = [
   'crmWebhookUrl'
 ];
 const SECRETAS = new Set([
-  'anthropicApiKey', 'openaiApiKey', 'geminiApiKey', 'whatsappToken', 'whatsappVerifyToken',
+  'anthropicApiKey', 'openaiApiKey', 'geminiApiKey', 'grokApiKey', 'copilotApiKey',
+  'compatibleApiKey', 'whatsappToken', 'whatsappVerifyToken',
   'twilioAuthToken', 'deepgramApiKey', 'elevenlabsApiKey'
 ]);
 

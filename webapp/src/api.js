@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Helpers de red compartidos por todas las páginas del workspace.
 
 /** Clave de administración persistida (misma que usaba la versión clásica). */

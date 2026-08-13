@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Rate limiting para los endpoints públicos.
 //
 // Por qué hace falta: /api/chat, /api/ayuda e /api/impuestos/estimar llaman al

@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Envoltorio de escritorio (Electron) para MV Agendate IA.
 //
 // No reimplementa nada: arranca el mismo src/server.js de siempre como

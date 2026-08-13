@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Tests del adaptador multi-proveedor de IA: selección de proveedor y los
 // traductores de formato (Anthropic ↔ OpenAI / Gemini) — node --test
 import { test, after } from 'node:test';

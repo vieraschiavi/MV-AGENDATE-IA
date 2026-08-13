@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Motor de agenda con optimización de traslados — MV Agendate IA
 //
 // Dado el mapa de citas de un día (con dirección/coordenadas y duración),
@@ -72,19 +73,6 @@ function seSuperponeConDescanso(inicioMin, finMin, config) {
   return inicioMin < almuerzoFin && finMin > almuerzoInicio;
 }
 
-/**
- * Propone horarios para una nueva cita en un día dado.
- *
- * @param {object} opts
- * @param {string} opts.fecha - "YYYY-MM-DD"
- * @param {number} opts.diaSemana - 0(domingo)-6(sábado), para chequear días libres
- * @param {{lat:number,lng:number}} opts.ubicacionCliente
- * @param {number} opts.duracionMin - duración estimada del trabajo
- * @param {Array<{inicio:string,fin:string,ubicacion:{lat:number,lng:number}}>} opts.citasDelDia
- *        horas en formato "HH:MM", ya ordenadas cronológicamente
- * @param {object} [opts.configuracion] - ver configuracionDescansoPorDefecto
- * @returns {{propuestas: Array<object>, motivo_descarte?: string}}
- */
 /** Día de la semana (0=domingo) de un 'YYYY-MM-DD', o null si no es una fecha. */
 export function diaDeLaFecha(fecha) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(fecha || ''));
@@ -95,6 +83,20 @@ export function diaDeLaFecha(fecha) {
   return Number.isNaN(d.getTime()) ? null : d.getUTCDay();
 }
 
+/**
+ * Propone horarios para una nueva cita en un día dado.
+ *
+ * @param {object} opts
+ * @param {string} opts.fecha - "YYYY-MM-DD"; de acá sale el día de la semana
+ * @param {number} [opts.diaSemana] - 0(domingo)-6(sábado). Solo se usa si la
+ *        fecha no se puede parsear: el día real se deriva de `fecha`.
+ * @param {{lat:number,lng:number}} opts.ubicacionCliente
+ * @param {number} opts.duracionMin - duración estimada del trabajo
+ * @param {Array<{inicio:string,fin:string,ubicacion:{lat:number,lng:number}}>} opts.citasDelDia
+ *        horas en formato "HH:MM", ya ordenadas cronológicamente
+ * @param {object} [opts.configuracion] - ver configuracionDescansoPorDefecto
+ * @returns {{propuestas: Array<object>, motivo_descarte?: string}}
+ */
 export function proponerHorarios({
   fecha,
   diaSemana,
@@ -186,7 +188,10 @@ export const proponerHorariosToolDef = {
     type: 'object',
     properties: {
       fecha: { type: 'string', description: 'YYYY-MM-DD' },
-      diaSemana: { type: 'number', description: '0=domingo .. 6=sábado' },
+      // El día de la semana ya NO se pide: lo calcula el servidor a partir de
+      // la fecha. Pedírselo al modelo era hacerle hacer justo la cuenta que
+      // hace mal —y equivocarse ahí es ofrecer turnos en el día libre del
+      // profesional— además de gastar tokens en un dato que se ignora.
       ubicacionCliente: {
         type: 'object',
         properties: { lat: { type: 'number' }, lng: { type: 'number' } },
@@ -194,6 +199,6 @@ export const proponerHorariosToolDef = {
       },
       duracionMin: { type: 'number' },
     },
-    required: ['fecha', 'diaSemana', 'ubicacionCliente', 'duracionMin'],
+    required: ['fecha', 'ubicacionCliente', 'duracionMin'],
   },
 };

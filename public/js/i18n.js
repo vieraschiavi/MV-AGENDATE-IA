@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Runtime multiidioma (es / pt / en) compartido por todas las páginas públicas.
 // El español es la base (está en el HTML). Cada página aporta las traducciones:
 //   window.MV_PT = { clave: 'texto pt', ... }   // portugués

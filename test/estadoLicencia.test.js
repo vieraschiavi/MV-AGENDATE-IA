@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Tests del chequeo periódico de suscripción Pro IA para la copia descargada
 // (PC/APK) — node --test. Es el que decide si se corta el chat/voz con IA;
 // la regla de negocio central es "nunca cortar por las dudas" (sin config,

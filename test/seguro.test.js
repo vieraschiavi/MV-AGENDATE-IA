@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Test de regresión de la función de escape centralizada (public/js/seguro.js).
 // No alcanza con que el código de hoy la use bien: esto prueba la función en
 // sí contra una batería de payloads XSS reales, para que un cambio futuro que

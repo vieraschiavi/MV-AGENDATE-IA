@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Único punto de verdad para pintar un mensaje de chat (chatbot demo, widget
 // embebible) en el DOM. La regla de seguridad es simple pero fácil de romper
 // sin querer: el texto de un mensaje puede venir del cliente final o del

@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Test de regresión: un payload XSS que llega por el canal de mensajes (chat
 // de la demo, widget embebible) tiene que mostrarse como texto, nunca
 // ejecutarse. Usa jsdom para correr el HTML/JS real de las páginas (no una

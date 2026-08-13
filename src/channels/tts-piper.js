@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // TTS con Piper — voz neuronal es_AR-daniela (rioplatense), OFFLINE y GRATIS.
 // Es la voz del gestor IA (ChatVoice) sin depender de ElevenLabs ni de créditos.
 //

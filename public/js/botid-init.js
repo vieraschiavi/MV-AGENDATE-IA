@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Protección antibots (Vercel BotID) — carga silenciosa, no afecta a usuarios reales.
 // Sólo tiene efecto una vez desplegado en Vercel (usa su infraestructura de reto/verificación).
 import { initBotId } from '/vendor/botid/core.mjs';

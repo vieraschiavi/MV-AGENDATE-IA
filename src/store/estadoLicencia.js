@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Chequeo periódico de la suscripción Pro IA para la copia DESCARGADA del
 // programa (PC/APK): si el cliente eligió suscripción mensual y el pago falla
 // o se cancela, esto desactiva el chat/fotos con IA — el resto del programa

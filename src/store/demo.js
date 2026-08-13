@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Cupo de la DEMO: cuando la instancia es de demostración (demoLimite='1'),
 // las funciones con IA (chat y análisis de fotos) son gratis pero limitadas a
 // N usos por visitante (default 3), con todas las opciones. Superado el cupo,

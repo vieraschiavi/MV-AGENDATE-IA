@@ -1,4 +1,5 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
+
 // Tests del modo SaaS multi-cliente (fase 1): cuentas con login, tokens,
 // aislamiento de datos por cuenta y aprobación de cotizaciones — node --test
 import { test, after } from 'node:test';
