@@ -36,7 +36,11 @@ test('confirmarPago emite licencia y token solo después del pago, es idempotent
 
   const r1 = await confirmarPago(pedido.id);
   assert.equal(r1.ok, true);
-  assert.ok(r1.pedido.licencia.startsWith('MV-FULL-'));
+  // La licencia que se emite al cobrar es una MVA1 FIRMADA con Ed25519. Antes
+  // era un HMAC (MV-FULL-XXXXXXXX) que la app del cliente NO podía comprobar:
+  // le entregaba un código y aceptaba cualquier otro texto igual.
+  assert.ok(r1.pedido.licencia.startsWith('MVA1.'),
+    'el cobro tiene que emitir una licencia firmada, no un código que la app no puede verificar');
   assert.ok(r1.pedido.token, 'confirmar el pago emite un token de descarga');
   assert.equal(r1.pedido.estado, 'pagado');
 
