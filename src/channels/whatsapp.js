@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Canal WhatsApp — webhook de Meta Cloud API.
 // Configuración: cargar token/phone id/verify token en /config.html (panel
 // admin, sin tocar archivos ni redeploy) o, alternativamente, como variables

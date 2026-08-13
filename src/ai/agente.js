@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Agente conversacional MV Agendate IA.
 // Cerebro: Claude (Anthropic) con herramientas de negocio (cotizar, buscar
 // horarios con traslados reales, confirmar dirección/receptor, cerrar cita).

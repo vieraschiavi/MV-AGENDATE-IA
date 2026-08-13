@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Tests del asistente de ayuda (dudas sobre el programa) — node --test
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

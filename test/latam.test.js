@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Tests de la adaptación LATAM: país/moneda, honorarios, oficios custom e
 // impuestos (fallback local sin API key) — node --test
 import { test, after } from 'node:test';

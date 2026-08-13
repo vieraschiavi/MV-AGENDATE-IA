@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Tests del cotizador y del motor de agenda — node --test
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

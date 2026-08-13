@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Pedidos, pagos y licencias de descarga.
 // Flujo: el cliente crea un pedido (elige plan/versión y medio de pago) → paga
 // (tarjeta vía PSP, MercadoPago o transferencia a Itaú) → al confirmarse el pago

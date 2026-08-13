@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // El programa instalado tiene que abrir en el PANEL de trabajo, no en la
 // landing de venta. Pasó una vez: el .exe mostraba la publicidad adentro de la
 // app que el cliente ya había comprado. — node --test

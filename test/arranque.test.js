@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Tests del arranque local: elegir un puerto libre en vez de morir.
 //
 // Bug real que motivó esto: el servidor hacía app.listen(3000) sin manejar el

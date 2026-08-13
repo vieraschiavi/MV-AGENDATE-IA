@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Cliente Redis (Upstash, vía integración "Storage" de Vercel) para estado
 // persistente entre invocaciones serverless: cuota de tokens por licencia,
 // estado de suscripción, etc. Sin esto, cualquier dato en memoria/archivo se

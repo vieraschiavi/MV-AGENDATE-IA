@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Integridad de la agenda y del precio que queda escrito en una cita.
 //
 // Dos cosas que el modelo NO puede decidir solo:

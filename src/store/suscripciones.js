@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Estado persistente de las suscripciones "Pro IA" (MercadoPago Preapproval):
 // cuota de tokens consumidos este mes por licencia, y si la suscripción sigue
 // activa. Antes de esto, el proyecto no tenía ninguna base de datos real en la

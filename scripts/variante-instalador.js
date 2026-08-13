@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Qué prueba lleva adentro cada variante de lo que se entrega (instalador .exe
 // y paquete portable .bat).
 //

@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Autoconfiguración de Twilio (ChatVoice) desde el panel — sin que la
 // profesional no tenga que entrar nunca a la consola de Twilio. Usa las mismas
 // credenciales (Account SID / Auth Token) que ya se cargan en /config.html.

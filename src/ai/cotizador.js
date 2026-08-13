@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Motor de cotización — MV Agendate IA
 //
 // Calcula un presupuesto (mano de obra + materiales + traslado) para un

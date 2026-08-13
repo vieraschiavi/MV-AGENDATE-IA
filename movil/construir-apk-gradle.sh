@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# © 2026 Martín Viera. Todos los derechos reservados.
 # Compila MV Agendate IA como APK ESTÁNDAR con Capacitor + Gradle.
 # Es el método recomendado (produce un APK idéntico en estructura a cualquier
 # app de Play Store; instala en todos los teléfonos). Requiere JDK 17,

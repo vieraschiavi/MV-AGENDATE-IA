@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Tests del geocoding — node --test. Mockea fetch para no depender de red real.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Service worker: cachea el shell de la app para carga instantánea y uso offline básico.
 const CACHE = 'mv-agendate-v1';
 const SHELL = ['./index.html', './manifest.json', './icon.svg'];

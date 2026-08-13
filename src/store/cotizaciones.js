@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Cotizaciones sugeridas pendientes de aprobación — MV Agendate IA.
 // El precio que calcula el cotizador es SIEMPRE un sugerido interno: el chatbot
 // no le dice ningún monto al cliente hasta que el profesional lo apruebe (tal

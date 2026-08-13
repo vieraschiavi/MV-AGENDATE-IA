@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Estimador de impuestos por país — MV Agendate IA.
 // Dado el país configurado y la facturación mensual del profesional, estima
 // la carga impositiva (régimen simplificado típico para independientes) y el

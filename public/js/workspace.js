@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Shell de workspace tipo Notion compartido por panel.html/agenda.html/clientes.html/dashboards.html:
 // sidebar de navegación + helper de fetch con clave admin persistida.
 // Uso: <script src="/js/workspace.js" defer></script> y luego mvShell('agenda') al cargar la página.

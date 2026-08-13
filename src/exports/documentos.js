@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Exportación de la agenda: ficha de cita imprimible (PDF vía navegador) y
 // planillas Excel/CSV de citas y clientes, con los mismos filtros del
 // dashboard. Sin dependencias externas.

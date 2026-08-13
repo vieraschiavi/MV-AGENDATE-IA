@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Configuración de la API key DENTRO del programa (consola), no en una web.
 // Se usa al arrancar (src/programa.js) y también suelto con `npm run configurar`.
 // La clave queda embebida/persistida en data/config.json: la cargás una vez y

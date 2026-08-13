@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Configuración en caliente del servidor MV.
 // Permite que el profesional cargue su propia API key de Claude y sus datos
 // desde el panel de administración, sin editar archivos ni reiniciar el

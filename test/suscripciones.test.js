@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Tests del estado de suscripciones "Pro IA" (a quién le cobro, a quién le
 // corto el acceso a IA si el pago falla) — node --test.
 import { test } from 'node:test';

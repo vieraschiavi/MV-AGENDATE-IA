@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Reseñas del producto MV Agendate IA (para la web pública).
 // Las deja cualquier visitante; NO se publican hasta que el vendedor las
 // aprueba desde el panel de moderación (evita spam y reseñas falsas). Se

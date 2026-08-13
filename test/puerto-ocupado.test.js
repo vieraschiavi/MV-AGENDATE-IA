@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Cuando otro programa ya usa el puerto pedido, el servidor tiene que
 // (1) elegir el siguiente libre en vez de morir o pisar la otra app, y
 // (2) anunciar el puerto REAL con la línea MV_PUERTO=n, que es la que usa el

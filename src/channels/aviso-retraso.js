@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Aviso automático de retraso — MV Agendate IA
 //
 // Se ejecuta periódicamente (cron cada 5-10 min, o al cerrar cada trabajo

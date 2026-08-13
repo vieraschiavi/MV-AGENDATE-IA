@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Entrypoint serverless para Vercel.
 // Vercel importa este módulo y usa el export default como handler (req, res).
 // Nuestro app de Express es un handler válido, así que lo re-exportamos.

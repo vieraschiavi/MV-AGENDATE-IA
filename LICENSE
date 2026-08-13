@@ -1,15 +1,16 @@
-Copyright (c) MV Agendate IA. Todos los derechos reservados.
+Copyright (c) 2026 Martín Viera. Todos los derechos reservados.
 
 Este software (código fuente, binarios compilados, instaladores, contenidos,
 imágenes, textos y cualquier material que lo acompañe — en adelante, el
-"Software") es propiedad exclusiva de MV Agendate IA y está protegido por
-las leyes de propiedad intelectual y los tratados internacionales aplicables.
+"Software") es propiedad exclusiva de Martín Viera (MV Software) y está
+protegido por las leyes de propiedad intelectual y los tratados
+internacionales aplicables.
 
 El Software se LICENCIA, no se vende. Ninguna disposición de este aviso
 transfiere la titularidad del Software ni de sus derechos de autor.
 
 Queda expresamente PROHIBIDO, salvo autorización previa y por escrito de
-MV Agendate IA:
+Martín Viera:
 
   1. Copiar, redistribuir, sublicenciar, alquilar, prestar o revender el
      Software, en todo o en parte, a terceros.
@@ -23,12 +24,11 @@ MV Agendate IA:
      gratuita o bajo una licencia paga a personas o cuentas distintas de
      las autorizadas.
 
-El uso del Software está además sujeto a los términos del Acuerdo de
-Licencia de Usuario Final (EULA) que se muestra durante la instalación y
-que se encuentra en el archivo EULA.txt de este repositorio.
+El uso del Software está además sujeto a los términos de la Licencia de
+Usuario Final (EULA) publicada en /eula.html.
 
 EL SOFTWARE SE PROPORCIONA "TAL CUAL", SIN GARANTÍA DE NINGÚN TIPO, EXPRESA
 O IMPLÍCITA, INCLUYENDO PERO NO LIMITADO A LAS GARANTÍAS DE COMERCIABILIDAD,
 IDONEIDAD PARA UN PROPÓSITO PARTICULAR Y NO INFRACCIÓN. EN NINGÚN CASO
-MV AGENDATE IA SERÁ RESPONSABLE POR RECLAMO, DAÑO U OTRA RESPONSABILIDAD
+MARTÍN VIERA SERÁ RESPONSABLE POR RECLAMO, DAÑO U OTRA RESPONSABILIDAD
 DERIVADA DEL USO DEL SOFTWARE.

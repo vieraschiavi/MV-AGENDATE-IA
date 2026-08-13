@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# © 2026 Martín Viera. Todos los derechos reservados.
 # Instalador para Linux/macOS (servidores VPS incluidos)
 set -e
 echo "============================================"

@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Integración con MercadoPago (Checkout Pro).
 // Flujo: creamos una "preferencia" de pago → el cliente paga en MercadoPago con
 // tarjeta/saldo → el dinero entra a TU cuenta de MercadoPago → vos hacés el

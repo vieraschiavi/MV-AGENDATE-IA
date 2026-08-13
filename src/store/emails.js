@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Emails transaccionales — MV Agendate IA.
 // Sin dependencias: usa la API REST de Resend (resend.com, tier gratis) con
 // fetch. Si no hay API key configurada, todo es un no-op silencioso (se

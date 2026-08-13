@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Genera una landing de SEO por oficio en public/oficios/.
 //
 // Cada página combina dos fuentes, y esa es la razón de que salgan distintas

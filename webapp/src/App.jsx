@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, NavLink, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import Panel from './pages/Panel.jsx';

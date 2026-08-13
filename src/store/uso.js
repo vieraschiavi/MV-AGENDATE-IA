@@ -1,3 +1,4 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
 // Seguimiento de uso de APIs (tokens) y catálogo de servicios/costos.
 // Sirve para: (a) cubrirte por uso si vendés con TU API embebida (trackeás cuánto
 // consume cada cliente), y (b) mostrarle a cada cliente qué API necesita cada
