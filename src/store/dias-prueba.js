@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Duración de la prueba gratis de la copia DESCARGADA (PC/APK), en un solo
 // lugar. La leen los dos extremos:
 //   - store/prueba.js  → el candado en runtime (cuántos días quedan / bloqueo)

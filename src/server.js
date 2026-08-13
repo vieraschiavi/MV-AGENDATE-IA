@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // MV Agendate IA — servidor principal
 // Chatbot/ChatVoice con IA que cotiza y agenda trabajos de cualquier oficio,
 // optimizando traslados y descansos, + CRM y dashboards del profesional.

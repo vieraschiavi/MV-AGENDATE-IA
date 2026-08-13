@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Service worker de MV Agendate IA — habilita la instalación como app (PWA) y
 // deja abrir el workspace aunque no haya señal. Estrategia: network-first para
 // navegación/estáticos (siempre lo más nuevo) con caché de respaldo offline;

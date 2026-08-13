@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Tests de soporte multi-profesional (varios trabajadores por cuenta) — node --test
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';

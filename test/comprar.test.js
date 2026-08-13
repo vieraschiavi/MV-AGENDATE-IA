@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // La ruta de compra, contra el servidor de verdad.
 // El caso que motiva el archivo: con MercadoPago sin configurar, /api/comprar
 // devolvía 503 PERO ya había guardado el pedido. Cada clic en "Comprar" dejaba

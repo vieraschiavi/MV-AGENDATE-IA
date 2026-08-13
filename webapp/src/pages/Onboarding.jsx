@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { fetchAdmin, getJSON, cuentaSesion } from '../api.js';

@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Configuración de ESLint (flat config, ESLint 9+).
 // Corre con: npm run lint
 //

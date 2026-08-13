@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Los dos bugs que impedían cobrar y entregar los productos estrella
 // (Básico US$129 y Full US$299), fijados como contrato.
 //

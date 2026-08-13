@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Investigador de precios de mercado — MV Agendate IA.
 // Dado un oficio/profesión y el país configurado, la IA estima qué se cobra
 // en ese mercado por cada tipo de trabajo (mano de obra/honorarios y

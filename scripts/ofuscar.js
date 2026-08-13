@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Ofusca src/ y electron/ antes de empaquetar el instalador de Windows.
 //
 // Con asar:false (necesario para que el proceso hijo del servidor arranque

@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Config del build de escritorio. Este archivo del repo es el que corre cuando
 // se arranca desde el código fuente (`npm start`): diasPrueba:null = sin
 // override, vale la prueba de 7 días de src/store/dias-prueba.js.

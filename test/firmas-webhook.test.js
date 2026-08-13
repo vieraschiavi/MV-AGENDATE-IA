@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Verificación de firma de los webhooks entrantes.
 //
 // Lo que se cuida: /webhook/whatsapp y /webhook/voz deciden a qué cuenta

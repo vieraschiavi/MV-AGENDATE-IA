@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Asistente de ayuda de MV Agendate IA: responde dudas SOBRE EL PROGRAMA
 // (cómo configurarlo, qué hace cada pantalla, canales, planes) — distinto del
 // agente de negocio (agente.js), que atiende a los clientes del profesional.

@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Verificación de firma contra el SERVIDOR REAL, no contra las funciones sueltas.
 //
 // Por qué existe además de test/firmas-webhook.test.js: aquel prueba el HMAC

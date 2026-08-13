@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Configuración PROPIA de cada cuenta SaaS (fase 2) — persiste en Redis.
 // Cada cuenta online guarda sus overrides (oficio, país/moneda, horarios,
 // equipo, catálogo custom, aprobación de cotizaciones, credenciales de sus

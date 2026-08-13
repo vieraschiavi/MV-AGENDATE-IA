@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Contexto de cuenta activa (modo SaaS) — AsyncLocalStorage.
 // Permite que TODO el código que hoy lee la configuración global (cotizador,
 // agente, agenda, canales) resuelva automáticamente la configuración de la

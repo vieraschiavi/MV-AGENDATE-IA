@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Verificación de firma de los webhooks entrantes (Meta y Twilio).
 //
 // Por qué existe: /webhook/whatsapp y /webhook/voz son públicos y deciden a qué

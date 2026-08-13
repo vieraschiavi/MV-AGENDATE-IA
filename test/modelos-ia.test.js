@@ -1,3 +1,5 @@
+// © 2026 Martín Viera. Todos los derechos reservados.
+
 // Elección de modelo de IA por proveedor.
 //
 // Lo que se cuida: el modelo lo elige el profesional para regular su gasto de
