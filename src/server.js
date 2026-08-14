@@ -39,7 +39,7 @@ import { resumenUso, catalogoConEstado } from './store/uso.js';
 import * as lic from './store/licencias.js';
 import {
   crearPreferencia, crearPreferenciaCreditos, consultarPago,
-  mercadopagoActivo, planRecurrente, consultarPreapproval, consultarPagoRecurrente,
+  mercadopagoActivo, modoMercadopago, planRecurrente, consultarPreapproval, consultarPagoRecurrente,
   tierDePlanRecurrente
 } from './store/mercadopago.js';
 import * as suscripciones from './store/suscripciones.js';
@@ -870,6 +870,9 @@ app.get('/api/tokens/catalogo', (_req, res) => res.json(catalogoConEstado()));
 // secreto en un chat.
 app.get('/api/diagnostico', (_req, res) => res.json({
   mercadopago: mercadopagoActivo(),
+  // 'prueba' | 'produccion' | null. Con 'produccion' cada cobro de la demo
+  // sale de una tarjeta real: hay que poder verlo antes de mostrarla.
+  modoCobro: modoMercadopago(),
   sitioUrl: cfg('sitioUrl') || null,
   almacenPersistente: redisDisponible(),
 }));

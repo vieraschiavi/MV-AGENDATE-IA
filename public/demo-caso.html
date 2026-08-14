@@ -126,8 +126,18 @@ async function chequear() {
   try {
     const d = await pedir('/api/diagnostico');
     const si = (v) => v ? '<span class="si">✔ listo</span>' : '<span class="no">✘ falta</span>';
+    // El modo de cobro se muestra aparte y con énfasis: en 'produccion' cada
+    // pago de la demo sale de una tarjeta de verdad, y confundirlo con 'prueba'
+    // cuesta plata. No alcanza con el ✔ de "MercadoPago conectado", que da
+    // igual en los dos casos.
+    const modo = d.modoCobro === 'prueba'
+      ? '<span class="si">✔ prueba — no se mueve plata real</span>'
+      : d.modoCobro === 'produccion'
+        ? '<span class="no">⚠ PRODUCCIÓN — cada cobro sale de una tarjeta real</span>'
+        : '<span class="no">✘ falta</span>';
     $('#diag').innerHTML =
       `<div class="chk"><b>MercadoPago conectado</b>${si(d.mercadopago)}</div>` +
+      `<div class="chk"><b>Modo de cobro</b>${modo}</div>` +
       `<div class="chk"><b>Dirección pública</b><span>${d.sitioUrl ? esc(d.sitioUrl) : '<span class="no">✘ falta</span>'}</span></div>` +
       `<div class="chk"><b>Datos que no se pierden</b>${si(d.almacenPersistente)}</div>` +
       (d.mercadopago && d.sitioUrl && d.almacenPersistente
