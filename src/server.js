@@ -44,6 +44,7 @@ import {
 } from './store/mercadopago.js';
 import * as suscripciones from './store/suscripciones.js';
 import { generarLinkDeCobro } from './store/cobro-trabajo.js';
+import { prepararCasoDemo } from './store/demo-caso.js';
 import { existsSync } from 'node:fs';
 import whatsapp, { enviarWhatsApp, probarConexion as probarConexionWhatsapp } from './channels/whatsapp.js';
 import * as tw from './store/twilio.js';
@@ -741,6 +742,14 @@ app.post('/api/citas/:id/cobrar', adminOCuenta, async (req, res) => {
   }
   res.json({ ...r, citaId: req.params.id });
 });
+// Deja armado el caso de demostración (catálogo de $100 + cita lista para
+// cobrar) en el almacén REAL del deploy. Con clave admin: escribe en el
+// catálogo y en la agenda del profesional, así que no puede quedar abierta.
+app.post('/api/demo/preparar', adminOCuenta, async (req, res) => {
+  const r = await prepararCasoDemo(req.cuentaId);
+  res.status(r.ok ? 200 : 409).json(r);
+});
+
 app.post('/api/citas', adminOCuenta, async (req, res) => {
   const datos = { ...req.body };
   if (datos.direccion && !Number.isFinite(datos.lat)) {
