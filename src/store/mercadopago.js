@@ -162,6 +162,61 @@ export async function crearPreferencia(pedido, baseUrl) {
 }
 
 /**
+ * Preferencia de pago para el TRABAJO que el profesional le cotizó a su cliente.
+ *
+ * Ojo que esto es otra cosa que crearPreferencia(): esa cobra la LICENCIA del
+ * software (el profesional le paga a MV Agendate IA). Ésta es el profesional
+ * cobrándole a SU cliente el trabajo cotizado, y la plata va a la cuenta de
+ * MercadoPago de ese profesional.
+ *
+ * Por eso el monto NO pasa por montoDeCobro(): esa función traduce un precio de
+ * lista en USD a moneda local, y una cotización ya viene en la moneda del
+ * profesional (el catálogo la fija según su país). Convertirla otra vez le
+ * multiplicaría el precio al cliente por el tipo de cambio.
+ *
+ * external_reference = "trabajo:{cuentaId}:{citaId}" — el webhook lo usa para
+ * marcar esa cita como pagada.
+ */
+export async function crearPreferenciaTrabajo({ cuentaId, citaId, titulo, monto, moneda, email }, baseUrl) {
+  const token = cfg('mercadopagoToken');
+  if (!token) return { ok: false, error: 'MercadoPago no está configurado (falta el Access Token).' };
+  const importe = Number(monto);
+  if (!Number.isFinite(importe) || importe <= 0) {
+    return { ok: false, error: 'El trabajo no tiene un monto cotizado para cobrar.' };
+  }
+  const body = {
+    items: [{
+      title: String(titulo || 'Trabajo').slice(0, 250),
+      quantity: 1,
+      currency_id: moneda || 'UYU',
+      unit_price: importe
+    }],
+    payer: email ? { email } : undefined,
+    external_reference: `trabajo:${cuentaId}:${citaId}`,
+    back_urls: {
+      success: `${baseUrl}/pago-trabajo.html?cita=${encodeURIComponent(citaId)}`,
+      pending: `${baseUrl}/pago-trabajo.html?cita=${encodeURIComponent(citaId)}`,
+      failure: `${baseUrl}/pago-trabajo.html?cita=${encodeURIComponent(citaId)}&estado=falla`
+    },
+    auto_return: 'approved',
+    notification_url: `${baseUrl}/api/pago/mercadopago`
+  };
+  try {
+    const r = await fetch(`${API}/checkout/preferences`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(20000)
+    });
+    const d = await r.json();
+    if (!r.ok) return { ok: false, error: d.message || 'No pude crear el link de pago en MercadoPago.' };
+    return { ok: true, init_point: d.init_point || d.sandbox_init_point, preference_id: d.id };
+  } catch (e) {
+    return { ok: false, error: 'Error conectando con MercadoPago: ' + e.message };
+  }
+}
+
+/**
  * Preferencia de pago para una RECARGA DE CRÉDITOS de IA de una cuenta SaaS.
  * external_reference = "credito:{cuentaId}:{monto}" — el webhook lo acredita.
  */
@@ -188,14 +243,24 @@ export async function crearPreferenciaCreditos({ cuentaId, monto, email }, baseU
   } catch (e) { return { ok: false, error: 'Error conectando con MercadoPago: ' + e.message }; }
 }
 
-/** Consulta el estado de un pago por su id. Devuelve { status, external_reference }. */
+/** Consulta el estado de un pago por su id. Devuelve { status, external_reference, monto, moneda }. */
 export async function consultarPago(paymentId) {
   const token = cfg('mercadopagoToken');
   if (!token) return null;
   try {
-    const r = await fetch(`${API}/v1/payments/${paymentId}`, { headers: { Authorization: `Bearer ${token}` } });
+    const r = await fetch(`${API}/v1/payments/${paymentId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(20000)
+    });
     if (!r.ok) return null;
     const d = await r.json();
-    return { status: d.status, external_reference: d.external_reference, monto: d.transaction_amount };
+    return {
+      status: d.status,
+      external_reference: d.external_reference,
+      monto: d.transaction_amount,
+      // La moneda con la que MercadoPago cerró el cobro. Se registra la que
+      // volvió y no la que pedimos: es la que de verdad entró a la cuenta.
+      moneda: d.currency_id
+    };
   } catch { return null; }
 }

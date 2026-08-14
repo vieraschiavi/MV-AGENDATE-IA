@@ -333,6 +333,56 @@ export async function cambiarEstadoCita(id, estado, cuentaId) {
   return { ok: true, cita: c };
 }
 
+// ---------- Cobro del trabajo al cliente ----------
+// Distinto del cobro de la LICENCIA del software (store/licencias.js): esto es
+// el profesional cobrándole a SU cliente el trabajo que le cotizó. El monto
+// nunca se inventa acá — sale de la cotización que ya tiene la cita, que a su
+// vez salió del catálogo de precios del profesional.
+
+/** Deja anotado en la cita el link de pago que se le generó al cliente. */
+export async function registrarLinkDeCobro(id, { link, preferenceId, monto, moneda }, cuentaId) {
+  const db = await cargar(cuentaId);
+  const c = db.citas.find((x) => x.id === id);
+  if (!c) return { ok: false, error: 'Cita no encontrada.' };
+  c.cobro = {
+    ...(c.cobro || {}),
+    estado: c.cobro?.estado === 'pagado' ? 'pagado' : 'pendiente',
+    link, preferenceId, monto, moneda,
+    generado: iso(hoy())
+  };
+  c.actualizada = iso(hoy());
+  await guardar(cuentaId);
+  return { ok: true, cita: c };
+}
+
+/**
+ * Marca la cita como pagada. IDEMPOTENTE por id de pago: MercadoPago reintenta
+ * la notificación del mismo pago, y sin esta marca cada reintento volvería a
+ * sumar el trabajo a lo facturado del día.
+ */
+export async function marcarCitaPagada(id, { pagoId, monto, moneda }, cuentaId) {
+  const db = await cargar(cuentaId);
+  const c = db.citas.find((x) => x.id === id);
+  if (!c) return { ok: false, error: 'Cita no encontrada.' };
+  if (c.cobro?.estado === 'pagado' && c.cobro?.pagoId === pagoId) {
+    return { ok: true, cita: c, yaEstaba: true };
+  }
+  c.cobro = {
+    ...(c.cobro || {}),
+    estado: 'pagado',
+    pagoId,
+    // El monto que confirmó MercadoPago, no el que esperábamos: si por lo que
+    // sea cobró otra cosa, lo que queda registrado es lo que entró de verdad.
+    montoPagado: monto,
+    moneda: moneda || c.cobro?.moneda,
+    pagado: iso(hoy())
+  };
+  c.actualizada = iso(hoy());
+  await guardar(cuentaId);
+  notificarCRM('trabajo.pagado', c);
+  return { ok: true, cita: c };
+}
+
 export async function registrarReceptor(id, nombreReceptor, cuentaId) {
   const db = await cargar(cuentaId);
   const c = db.citas.find((x) => x.id === id);

@@ -178,13 +178,16 @@ test('consultarPagoRecurrente devuelve el cobro del mes, o null si MercadoPago r
   });
 });
 
-test('consultarPago devuelve status/external_reference/monto tal cual los manda MercadoPago', async () => {
+test('consultarPago devuelve status/external_reference/monto/moneda tal cual los manda MercadoPago', async () => {
   setConfig({ mercadopagoToken: 'TEST-token' });
   await conFetchMock(
-    { ok: true, body: { status: 'approved', external_reference: 'ORD-7', transaction_amount: 129 } },
+    { ok: true, body: { status: 'approved', external_reference: 'ORD-7', transaction_amount: 129, currency_id: 'UYU' } },
     async () => {
       const r = await consultarPago('pago-7');
-      assert.deepEqual(r, { status: 'approved', external_reference: 'ORD-7', monto: 129 });
+      // La moneda hace falta para el cobro de un TRABAJO (ver
+      // test/cobro-trabajo.test.js): ahí se registra en la cita la moneda con
+      // la que MercadoPago cerró el cobro, no la que habíamos pedido.
+      assert.deepEqual(r, { status: 'approved', external_reference: 'ORD-7', monto: 129, moneda: 'UYU' });
     }
   );
 });

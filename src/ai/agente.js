@@ -15,6 +15,8 @@ import { geocodificar, geocodificarToolDef } from './geocoding.js';
 import { proponerHorarios, proponerHorariosToolDef, configuracionDescansoPorDefecto } from '../store/agenda.js';
 import { crearCita, confirmarDireccionCliente, buscarClientePorTelefono, agendaDelDiaConUbicacion } from '../store/trabajos.js';
 import { aprobacionRequerida, crearCotizacion, cotizacionDeSesion } from '../store/cotizaciones.js';
+import { generarLinkDeCobro } from '../store/cobro-trabajo.js';
+import { mercadopagoActivo } from '../store/mercadopago.js';
 import { cuentaActiva, overridesActivos } from '../store/contextoCuenta.js';
 import { creditosHabilitado, haySaldo, consumir } from '../store/creditos.js';
 import { get as cfg, listarProfesionales } from '../store/config.js';
@@ -131,6 +133,24 @@ const confirmarCitaToolDef = {
   }
 };
 
+// Cobro del trabajo por MercadoPago. Es opcional: solo se le ofrece al modelo
+// si el profesional tiene MercadoPago configurado — si no, el agente vería una
+// herramienta que siempre falla y le prometería al cliente un link que nunca
+// llega.
+const cobrarTrabajoToolDef = {
+  name: 'cobrar_trabajo',
+  description:
+    'Genera el link de pago de MercadoPago del trabajo YA AGENDADO y se lo pasa al cliente. Llamala DESPUÉS de confirmar_cita, solo si el cliente quiere pagar ahora o pregunta cómo pagar. El monto lo pone el sistema con lo cotizado: no lo pidas ni lo inventes.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      citaId: { type: 'string', description: 'id de la cita que devolvió confirmar_cita' },
+      email: { type: 'string', description: 'email del cliente, si lo dio (opcional, para que le llegue el comprobante)' }
+    },
+    required: ['citaId']
+  }
+};
+
 const elegirProfesionalToolDef = {
   name: 'elegir_profesional',
   description:
@@ -144,9 +164,17 @@ const elegirProfesionalToolDef = {
 
 const TOOLS = [cotizarToolDef, geocodificarToolDef, proponerHorariosToolDef, confirmarDireccionToolDef, registrarReceptorToolDef, confirmarCitaToolDef];
 
-/** Herramientas disponibles para esta conversación: suma elegir_profesional solo si la cuenta tiene más de un profesional. */
+/**
+ * Herramientas disponibles para esta conversación: suma elegir_profesional solo
+ * si la cuenta tiene más de un profesional, y cobrar_trabajo solo si hay
+ * MercadoPago configurado (sin token, el link nunca se podría generar y el
+ * agente terminaría prometiéndole al cliente algo que no va a llegar).
+ */
 function construirTools() {
-  return listarProfesionales().length > 1 ? [elegirProfesionalToolDef, ...TOOLS] : TOOLS;
+  const extra = [];
+  if (listarProfesionales().length > 1) extra.push(elegirProfesionalToolDef);
+  if (mercadopagoActivo()) extra.push(cobrarTrabajoToolDef);
+  return extra.length ? [...extra, ...TOOLS] : TOOLS;
 }
 
 async function ejecutarHerramienta(nombre, input, canal, sessionId) {
@@ -296,6 +324,25 @@ async function ejecutarHerramienta(nombre, input, canal, sessionId) {
         total_guardado: cotizado ? cotizado.total : null,
         mensaje: `Cita confirmada para el ${cita.fecha} a las ${cita.inicio}.`,
         ...(cotizado ? {} : { aviso: 'La cita quedó SIN monto porque no hay una cotización hecha para este trabajo. No le confirmes ningún precio al cliente.' })
+      });
+    }
+    case 'cobrar_trabajo': {
+      // El monto NO sale del input: lo saca el servidor de la cotización que ya
+      // tiene la cita. Igual que en confirmar_cita, el precio nunca puede venir
+      // del modelo.
+      const r = await generarLinkDeCobro(String(input.citaId || ''), input.email, cuenta);
+      if (!r.ok) {
+        return JSON.stringify({
+          ok: false, error: r.error,
+          instruccion: 'No pude generar el link de pago. No le prometas al cliente que le va a llegar: decile que el profesional se lo va a pasar y seguí normal.'
+        });
+      }
+      if (r.yaPagado) {
+        return JSON.stringify({ ok: true, yaPagado: true, instruccion: 'Ese trabajo ya está pagado: agradecele y no le mandes otro link.' });
+      }
+      return JSON.stringify({
+        ok: true, link: r.link, monto: r.monto, moneda: r.moneda,
+        instruccion: 'Pasale el link TAL CUAL, sin acortarlo ni cambiarlo, y aclarale el monto y la moneda. Cuando pague, la cita queda marcada como cobrada sola.'
       });
     }
     default:

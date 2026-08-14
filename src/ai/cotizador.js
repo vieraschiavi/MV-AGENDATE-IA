@@ -93,11 +93,17 @@ export function cotizar({
   const factorHorario = FACTORES_HORARIO[horario] ?? 1.0;
   const factorTotal = factorUrgencia * factorHorario;
 
-  const manoObra = Math.round(datosTrabajo.mano_obra * factorTotal);
-  const materiales = datosTrabajo.materiales_base; // los materiales no llevan sobreprecio por urgencia
+  // Los números del catálogo se leen con tolerancia porque `oficiosCustom` es
+  // JSON que el profesional puede escribir a mano (o traer de una versión
+  // vieja): si a un oficio propio le falta traslado_por_km, la cuenta daba
+  // NaN y el cliente veía "Total estimado: $NaN". Un campo ausente vale 0.
+  const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+
+  const manoObra = Math.round(num(datosTrabajo.mano_obra) * factorTotal);
+  const materiales = num(datosTrabajo.materiales_base); // los materiales no llevan sobreprecio por urgencia
   const traslado = Math.max(
-    Math.round(distanciaKm * datosOficio.traslado_por_km),
-    distanciaKm > 0 ? datosOficio.traslado_minimo : 0
+    Math.round(num(distanciaKm) * num(datosOficio.traslado_por_km)),
+    num(distanciaKm) > 0 ? num(datosOficio.traslado_minimo) : 0
   );
   const total = manoObra + materiales + traslado;
 
