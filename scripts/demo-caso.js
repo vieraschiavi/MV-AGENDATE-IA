@@ -1,109 +1,43 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
 
-// Deja el programa listo para mostrarle a un cliente el circuito COMPLETO en
-// vivo: chatear con el bot → que cotice → que agende → cobrar por MercadoPago →
+// Deja el programa LOCAL listo para mostrar el circuito completo:
+// chatear con el bot → que cotice → que agende → cobrar por MercadoPago →
 // ver la cita marcada como pagada.
 //
 //   npm run demo-caso
 //
-// No inventa ningún monto: carga en el CATÁLOGO del profesional un servicio de
-// demostración de $100, y a partir de ahí el chatbot cotiza esos $100 igual que
-// cotizaría cualquier otro trabajo. Es la misma regla de siempre —el precio
-// sale del catálogo, no del modelo— solo que con un catálogo pensado para que
-// la demo salga barata de pagar de verdad.
+// Ojo: esto escribe en el almacén de ESTA máquina. Para dejar la demo pronta
+// en el deploy (Vercel), usá la pestaña "Demo" del panel — el script no puede
+// tocar los datos de producción.
 //
-// Deja además una cita YA agendada con ese trabajo, para poder mostrar el cobro
-// sin tener que conversar primero.
+// La lógica vive en src/store/demo-caso.js, compartida con el botón del panel
+// para que las dos puntas armen exactamente el mismo caso.
 import { get as cfg, setConfig } from '../src/store/config.js';
-import { crearCita, listarCitas } from '../src/store/trabajos.js';
-
-const CLIENTE = {
-  nombre: 'Martín Viera',
-  telefono: '098576279',
-  email: 'vieraschiavi@gmail.com',
-  direccion: 'Montevideo, Uruguay'
-};
-
-// El servicio de demostración: $100 para que la prueba de pago real cueste eso
-// y no una cotización de verdad de varios miles.
-const OFICIO_DEMO = 'demo_visita';
-const TRABAJO_DEMO = 'visita_demo';
-const PRECIO_DEMO = 100;
-
-const catalogoDemo = {
-  [OFICIO_DEMO]: {
-    nombre: 'Demostración MV Agendate IA',
-    // Sin traslado: la demo tiene que costar exactamente $100, y el traslado
-    // se suma aparte según la distancia.
-    traslado_por_km: 0,
-    traslado_minimo: 0,
-    trabajos: {
-      [TRABAJO_DEMO]: {
-        nombre: 'Visita de demostración',
-        duracion_min: 30,
-        mano_obra: PRECIO_DEMO,
-        materiales_base: 0
-      }
-    }
-  }
-};
-
-/** Fecha de mañana en YYYY-MM-DD (que la cita de muestra no quede en el pasado). */
-function manana() {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
-}
+import { prepararCasoDemo, CLIENTE_DEMO, PRECIO_DEMO } from '../src/store/demo-caso.js';
 
 async function main() {
-  // 1) Catálogo: se FUSIONA con lo que ya haya cargado, no lo pisa.
-  let custom = {};
-  try { custom = JSON.parse(cfg('oficiosCustom') || '{}'); } catch { /* config rota: se arranca de cero */ }
+  // Datos del profesional que sólo tienen sentido en la copia local.
   setConfig({
-    oficiosCustom: JSON.stringify({ ...custom, ...catalogoDemo }),
-    // El país fija la moneda de la cotización ($ UYU) — sin esto cotizaría en
-    // la moneda de otro país y el cobro no coincidiría con lo que se muestra.
-    pais: cfg('pais') || 'uy',
-    oficioProfesional: OFICIO_DEMO,
-    nombreProfesional: cfg('nombreProfesional') || 'Martín Viera',
+    nombreProfesional: cfg('nombreProfesional') || CLIENTE_DEMO.nombre,
     agenciaNombre: cfg('agenciaNombre') || 'MV Agendate IA',
-    agenciaTelefono: cfg('agenciaTelefono') || CLIENTE.telefono
+    agenciaTelefono: cfg('agenciaTelefono') || CLIENTE_DEMO.telefono
   });
 
-  // 2) Cita de muestra, ya agendada y lista para cobrar. Si ya existe una de
-  //    una corrida anterior, no se duplica.
-  const fecha = manana();
-  const yaHay = (await listarCitas({}))
-    .find((c) => c.trabajo === TRABAJO_DEMO && c.cobro?.estado !== 'pagado' && c.fecha >= fecha);
-
-  let cita = yaHay;
-  if (!cita) {
-    cita = await crearCita({
-      clienteNombre: CLIENTE.nombre,
-      telefono: CLIENTE.telefono,
-      oficio: OFICIO_DEMO,
-      oficioNombre: catalogoDemo[OFICIO_DEMO].nombre,
-      trabajo: TRABAJO_DEMO,
-      trabajoNombre: catalogoDemo[OFICIO_DEMO].trabajos[TRABAJO_DEMO].nombre,
-      fecha,
-      inicio: '10:00',
-      fin: '10:30',
-      direccion: CLIENTE.direccion,
-      direccionConfirmada: true,
-      // El monto sale del catálogo de arriba, no de acá: es el mismo número.
-      cotizacion: { mano_obra: PRECIO_DEMO, materiales: 0, traslado: 0, total: PRECIO_DEMO },
-      canal: 'webchat'
-    });
+  const r = await prepararCasoDemo();
+  if (!r.ok) {
+    console.error(`No pude preparar el caso de demostración: ${r.error}`);
+    process.exit(1);
   }
+  const { cita, yaExistia } = r;
 
   const listo = (v) => (v ? '✔' : '✘');
   console.log(`
   Caso de demostración listo
   ==========================
 
-  Catálogo      "${catalogoDemo[OFICIO_DEMO].trabajos[TRABAJO_DEMO].nombre}" a $${PRECIO_DEMO}
-  Cliente       ${CLIENTE.nombre} · ${CLIENTE.telefono} · ${CLIENTE.email}
-  Cita          ${cita.id} — ${cita.fecha} ${cita.inicio}${yaHay ? '  (ya existía, no se duplicó)' : ''}
+  Catálogo      "Visita de demostración" a $${PRECIO_DEMO}
+  Cliente       ${CLIENTE_DEMO.nombre} · ${CLIENTE_DEMO.telefono} · ${CLIENTE_DEMO.email}
+  Cita          ${cita.id} — ${cita.fecha} ${cita.inicio}${yaExistia ? '  (ya existía, no se duplicó)' : ''}
 
   Para mostrarlo en vivo
   ----------------------

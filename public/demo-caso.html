@@ -1,0 +1,195 @@
+<!doctype html>
+<!-- © 2026 Martín Viera. Todos los derechos reservados. -->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MV Agendate IA — Demo</title>
+<link rel="icon" href="/logo-mv.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0f2a43">
+<style>
+  :root{ --navy:#0f2a43; --navy2:#16466e; --gold:#e0b25c; --line:#e3e9f0; --ok:#1a7f37; --off:#b23; --pend:#8a6d1f; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:#eef2f7; color:#22303e; }
+  header{ background:linear-gradient(135deg,var(--navy),var(--navy2)); color:#fff; padding:22px 20px; }
+  header h1{ margin:0; font-size:1.25rem; }
+  header p{ margin:4px 0 0; opacity:.85; font-size:.85rem; }
+  .wrap{ max-width:760px; margin:22px auto 60px; padding:0 16px; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:16px; padding:20px; margin-bottom:16px; box-shadow:0 8px 26px #0f2a4310; }
+  .card h2{ margin:0 0 4px; font-size:1rem; color:var(--navy); }
+  .card p.sub{ margin:0 0 14px; font-size:.85rem; color:#5a6b7c; }
+  label{ display:block; font-size:.8rem; font-weight:600; color:#41535f; margin-bottom:5px; }
+  input{ width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:9px; font-size:.92rem; font-family:inherit; }
+  button{ background:var(--navy); color:#fff; border:0; border-radius:9px; padding:11px 18px; font-size:.9rem; font-weight:600; cursor:pointer; font-family:inherit; }
+  button:disabled{ opacity:.5; cursor:default; }
+  button.sec{ background:#fff; color:var(--navy); border:1px solid var(--line); }
+  .fila{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .chk{ display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid var(--line); font-size:.88rem; }
+  .chk:last-child{ border-bottom:0; }
+  .chk b{ font-weight:600; }
+  .si{ color:var(--ok); font-weight:700; } .no{ color:var(--off); font-weight:700; }
+  .paso{ display:flex; gap:11px; padding:9px 0; font-size:.88rem; align-items:flex-start; }
+  .paso span:first-child{ background:var(--navy); color:#fff; border-radius:50%; min-width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:.75rem; font-weight:700; }
+  .aviso{ padding:11px 14px; border-radius:9px; font-size:.86rem; margin-bottom:14px; }
+  .aviso.err{ background:#fdecec; color:#8d1f1f; border:1px solid #f3c6c6; }
+  .aviso.ok{ background:#e8f6ec; color:#175c2c; border:1px solid #bfe3c9; }
+  .link{ word-break:break-all; background:#f6f9fc; border:1px solid var(--line); border-radius:9px; padding:11px; font-size:.82rem; margin-top:10px; }
+  .estado{ display:inline-block; font-size:.74rem; font-weight:700; padding:3px 10px; border-radius:999px; }
+  .estado.ok{ background:#e6f6ec; color:var(--ok); } .estado.pend{ background:#fdf4e0; color:var(--pend); }
+  code{ background:#f0f4f8; padding:1px 6px; border-radius:5px; font-size:.85em; }
+  a.volver{ color:#fff; opacity:.85; font-size:.82rem; text-decoration:none; }
+</style>
+</head>
+<body>
+<header>
+  <a class="volver" href="/config.html">← Configuración</a>
+  <h1>Demo para mostrar a clientes</h1>
+  <p>Deja el circuito completo pronto: el bot cotiza, agenda y cobra de verdad.</p>
+</header>
+
+<div class="wrap">
+  <div id="avisos"></div>
+
+  <div class="card">
+    <h2>Clave de administración</h2>
+    <p class="sub">La misma del panel. Sin esto no se puede preparar la demo — escribe en tu catálogo y en tu agenda.</p>
+    <input id="adminKey" type="password" placeholder="Clave de administración" autocomplete="off">
+  </div>
+
+  <div class="card">
+    <h2>Estado del despliegue</h2>
+    <p class="sub">Los tres puntos que tienen que estar en verde para que el pago se acredite solo.</p>
+    <div id="diag">Consultando…</div>
+    <div class="fila" style="margin-top:12px"><button class="sec" id="btnDiag" type="button">Volver a chequear</button></div>
+  </div>
+
+  <div class="card">
+    <h2>1 · Preparar el caso</h2>
+    <p class="sub">Carga en tu catálogo una “Visita de demostración” de $100 y deja una cita agendada para mañana a nombre de Martín Viera. No pisa tus precios reales ni duplica la cita si ya existe.</p>
+    <div class="fila"><button id="btnPreparar" type="button">Preparar demo</button></div>
+    <div id="resultado"></div>
+  </div>
+
+  <div class="card">
+    <h2>2 · Mostrarlo en vivo</h2>
+    <div class="paso"><span>1</span><span>Abrí <a href="/demo.html" target="_blank" rel="noopener">/demo.html</a> y escribile al bot “necesito una visita de demostración”. Cotiza los $100 <b>del catálogo</b> y agenda solo.</span></div>
+    <div class="paso"><span>2</span><span>Volvé acá y generá el link de cobro de la cita.</span></div>
+    <div class="paso"><span>3</span><span>Abrí el link y pagá los $100 con MercadoPago. Es un pago real: la plata entra a tu cuenta.</span></div>
+    <div class="paso"><span>4</span><span>La cita queda marcada como <b>PAGADA</b> sola, cuando MercadoPago avisa.</span></div>
+  </div>
+
+  <div class="card">
+    <h2>3 · Cobrar</h2>
+    <p class="sub">Genera el link de pago de la cita de demostración. El monto sale de lo cotizado — no se puede escribir a mano.</p>
+    <div class="fila">
+      <button id="btnCobrar" type="button" disabled>Generar link de cobro</button>
+      <button class="sec" id="btnEstado" type="button" disabled>Ver si ya se pagó</button>
+    </div>
+    <div id="cobro"></div>
+  </div>
+</div>
+
+<script src="/js/seguro.js"></script>
+<script>
+const esc = window.escaparHtml;
+const $ = (s) => document.querySelector(s);
+let citaDemo = null;
+
+// La clave se guarda sólo en este navegador para no tener que reescribirla en
+// cada paso. Nunca viaja a otro lado que no sea el propio servidor.
+$('#adminKey').value = localStorage.getItem('mvAdminKey') || '';
+$('#adminKey').addEventListener('change', (e) => localStorage.setItem('mvAdminKey', e.target.value.trim()));
+
+function headers() {
+  const h = { 'Content-Type': 'application/json' };
+  const k = $('#adminKey').value.trim();
+  if (k) h['X-Admin-Key'] = k;
+  return h;
+}
+
+function aviso(msg, ok) {
+  $('#avisos').innerHTML = `<div class="aviso ${ok ? 'ok' : 'err'}">${esc(msg)}</div>`;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function pedir(url, opts) {
+  const r = await fetch(url, opts);
+  let d = {};
+  try { d = await r.json(); } catch { /* respuesta sin cuerpo JSON */ }
+  if (r.status === 401) throw new Error('Clave de administración incorrecta.');
+  if (!r.ok) throw new Error(d.error || `Falló la operación (HTTP ${r.status}).`);
+  return d;
+}
+
+async function chequear() {
+  $('#diag').textContent = 'Consultando…';
+  try {
+    const d = await pedir('/api/diagnostico');
+    const si = (v) => v ? '<span class="si">✔ listo</span>' : '<span class="no">✘ falta</span>';
+    $('#diag').innerHTML =
+      `<div class="chk"><b>MercadoPago conectado</b>${si(d.mercadopago)}</div>` +
+      `<div class="chk"><b>Dirección pública</b><span>${d.sitioUrl ? esc(d.sitioUrl) : '<span class="no">✘ falta</span>'}</span></div>` +
+      `<div class="chk"><b>Datos que no se pierden</b>${si(d.almacenPersistente)}</div>` +
+      (d.mercadopago && d.sitioUrl && d.almacenPersistente
+        ? ''
+        : '<p class="sub" style="margin-top:10px">Lo que falta se configura en las variables de entorno del despliegue. Sin eso, el pago puede entrar y la cita quedar figurando impaga.</p>');
+  } catch (e) {
+    $('#diag').innerHTML = `<span class="no">No pude consultar el estado: ${esc(e.message)}</span>`;
+  }
+}
+
+function pintarCita(c, extra = '') {
+  citaDemo = c;
+  $('#btnCobrar').disabled = false;
+  $('#btnEstado').disabled = false;
+  const pagado = c.cobro?.estado === 'pagado';
+  $('#resultado').innerHTML =
+    `<div class="link">Cita <b>${esc(c.id)}</b> — ${esc(c.fecha)} ${esc(c.inicio)} · ${esc(c.clienteNombre || '')}` +
+    `<br>Cotizado: <b>$${esc(String(c.cotizacion?.total ?? '—'))}</b> ` +
+    `<span class="estado ${pagado ? 'ok' : 'pend'}">${pagado ? 'PAGADO' : 'SIN COBRAR'}</span>${extra}</div>`;
+}
+
+$('#btnDiag').onclick = chequear;
+
+$('#btnPreparar').onclick = async () => {
+  $('#btnPreparar').disabled = true;
+  try {
+    const d = await pedir('/api/demo/preparar', { method: 'POST', headers: headers(), body: '{}' });
+    aviso(d.yaExistia ? 'La demo ya estaba preparada: se reutilizó la cita existente.' : 'Demo preparada.', true);
+    pintarCita(d.cita);
+  } catch (e) { aviso(e.message, false); }
+  $('#btnPreparar').disabled = false;
+};
+
+$('#btnCobrar').onclick = async () => {
+  if (!citaDemo) return;
+  $('#btnCobrar').disabled = true;
+  try {
+    const d = await pedir(`/api/citas/${encodeURIComponent(citaDemo.id)}/cobrar`, {
+      method: 'POST', headers: headers(), body: JSON.stringify({ email: 'vieraschiavi@gmail.com' })
+    });
+    if (d.yaPagado) {
+      aviso('Ese trabajo ya está pagado: no se genera otro link.', true);
+    } else {
+      $('#cobro').innerHTML =
+        `<div class="link">Link para mandarle al cliente:<br><a href="${esc(d.link)}" target="_blank" rel="noopener">${esc(d.link)}</a>` +
+        `<br><br>Cobra <b>${esc(String(d.monto))} ${esc(d.moneda || '')}</b>.</div>`;
+      aviso('Link generado. Es un cobro real: la plata entra a tu cuenta de MercadoPago.', true);
+    }
+  } catch (e) { aviso(e.message, false); }
+  $('#btnCobrar').disabled = false;
+};
+
+$('#btnEstado').onclick = async () => {
+  if (!citaDemo) return;
+  try {
+    const c = await pedir(`/api/citas/${encodeURIComponent(citaDemo.id)}`);
+    pintarCita(c);
+    aviso(c.cobro?.estado === 'pagado' ? '¡Pago acreditado! La cita quedó marcada como pagada.' : 'Todavía sin pagar.', c.cobro?.estado === 'pagado');
+  } catch (e) { aviso(e.message, false); }
+};
+
+chequear();
+</script>
+</body>
+</html>
