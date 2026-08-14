@@ -72,6 +72,26 @@ test('una profesión custom se fusiona al catálogo y se puede cotizar', () => {
   setConfig({ oficiosCustom: '{}' });
 });
 
+test('un oficio custom sin datos de traslado cotiza igual (no devuelve NaN)', () => {
+  // `oficiosCustom` lo escribe el profesional a mano desde /config.html: si no
+  // carga traslado_por_km / traslado_minimo, la cuenta daba NaN y el cliente
+  // recibía por WhatsApp "Total estimado: $NaN".
+  setConfig({
+    oficiosCustom: JSON.stringify({
+      solo_mano_obra: {
+        nombre: 'Servicio sin traslado',
+        trabajos: { visita: { nombre: 'Visita', duracion_min: 30, mano_obra: 100 } },
+      },
+    }),
+  });
+  const r = cotizar({ oficio: 'solo_mano_obra', trabajo: 'visita', distanciaKm: 8 });
+  assert.equal(r.error, undefined);
+  assert.equal(r.total, 100, 'sin tarifa de traslado cargada, el traslado vale 0');
+  assert.deepEqual(r.desglose, { mano_obra: 100, materiales: 0, traslado: 0 });
+  assert.ok(!/NaN/.test(r.mensaje_whatsapp), 'el mensaje al cliente nunca puede decir NaN');
+  setConfig({ oficiosCustom: '{}' });
+});
+
 test('estimarImpuestos (sin API key) devuelve régimen, carga y neto para cualquier país', async () => {
   for (const [pais, ingreso] of [['uy', 80000], ['ar', 900000], ['mx', 25000]]) {
     setConfig({ pais, moneda: '' });

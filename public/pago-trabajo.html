@@ -1,0 +1,116 @@
+<!doctype html>
+<!-- © 2026 Martín Viera. Todos los derechos reservados. -->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pago del trabajo — MV Agendate IA</title>
+<link rel="icon" href="/logo-mv.svg" type="image/svg+xml">
+<style>
+  :root{ --navy:#0f2a43; --navy2:#16466e; --oro:#e0b25c; --line:#e6ebf1; --ok:#1a7f37; --pend:#8a6d1f; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:#eef2f7; color:#1e2b38; }
+  header{ background:linear-gradient(135deg,var(--navy),var(--navy2)); color:#fff; padding:14px 22px; display:flex; align-items:center; gap:12px; }
+  header img{ width:36px; height:36px; border-radius:9px; } header strong{ font-size:1.05rem; }
+  .wrap{ max-width:560px; margin:40px auto; padding:0 16px; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:18px; padding:30px; box-shadow:0 10px 32px #0f2a4314; text-align:center; }
+  .ico{ font-size:3rem; margin-bottom:6px; }
+  h1{ color:var(--navy); font-size:1.5rem; margin:6px 0 4px; }
+  .lead{ color:#5a6b7c; font-size:.95rem; margin-bottom:20px; }
+  .resumen{ background:#f6f9fc; border:1px solid var(--line); border-radius:12px; padding:14px 16px; text-align:left; font-size:.9rem; }
+  .resumen div{ display:flex; justify-content:space-between; gap:12px; padding:4px 0; }
+  .resumen span:first-child{ color:#5a6b7c; }
+  .resumen b{ color:var(--navy); }
+  .estado{ display:inline-block; font-size:.8rem; font-weight:700; padding:5px 12px; border-radius:999px; margin-bottom:14px; }
+  .estado.ok{ background:#e6f6ec; color:var(--ok); }
+  .estado.pend{ background:#fdf4e0; color:var(--pend); }
+  .nota{ font-size:.82rem; color:#7a8a9a; margin-top:18px; }
+</style>
+</head>
+<body>
+<header>
+  <img src="/logo-mv.svg" alt="MV">
+  <strong>MV Agendate IA</strong>
+</header>
+
+<div class="wrap">
+  <div class="card" id="tarjeta">
+    <div class="ico" id="ico">⏳</div>
+    <h1 id="titulo">Confirmando tu pago…</h1>
+    <p class="lead" id="lead">Un segundo, estamos verificando con MercadoPago.</p>
+    <div id="detalle"></div>
+    <p class="nota" id="nota"></p>
+  </div>
+</div>
+
+<script src="/js/seguro.js"></script>
+<script>
+// A esta página vuelve el CLIENTE después de pagarle el trabajo al profesional
+// por MercadoPago. Quien marca la cita como pagada es el webhook del servidor,
+// no esta pantalla: acá solo se consulta el estado y se muestra. Por eso puede
+// tardar unos segundos en pasar a "pagado" — se reintenta solo unas veces.
+const esc = window.escaparHtml;
+const params = new URLSearchParams(location.search);
+const citaId = params.get('cita') || '';
+const falla = params.get('estado') === 'falla';
+
+const $ = (s) => document.querySelector(s);
+
+function pintarFalla() {
+  $('#ico').textContent = '⚠️';
+  $('#titulo').textContent = 'El pago no se completó';
+  $('#lead').textContent = 'No se hizo ningún cargo. Podés intentar de nuevo con el mismo link que te pasamos.';
+}
+
+function pintar(cita) {
+  const cobro = cita.cobro || {};
+  const pagado = cobro.estado === 'pagado';
+  const monto = pagado ? cobro.montoPagado : cobro.monto;
+  const moneda = cobro.moneda || '';
+
+  $('#ico').textContent = pagado ? '✅' : '⏳';
+  $('#titulo').textContent = pagado ? '¡Listo, pago recibido!' : 'Tu pago se está acreditando';
+  $('#lead').textContent = pagado
+    ? 'Ya le avisamos al profesional y quedó registrado en su agenda.'
+    : 'MercadoPago todavía no nos confirmó el pago. Podés cerrar esta página: cuando se acredite, queda registrado igual.';
+
+  const filas = [
+    ['Trabajo', cita.trabajoNombre || cita.trabajo || '—'],
+    ['Fecha', `${cita.fecha || '—'}${cita.inicio ? ' · ' + cita.inicio : ''}`],
+    monto != null ? ['Monto', `${moneda} ${monto}`] : null
+  ].filter(Boolean);
+
+  $('#detalle').innerHTML =
+    `<div class="estado ${pagado ? 'ok' : 'pend'}">${pagado ? 'PAGADO' : 'PENDIENTE'}</div>` +
+    '<div class="resumen">' +
+    filas.map(([k, v]) => `<div><span>${esc(k)}</span><b>${esc(String(v))}</b></div>`).join('') +
+    '</div>';
+}
+
+async function consultar(intento = 0) {
+  if (!citaId) {
+    $('#ico').textContent = '🤔';
+    $('#titulo').textContent = 'No sabemos de qué trabajo se trata';
+    $('#lead').textContent = 'El link no traía la referencia del trabajo. Consultale al profesional.';
+    return;
+  }
+  try {
+    const r = await fetch('/api/citas/' + encodeURIComponent(citaId));
+    if (!r.ok) throw new Error('no encontrada');
+    const cita = await r.json();
+    pintar(cita);
+    // El webhook puede tardar unos segundos: se reintenta un rato y se para.
+    if (cita.cobro?.estado !== 'pagado' && intento < 5) {
+      setTimeout(() => consultar(intento + 1), 3000);
+    }
+  } catch {
+    $('#ico').textContent = '🤔';
+    $('#titulo').textContent = 'No pudimos leer el estado';
+    $('#lead').textContent = 'Si ya pagaste, quedate tranquilo: el pago se registra igual. Consultale al profesional.';
+  }
+}
+
+if (falla) pintarFalla(); else consultar();
+</script>
+</body>
+</html>

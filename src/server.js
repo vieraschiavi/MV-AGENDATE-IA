@@ -38,10 +38,12 @@ import { fichaCitaHTML, agendaCSV, agendaExcelHTML, clientesCSV, clientesExcelHT
 import { resumenUso, catalogoConEstado } from './store/uso.js';
 import * as lic from './store/licencias.js';
 import {
-  crearPreferencia, crearPreferenciaCreditos, consultarPago, mercadopagoActivo,
-  planRecurrente, consultarPreapproval, consultarPagoRecurrente, tierDePlanRecurrente
+  crearPreferencia, crearPreferenciaCreditos, consultarPago,
+  mercadopagoActivo, planRecurrente, consultarPreapproval, consultarPagoRecurrente,
+  tierDePlanRecurrente
 } from './store/mercadopago.js';
 import * as suscripciones from './store/suscripciones.js';
+import { generarLinkDeCobro } from './store/cobro-trabajo.js';
 import { existsSync } from 'node:fs';
 import whatsapp, { enviarWhatsApp, probarConexion as probarConexionWhatsapp } from './channels/whatsapp.js';
 import * as tw from './store/twilio.js';
@@ -714,6 +716,31 @@ const profesionalOpts = () => ({ agencia: cfg('agenciaNombre') || cfg('nombrePro
 app.get('/api/citas', async (req, res) => res.json(await trabajos.listarCitas(req.query ?? {}, req.cuentaId)));
 app.get('/api/citas/dia/:fecha', async (req, res) => res.json(await trabajos.citasDelDia(req.params.fecha, req.cuentaId)));
 app.get('/api/citas/:id', async (req, res) => { const c = await trabajos.obtenerCita(req.params.id, req.cuentaId); res.status(c ? 200 : 404).json(c || { error: 'No encontrada' }); });
+
+// Link de pago del TRABAJO para mandarle al cliente (MercadoPago).
+//
+// Es el profesional cobrándole a SU cliente lo que le cotizó — la plata va a la
+// cuenta de MercadoPago del profesional, no a la de la licencia del software.
+// El monto NO se recibe por parámetro a propósito: sale de la cotización que ya
+// tiene la cita, que salió del catálogo de precios. Si el monto se pudiera
+// mandar desde afuera, cualquiera con el id de una cita podría cobrarse lo que
+// quiera a nombre del profesional.
+// Va con la misma guardia que el resto de la escritura sobre citas: sin ella,
+// cualquiera con el id de una cita podría emitir cobros a nombre del
+// profesional y disparar llamadas a la API de MercadoPago desde afuera.
+app.post('/api/citas/:id/cobrar', adminOCuenta, async (req, res) => {
+  // La misma función que usa la herramienta cobrar_trabajo del agente, para
+  // que el botón del panel y el chatbot cobren exactamente igual.
+  const base = cfg('sitioUrl') || `${req.protocol}://${req.get('host')}`;
+  const r = await generarLinkDeCobro(req.params.id, req.body?.email, req.cuentaId, base);
+  if (!r.ok) {
+    const codigo = /No encontré esa cita/.test(r.error) ? 404
+      : /MercadoPago|sitioUrl/.test(r.error) ? 503
+        : 400;
+    return res.status(codigo).json(r);
+  }
+  res.json({ ...r, citaId: req.params.id });
+});
 app.post('/api/citas', adminOCuenta, async (req, res) => {
   const datos = { ...req.body };
   if (datos.direccion && !Number.isFinite(datos.lat)) {
@@ -908,6 +935,15 @@ app.post('/api/pago/mercadopago', async (req, res) => {
           // mismo pago se acreditaba tantas veces como llegara el aviso.
           const r = await acreditar(cuentaId, Number(monto), dataId);
           if (r.ok && !r.yaEstaba) emails.avisarRecarga(cuentaId, Number(monto), r.saldo).catch(() => {});
+        } else if (String(pago.external_reference).startsWith('trabajo:')) {
+          // El cliente le pagó al profesional el trabajo cotizado:
+          // "trabajo:{cuentaId}:{citaId}". Distinto de una licencia — acá la
+          // plata va a la cuenta de MercadoPago del profesional, y lo único
+          // que hacemos es dejar la cita marcada como cobrada.
+          const [, cuentaId, citaId] = String(pago.external_reference).split(':');
+          await trabajos.marcarCitaPagada(citaId, {
+            pagoId: String(dataId), monto: pago.monto, moneda: pago.moneda
+          }, cuentaId).catch((e) => console.error('[pago trabajo]', e.message));
         } else {
           const r = await lic.confirmarPago(pago.external_reference);
           // La licencia también viaja por email (además de verse en /gracias.html)
