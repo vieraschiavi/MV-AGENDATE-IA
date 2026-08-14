@@ -32,7 +32,7 @@ import { estadoCreditos, acreditar, bonoBienvenida, PACKS as PACKS_CREDITOS } fr
 import * as emails from './store/emails.js';
 import * as resenas from './store/resenas.js';
 import { runConCuenta, runConDemoPais, runConDemoIdioma } from './store/contextoCuenta.js';
-import { kvGet, kvSet } from './store/redis.js';
+import { kvGet, kvSet, redisDisponible } from './store/redis.js';
 import { obtenerOverrides, guardarOverrides, configPublicaCuenta } from './store/configCuentas.js';
 import { fichaCitaHTML, agendaCSV, agendaExcelHTML, clientesCSV, clientesExcelHTML } from './exports/documentos.js';
 import { resumenUso, catalogoConEstado } from './store/uso.js';
@@ -853,6 +853,17 @@ app.get('/api/panel', adminOCuenta, async (req, res) => {
 // --- Uso de APIs (tokens) y catálogo de servicios/costos ---
 app.get('/api/uso', soloAdmin, (_req, res) => res.json(resumenUso()));
 app.get('/api/tokens/catalogo', (_req, res) => res.json(catalogoConEstado()));
+
+// Diagnóstico de despliegue: solo booleanos y la URL configurada, nunca un
+// token ni nada sensible. Pensado para chequear desde afuera (curl, sin clave
+// admin) que un deploy nuevo quedó bien conectado a MercadoPago y a Redis,
+// sin tener que abrir el panel de Vercel ni pedirle a nadie que pegue un
+// secreto en un chat.
+app.get('/api/diagnostico', (_req, res) => res.json({
+  mercadopago: mercadopagoActivo(),
+  sitioUrl: cfg('sitioUrl') || null,
+  almacenPersistente: redisDisponible(),
+}));
 
 // ==================== Compra / pagos / licencias / descarga ====================
 app.get('/api/planes', (_req, res) => res.json({ planes: lic.PLANES, medios: lic.MEDIOS, mercadopago: mercadopagoActivo() }));
