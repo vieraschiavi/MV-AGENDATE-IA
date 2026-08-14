@@ -39,7 +39,20 @@ test('sin nada configurado, informa todo en false/null y no rompe', async () => 
   const r = await fetch(`${base}/api/diagnostico`);
   assert.equal(r.status, 200);
   const d = await r.json();
-  assert.deepEqual(d, { mercadopago: false, sitioUrl: null, almacenPersistente: false });
+  assert.deepEqual(d, { mercadopago: false, modoCobro: null, sitioUrl: null, almacenPersistente: false });
+});
+
+test('distingue el token de prueba del de producción', async () => {
+  // Con credenciales de producción cada cobro de la demo sale de una tarjeta
+  // real. Los dos casos daban `mercadopago: true` idéntico, así que creer que
+  // se está en prueba estando en producción se pagaba con dinero.
+  await fetch(`${base}/api/config`, { method: 'POST', headers: J,
+    body: JSON.stringify({ mercadopagoToken: 'TEST-1234-abcd' }) });
+  assert.equal((await (await fetch(`${base}/api/diagnostico`)).json()).modoCobro, 'prueba');
+
+  await fetch(`${base}/api/config`, { method: 'POST', headers: J,
+    body: JSON.stringify({ mercadopagoToken: 'APP_USR-1234-abcd' }) });
+  assert.equal((await (await fetch(`${base}/api/diagnostico`)).json()).modoCobro, 'produccion');
 });
 
 test('refleja MercadoPago y sitioUrl configurados, sin exponer el token', async () => {

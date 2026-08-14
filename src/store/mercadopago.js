@@ -13,6 +13,24 @@ const API = 'https://api.mercadopago.com';
 
 export function mercadopagoActivo() { return !!cfg('mercadopagoToken'); }
 
+/**
+ * Modo del cobro según el Access Token cargado: 'prueba' | 'produccion' | null.
+ *
+ * MercadoPago distingue las credenciales por prefijo: las de prueba empiezan
+ * con TEST-. La diferencia no es cosmética —con las de producción sale plata
+ * de una tarjeta real— y hasta ahora, desde afuera, los dos casos se veían
+ * idénticos: un `mercadopagoActivo() === true`. Al mostrarle el circuito a un
+ * cliente eso es justo lo que hay que poder confirmar de un vistazo, porque
+ * creer que estás en prueba cuando estás en producción se paga con dinero.
+ *
+ * Devuelve el modo, nunca el token.
+ */
+export function modoMercadopago() {
+  const token = cfg('mercadopagoToken');
+  if (!token) return null;
+  return String(token).startsWith('TEST-') ? 'prueba' : 'produccion';
+}
+
 // --- Moneda de cobro ---
 // Confirmado contra la cuenta real: MercadoPago RECHAZA cobros en USD para
 // cuentas de Uruguay ("Cannot operate with currency id USD in MLU"). Vale para
