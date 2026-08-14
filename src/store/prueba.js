@@ -20,6 +20,7 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { get as cfg, setConfig } from './config.js';
 import { DIAS_PRUEBA_CLIENTE, DIAS_FIJADOS } from './dias-prueba.js';
+import { esOwner } from './sello-owner.js';
 
 const MS_DIA = 86400000;
 
@@ -53,6 +54,11 @@ function escribirAncla(inicio) {
  * vende.
  */
 function diasPrueba() {
+  // El sello FIRMADO del dueño manda sobre todo, incluso sobre lo fijado por
+  // el empaquetador: es lo que permite vender UN solo instalador y que la
+  // copia del dueño sea la misma descarga con el sello puesto (misma
+  // metodología que Buscador-Inmobiliario). Sin la clave privada no se fabrica.
+  if (esOwner()) return 0;
   if (Number.isFinite(DIAS_FIJADOS)) return DIAS_FIJADOS;
   const n = Number(process.env.DIAS_PRUEBA);
   return Number.isFinite(n) ? n : DIAS_PRUEBA_CLIENTE;

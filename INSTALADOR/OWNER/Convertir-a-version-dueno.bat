@@ -1,142 +1,82 @@
 @echo off
 setlocal enabledelayedexpansion
-title MV Agendate IA - pasar a version DUENO
-cd /d "%~dp0"
-
+title MV Agendate IA - activar version DUENO
+REM (c) 2026 Martin Viera. Todos los derechos reservados.
+REM Software propietario. Uso sujeto a LICENSE.
 REM ===================================================================
-REM  Pasa una copia YA INSTALADA de MV Agendate IA a la version DUENO:
-REM  sin clave de licencia y sin limite de dias.
+REM  Activa la version DUENO de MV Agendate IA: sin clave y sin limite.
 REM
-REM  COMO SE USA
-REM    1. Copia este archivo a la carpeta donde quedo instalado el
-REM       programa (la que tiene "MV Agendate IA.exe").
-REM    2. Cerra el programa si lo tenes abierto.
-REM    3. Doble clic aca.
-REM    4. Abri el programa: ya no pide nada.
+REM  NO hace falta copiarlo a ninguna carpeta: detecta solo donde esta
+REM  instalado el programa. Doble clic y listo.
 REM
-REM  QUE HACE POR DENTRO
-REM    La edicion NO se guarda en una licencia ni en el registro: son
-REM    dos archivos chiquitos adentro de la carpeta del programa, que
-REM    el motor lee al arrancar. Este script los reemplaza por los de
-REM    la variante dueno (dias de prueba = 0 = candado apagado) y deja
-REM    una copia .original de cada uno para poder volver atras.
+REM  COMO FUNCIONA
+REM    El sello es un archivo FIRMADO digitalmente (Ed25519) con la
+REM    clave privada del dueno, que no viaja con el producto: copiarse
+REM    este .bat no le sirve a nadie para fabricar sellos nuevos, y
+REM    escribir el archivo a mano tampoco -- el programa verifica la
+REM    firma al arrancar (src/store/sello-owner.js).
 REM
-REM  NO REPARTAS ESTE ARCHIVO: convierte cualquier copia instalada en
-REM  la version completa. Es la llave maestra de tu propio producto.
+REM    Se escribe en DOS lugares:
+REM      1. El perfil del usuario (%%USERPROFILE%%\.mv-agendate-ia).
+REM         Vale para CUALQUIER carpeta de instalacion y sobrevive a
+REM         reinstalaciones y actualizaciones. Por esto no hay que
+REM         copiar el .bat a ningun lado.
+REM      2. La carpeta del programa, si se encuentra (de yapa).
 REM ===================================================================
 
 echo.
 echo  ================================================
-echo   MV Agendate IA - pasar a version DUENO
+echo   MV Agendate IA - activar version DUENO
 echo  ================================================
 echo.
 
-REM --- Buscar la carpeta de la app (electron-builder la deja en resources\app) ---
+set "SELLO={"token": "MV1.eyJ0aXBvIjoib3duZXIiLCJlbWl0aWRvIjoiMjAyNi0wOC0xMlQxMzoxNTozNy45NDZaIn0.9C9cqjUqhWwKxwAjh_uFZtaxOXvb7ddYj3ZVHD_4tXo8KCc5uJzRwNyfa256gyChILx9gYVb7-B9-_5OhpC3AQ"}"
+
+REM --- 1) El perfil del usuario: alcanza solo, este donde este instalado ---
+set "PERFIL=%USERPROFILE%\.mv-agendate-ia"
+if not exist "%PERFIL%" mkdir "%PERFIL%"
+(echo !SELLO!)>"%PERFIL%\licencia-owner.json"
+if not exist "%PERFIL%\licencia-owner.json" goto :fallo
+echo  [OK] Sello del dueno escrito en tu perfil:
+echo       %PERFIL%\licencia-owner.json
+echo.
+
+REM --- 2) Detectar la instalacion (opcional: refuerza, no hace falta) ---
 set "APP="
-if exist "resources\app\electron\owner-config.cjs" set "APP=resources\app"
-if not defined APP if exist "..\resources\app\electron\owner-config.cjs" set "APP=..\resources\app"
-if not defined APP if exist "app\electron\owner-config.cjs" set "APP=app"
-if not defined APP if exist "electron\owner-config.cjs" set "APP=."
-if not defined APP goto :no_encontre
+if exist "%~dp0resources\app\src\store\prueba.js" set "APP=%~dp0resources\app"
+if not defined APP if exist "%~dp0src\store\prueba.js" set "APP=%~dp0."
+if not defined APP if exist "%LOCALAPPDATA%\Programs\MV Agendate IA\resources\app\src\store\prueba.js" set "APP=%LOCALAPPDATA%\Programs\MV Agendate IA\resources\app"
+if not defined APP if exist "%LOCALAPPDATA%\Programs\MV Agendate IA (Dueno)\resources\app\src\store\prueba.js" set "APP=%LOCALAPPDATA%\Programs\MV Agendate IA (Dueno)\resources\app"
+if not defined APP (
+  REM Registro de programas instalados: de aca sale la carpeta elegida en el
+  REM instalador aunque no sea la estandar (disco D:, etc.).
+  for /f "tokens=2*" %%A in ('reg query "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall" /s /v InstallLocation 2^>nul ^| findstr /i "Agendate"') do (
+    if exist "%%B\resources\app\src\store\prueba.js" set "APP=%%B\resources\app"
+  )
+)
 
-set "CFG=%APP%\electron\owner-config.cjs"
-set "DIAS=%APP%\src\store\dias-prueba.js"
-
-if not exist "%DIAS%" goto :no_encontre
-
-REM --- Si ya esta en modo dueno, ofrecer volver atras ---
-findstr /c:"diasPrueba: 0" "%CFG%" >nul 2>nul
-if not errorlevel 1 goto :ya_esta
-
-echo  Encontre el programa en: %APP%
-echo.
-echo  Voy a sacarle el limite de prueba y el pedido de licencia.
-echo.
-pause
-
-REM --- Copia de seguridad (solo la primera vez) ---
-if not exist "%CFG%.original" copy /y "%CFG%" "%CFG%.original" >nul
-if not exist "%DIAS%.original" copy /y "%DIAS%" "%DIAS%.original" >nul
-
-REM --- Escribir el sello de la variante dueno ---
-> "%CFG%" echo module.exports = { diasPrueba: 0 };
-
-> "%DIAS%" echo export const DIAS_PRUEBA_CLIENTE = 7;
->> "%DIAS%" echo export const DIAS_FIJADOS = 0;
-
-REM --- Verificar que quedo escrito de verdad ---
-findstr /c:"diasPrueba: 0" "%CFG%" >nul 2>nul
-if errorlevel 1 goto :fallo
-findstr /c:"DIAS_FIJADOS = 0" "%DIAS%" >nul 2>nul
-if errorlevel 1 goto :fallo
+if defined APP (
+  if not exist "!APP!\data" mkdir "!APP!\data"
+  (echo !SELLO!)>"!APP!\data\licencia-owner.json"
+  echo  [OK] Tambien sellada la instalacion encontrada en:
+  echo       !APP!
+) else (
+  echo  No encontre la carpeta del programa, pero NO importa: el sello
+  echo  del perfil alcanza para cualquier instalacion de esta PC.
+)
 
 echo.
-echo  [OK] Listo. Esta copia quedo en version DUENO.
-echo.
-echo       - No pide clave de licencia.
-echo       - No tiene limite de dias.
-echo       - Desaparece el cartel de "te quedan N dias".
-echo.
-echo  Abri MV Agendate IA y comprobalo. Si estaba abierto, cerralo
-echo  y volve a abrirlo: el motor lee estos archivos al arrancar.
-echo.
-echo  Para volver a la version normal, corre este mismo archivo otra vez.
+echo  Abri MV Agendate IA: sin clave, sin limite de dias.
+echo  Para volver a la version normal, borra estos archivos:
+echo    %PERFIL%\licencia-owner.json
+if defined APP echo    !APP!\data\licencia-owner.json
 echo.
 pause
 exit /b 0
-
-:ya_esta
-echo  Esta copia YA esta en version dueno (sin clave ni limite).
-echo.
-if not exist "%CFG%.original" goto :sin_backup
-set /p RESP=" Queres volverla a la version normal (con prueba)? [s/N] "
-if /i not "!RESP!"=="s" goto :sin_cambios
-copy /y "%CFG%.original" "%CFG%" >nul
-copy /y "%DIAS%.original" "%DIAS%" >nul
-echo.
-echo  [OK] Volvio a la version normal, con su prueba de dias.
-echo       Cerra y volve a abrir el programa.
-echo.
-pause
-exit /b 0
-
-:sin_cambios
-echo.
-echo  No toque nada. Sigue en version dueno.
-echo.
-pause
-exit /b 0
-
-:sin_backup
-echo  No encontre las copias .original, asi que no puedo revertir desde aca.
-echo  Si necesitas la version con prueba, reinstala con el instalador normal.
-echo.
-pause
-exit /b 0
-
-:no_encontre
-echo  [X] No encontre el programa instalado desde aca.
-echo.
-echo      Copia este archivo A LA CARPETA DONDE ESTA INSTALADO
-echo      MV Agendate IA (la que contiene "MV Agendate IA.exe")
-echo      y volve a ejecutarlo.
-echo.
-echo      Para encontrarla: clic derecho en el acceso directo del
-echo      escritorio - "Abrir ubicacion del archivo".
-echo.
-pause
-exit /b 1
 
 :fallo
-echo.
-echo  [X] No pude escribir los archivos del programa.
-echo.
-echo      Suele ser una de estas:
-echo        - El programa esta abierto: cerralo y proba de nuevo.
-echo        - El antivirus bloquea la escritura en esa carpeta.
-echo        - Se instalo en "Archivos de programa" y hace falta
-echo          ejecutar este .bat como administrador
-echo          (clic derecho - "Ejecutar como administrador").
+echo  [X] No pude escribir en tu perfil de usuario. Proba ejecutar este
+echo      archivo como administrador (clic derecho - Ejecutar como admin).
 echo.
 pause
 exit /b 1
