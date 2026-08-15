@@ -59,8 +59,11 @@
       <div id="planes"></div>
     </div>
     <div class="card" id="versionCard">
-      <h2 data-i18n="h2">2. Versión a descargar</h2>
-      <select id="version">
+      <h2 id="tituloVersion" data-i18n="h2">2. Versión a descargar</h2>
+      <!-- El nombre accesible sale del propio título, que ya lo traduce i18n:
+           con un aria-label fijo en español el lector de pantalla seguiría
+           diciéndolo en español aunque la página esté en inglés o portugués. -->
+      <select id="version" aria-labelledby="tituloVersion">
         <option value="pc" data-i18n="vPc">💻 PC / Servidor (completa)</option>
         <option value="apk" data-i18n="vApk">📱 Android (APK)</option>
         <option value="ios" data-i18n="vIos">🍏 iOS (próximamente)</option>
@@ -70,8 +73,8 @@
     </div>
     <div class="card">
       <h2 data-i18n="h3">3. Tus datos</h2>
-      <label data-i18n="lNombre">Nombre / Negocio</label><input id="nombre">
-      <label>Email</label><input id="email" type="email" placeholder="tu@email.com">
+      <label data-i18n="lNombre" for="nombre">Nombre / Negocio</label><input id="nombre">
+      <label for="email">Email</label><input id="email" type="email" placeholder="tu@email.com">
       <div class="medios" id="medios" style="margin-top:12px;">
         <div class="medio on" style="cursor:default;" data-i18n-html="medioMp">🟦 Pagás con <b>MercadoPago</b><br><small>tarjeta, débito o saldo — checkout seguro de MercadoPago</small></div>
       </div>
