@@ -86,11 +86,11 @@
   <div class="col">
     <h2 id="hCot">💰 Cotizador instantáneo</h2>
     <form class="cot" id="formCot">
-      <div><label id="lOficio">Oficio</label><select name="oficio" id="selOficio"></select></div>
-      <div><label id="lTrabajo">Trabajo</label><select name="trabajo" id="selTrabajo"></select></div>
-      <div><label id="lDistancia">Distancia estimada (km)</label><input name="distanciaKm" type="number" value="5" /></div>
-      <div><label id="lUrgencia">Urgencia</label><select name="urgencia"><option value="normal">Normal (agendado)</option><option value="mismo_dia">Mismo día</option><option value="urgente">Urgente</option></select></div>
-      <div class="full"><label id="lHorario">Horario</label><select name="horario"><option value="habil">Horario hábil</option><option value="nocturno">Nocturno (después de 20h)</option><option value="feriado">Feriado</option></select></div>
+      <div><label id="lOficio" for="selOficio">Oficio</label><select name="oficio" id="selOficio"></select></div>
+      <div><label id="lTrabajo" for="selTrabajo">Trabajo</label><select name="trabajo" id="selTrabajo"></select></div>
+      <div><label id="lDistancia" for="demoDistancia">Distancia estimada (km)</label><input name="distanciaKm" id="demoDistancia" type="number" value="5" /></div>
+      <div><label id="lUrgencia" for="demoUrgencia">Urgencia</label><select name="urgencia" id="demoUrgencia"><option value="normal">Normal (agendado)</option><option value="mismo_dia">Mismo día</option><option value="urgente">Urgente</option></select></div>
+      <div class="full"><label id="lHorario" for="demoHorario">Horario</label><select name="horario" id="demoHorario"><option value="habil">Horario hábil</option><option value="nocturno">Nocturno (después de 20h)</option><option value="feriado">Feriado</option></select></div>
       <div class="full"><button type="submit" id="btnCotizar" style="width:100%;">Cotizar</button></div>
     </form>
     <div id="resultado"></div>

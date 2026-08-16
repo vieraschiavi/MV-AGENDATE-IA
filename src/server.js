@@ -590,8 +590,16 @@ app.get('/api/telefonia/numeros-disponibles', adminOCuenta, async (req, res) => 
   res.status(r.ok ? 200 : 400).json(r);
 });
 app.get('/api/telefonia/mis-numeros', adminOCuenta, async (_req, res) => {
+  // Que Twilio NO esté configurado es el estado normal de una instalación
+  // recién hecha, no un fallo: se responde 200 y el panel simplemente no
+  // muestra la sección. Antes iba 400 y el navegador marcaba un error rojo en
+  // la consola en CADA carga del panel, indistinguible de un problema real.
+  // Un fallo de verdad de la API de Twilio sí sigue siendo error (502).
+  if (!tw.twilioActivo()) {
+    return res.json({ ok: false, configurado: false, numeros: [] });
+  }
   const r = await tw.misNumeros();
-  res.status(r.ok ? 200 : 400).json(r);
+  res.status(r.ok ? 200 : 502).json(r);
 });
 app.post('/api/telefonia/comprar-numero', adminOCuenta, async (req, res) => {
   const numero = String(req.body?.numero || '').trim();

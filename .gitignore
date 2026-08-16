@@ -76,3 +76,10 @@ INSTALADOR/OWNER/*
 # licencias de este producto. Nunca, bajo ninguna circunstancia, al repo.
 scripts/licencia-privada.pem
 *.pem
+
+# Una licencia ya emitida y FIRMADA. store/prueba.js la lee de dos lugares:
+# data/licencia.txt (ya ignorado por la regla de data/) y esta raíz, que es
+# "al lado del programa instalado" cuando el programa corre desde el repo.
+# El conversor del dueño escribe justamente este archivo, con una licencia
+# perpetua: commitearlo en un repo PÚBLICO regala el producto completo.
+licencia.txt

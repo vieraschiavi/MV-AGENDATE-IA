@@ -55,12 +55,12 @@
       <button class="mvc-x" data-cerrar aria-label="Cerrar">×</button>
       <h3 class="mvc-tit"></h3>
       <div class="mvc-row">
-        <div><label class="l-nom"></label><input id="mvc-nom" autocomplete="name"></div>
-        <div><label class="l-tel"></label><input id="mvc-tel" autocomplete="tel" inputmode="tel"></div>
+        <div><label class="l-nom" for="mvc-nom"></label><input id="mvc-nom" autocomplete="name"></div>
+        <div><label class="l-tel" for="mvc-tel"></label><input id="mvc-tel" autocomplete="tel" inputmode="tel"></div>
       </div>
-      <label class="l-mail"></label><input id="mvc-mail" type="email" autocomplete="email">
-      <label class="l-asu"></label><input id="mvc-asu">
-      <label class="l-pre"></label><textarea id="mvc-pre"></textarea>
+      <label class="l-mail" for="mvc-mail"></label><input id="mvc-mail" type="email" autocomplete="email">
+      <label class="l-asu" for="mvc-asu"></label><input id="mvc-asu">
+      <label class="l-pre" for="mvc-pre"></label><textarea id="mvc-pre"></textarea>
       <button class="mvc-send" data-enviar></button>
       <div class="mvc-ok"></div>
     </div>`;

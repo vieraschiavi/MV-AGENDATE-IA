@@ -79,7 +79,7 @@
   <div class="card" id="cardLicencia" style="display:none;">
     <h2>🎁 Prueba y licencia</h2>
     <div class="sub" id="pruebaEstado">Cargando estado de la prueba…</div>
-    <label>Código de licencia (el que te llegó al comprar)</label>
+    <label for="codigoLicencia">Código de licencia (el que te llegó al comprar)</label>
     <input id="codigoLicencia" placeholder="Ej: MV-FULL-A1B2C3D4" autocomplete="off">
     <button class="btn gold" id="btnActivarLicencia" type="button">Activar licencia</button>
     <div class="hint">La app descargable funciona completa 7 días; después se bloquea hasta activar la licencia. Comprala en <a href="/comprar.html">/comprar.html</a>.</div>
@@ -89,20 +89,20 @@
     <h2>👷 Vos y tu negocio</h2>
     <div class="sub">Con esto el asistente ya se presenta con tu nombre y cotiza en tu moneda.</div>
     <div class="row">
-      <div><label>Tu nombre (o el de tu negocio)</label><input id="nombreProfesional" placeholder="Juan Pérez"></div>
-      <div><label>Profesión / oficio</label>
+      <div><label for="nombreProfesional">Tu nombre (o el de tu negocio)</label><input id="nombreProfesional" placeholder="Juan Pérez"></div>
+      <div><label for="oficioProfesional">Profesión / oficio</label>
         <select id="oficioProfesional"></select>
       </div>
     </div>
     <div class="hint">¿Tu profesión no está en la lista? Creala más abajo en "Mi profesión / precios de mercado" — sirve para cualquier rubro con agenda: médicos, abogados, escribanos, psicólogos, talleres, etc.</div>
     <div class="row">
-      <div><label>Nombre comercial (fichas/exportaciones)</label><input id="agenciaNombre" placeholder="Electricidad Pérez"></div>
-      <div><label>Teléfono de contacto</label><input id="agenciaTelefono" placeholder="+598 99 123 456"></div>
+      <div><label for="agenciaNombre">Nombre comercial (fichas/exportaciones)</label><input id="agenciaNombre" placeholder="Electricidad Pérez"></div>
+      <div><label for="agenciaTelefono">Teléfono de contacto</label><input id="agenciaTelefono" placeholder="+598 99 123 456"></div>
     </div>
     <label>Logo (aparece en fichas y exportaciones)</label>
     <div style="display:flex;gap:10px;align-items:center;">
       <input id="logoUrl" placeholder="URL del logo o subilo →" style="flex:1;">
-      <input id="logoFile" type="file" accept="image/*" style="width:auto;padding:6px;">
+      <input id="logoFile" type="file" accept="image/*" aria-label="Subir un archivo de logo desde tu dispositivo" style="width:auto;max-width:100%;padding:6px;">
       <img id="logoPrev" alt="Vista previa del logo que subiste" style="width:40px;height:40px;border-radius:8px;object-fit:contain;display:none;">
     </div>
     <div class="hint">Podés pegar una URL o subir una imagen (se guarda embebida). Si lo dejás vacío, usa el logo MV.</div>
@@ -110,8 +110,8 @@
     <h2 style="margin-top:22px;">🌎 Tu país</h2>
     <div class="sub">Elegí tu país: la moneda de cotización y facturación se ajusta sola (o facturá en USD si preferís). El estimador de impuestos y el sugeridor de precios de mercado también usan esto.</div>
     <div class="row">
-      <div><label>País</label><select id="pais"></select></div>
-      <div><label>Moneda de cotización</label>
+      <div><label for="pais">País</label><select id="pais"></select></div>
+      <div><label for="moneda">Moneda de cotización</label>
         <select id="moneda">
           <option value="">Moneda local del país</option>
           <option value="USD">USD (dólares)</option>
@@ -122,12 +122,12 @@
     <h2 style="margin-top:22px;">🗓️ Jornada y descansos</h2>
     <div class="sub">El motor de agenda usa esto para no ofrecer horarios fuera de tu jornada, respetar tu almuerzo y no agendar en tus días libres.</div>
     <div class="row">
-      <div><label>Inicio de jornada</label><input id="horarioInicio" type="time" value="08:00"></div>
-      <div><label>Fin de jornada</label><input id="horarioFin" type="time" value="19:00"></div>
+      <div><label for="horarioInicio">Inicio de jornada</label><input id="horarioInicio" type="time" value="08:00"></div>
+      <div><label for="horarioFin">Fin de jornada</label><input id="horarioFin" type="time" value="19:00"></div>
     </div>
     <div class="row">
-      <div><label>Inicio de almuerzo/descanso</label><input id="almuerzoInicio" type="time" value="12:30"></div>
-      <div><label>Fin de almuerzo/descanso</label><input id="almuerzoFin" type="time" value="13:30"></div>
+      <div><label for="almuerzoInicio">Inicio de almuerzo/descanso</label><input id="almuerzoInicio" type="time" value="12:30"></div>
+      <div><label for="almuerzoFin">Fin de almuerzo/descanso</label><input id="almuerzoFin" type="time" value="13:30"></div>
     </div>
     <label>Días libres (no se agenda)</label>
     <div class="badges" id="diasLibresBox"></div>
@@ -137,7 +137,7 @@
       <summary>⚙️ Avanzado — IA propia, créditos y modo de cotización</summary>
     <h3 style="margin:0 0 4px;">🔑 Usar mi propia clave de IA (opcional)</h3>
     <div class="sub">La cuenta online ya viene con IA incluida (créditos) — esto es solo si preferís usar tu propia clave de Claude, ChatGPT o Gemini, o si instalaste la versión descargable.</div>
-    <label>Proveedor de IA</label>
+    <label for="proveedorIA">Proveedor de IA</label>
     <select id="proveedorIA">
       <option value="claude">Claude (Anthropic) — recomendado</option>
       <option value="openai">ChatGPT (OpenAI)</option>
@@ -147,27 +147,27 @@
       <option value="compatible">Otro compatible con OpenAI</option>
     </select>
     <div id="iaClaude" class="ia-campo">
-      <label>Claude — API key</label>
+      <label for="anthropicApiKey">Claude — API key</label>
       <input id="anthropicApiKey" type="password" placeholder="sk-ant-... (dejá vacío para no cambiarla)" autocomplete="off">
       <div class="hint">Conseguila en <a class="link" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.</div>
     </div>
     <div id="iaOpenai" class="ia-campo" style="display:none;">
-      <label>ChatGPT (OpenAI) — API key</label>
+      <label for="openaiApiKey">ChatGPT (OpenAI) — API key</label>
       <input id="openaiApiKey" type="password" placeholder="sk-... (dejá vacío para no cambiarla)" autocomplete="off">
       <div class="hint">Conseguila en <a class="link" href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a>.</div>
     </div>
     <div id="iaGemini" class="ia-campo" style="display:none;">
-      <label>Gemini (Google) — API key</label>
+      <label for="geminiApiKey">Gemini (Google) — API key</label>
       <input id="geminiApiKey" type="password" placeholder="AIza... (dejá vacío para no cambiarla)" autocomplete="off">
       <div class="hint">Conseguila en <a class="link" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">aistudio.google.com/app/apikey</a>.</div>
     </div>
     <div id="iaGrok" class="ia-campo" style="display:none;">
-      <label>Grok (xAI) — API key</label>
+      <label for="grokApiKey">Grok (xAI) — API key</label>
       <input id="grokApiKey" type="password" placeholder="xai-... (dejá vacío para no cambiarla)" autocomplete="off">
       <div class="hint">Conseguila en <a class="link" href="https://console.x.ai" target="_blank" rel="noopener">console.x.ai</a>.</div>
     </div>
     <div id="iaCopilot" class="ia-campo" style="display:none;">
-      <label>GitHub Models — token de GitHub</label>
+      <label for="copilotApiKey">GitHub Models — token de GitHub</label>
       <input id="copilotApiKey" type="password" placeholder="github_pat_... (dejá vacío para no cambiarlo)" autocomplete="off">
       <div class="hint">
         Copilot en sí es un asistente dentro del editor y <strong>no expone una API</strong> que otra app pueda usar para conversar.
@@ -176,9 +176,9 @@
       </div>
     </div>
     <div id="iaCompatible" class="ia-campo" style="display:none;">
-      <label>URL base del proveedor</label>
+      <label for="compatibleBaseUrl">URL base del proveedor</label>
       <input id="compatibleBaseUrl" placeholder="https://api.deepseek.com/v1" autocomplete="off">
-      <label>API key</label>
+      <label for="compatibleApiKey">API key</label>
       <input id="compatibleApiKey" type="password" placeholder="(dejá vacío para no cambiarla)" autocomplete="off">
       <div class="hint">
         Para cualquier proveedor que hable el mismo protocolo que OpenAI: DeepSeek, Groq, Mistral, OpenRouter, Together,
@@ -186,7 +186,7 @@
       </div>
     </div>
 
-    <label style="margin-top:12px;">Modelo a usar <span style="font-weight:400;color:#7a8a9a;">— acá controlás cuánto gastás</span></label>
+    <label for="modeloIA" style="margin-top:12px;">Modelo a usar <span style="font-weight:400;color:#7a8a9a;">— acá controlás cuánto gastás</span></label>
     <div style="display:flex;gap:8px;align-items:flex-start;">
       <select id="modeloIA" style="flex:1;margin:0;"></select>
       <button class="btn" type="button" id="btnActualizarModelos" style="margin:0;width:auto;white-space:nowrap;">🔄 Actualizar</button>
@@ -202,17 +202,17 @@
     <h3 style="margin:14px 0 4px;">💳 Créditos de IA (solo para el vendedor)</h3>
     <div class="sub">Si vendés cuentas SaaS, con TU key le vendés "créditos" a cada cuenta: usan tu IA y cada mensaje descuenta su saldo. Cuando se agota, la IA se corta hasta que recarguen por MercadoPago. (Si preferís que cada cuenta traiga su propia key, desactivalo.)</div>
     <div class="row">
-      <div><label>Modo créditos</label><select id="creditosSaas"><option value="">Activado (vendés créditos)</option><option value="0">Desactivado (cada cuenta trae su key)</option></select></div>
-      <div><label>Margen sobre el costo (×)</label><input id="creditosMargen" type="number" step="0.1" placeholder="2.5"></div>
+      <div><label for="creditosSaas">Modo créditos</label><select id="creditosSaas"><option value="">Activado (vendés créditos)</option><option value="0">Desactivado (cada cuenta trae su key)</option></select></div>
+      <div><label for="creditosMargen">Margen sobre el costo (×)</label><input id="creditosMargen" type="number" step="0.1" placeholder="2.5"></div>
     </div>
-    <label>Bono gratis de bienvenida por cuenta (US$)</label>
+    <label for="creditosBono">Bono gratis de bienvenida por cuenta (US$)</label>
     <input id="creditosBono" type="number" step="1" placeholder="3">
     <div class="hint">El saldo se descuenta al costo real de la IA × el margen. Ej: con margen 2.5, US$ 10 de recarga ≈ US$ 4 de costo real = cientos de mensajes. Ajustá según tu estrategia.</div>
     </div>
 
     <h3 style="margin:14px 0 4px;">✅ Aprobación de cotizaciones</h3>
     <div class="sub">El precio que calcula el asistente es un sugerido: por defecto NO se lo dice al cliente hasta que vos lo apruebes (o ajustes) desde el Panel. Te llega un aviso por WhatsApp con cada cotización pendiente.</div>
-    <label>Modo de cotización del chatbot</label>
+    <label for="aprobarCotizaciones">Modo de cotización del chatbot</label>
     <select id="aprobarCotizaciones">
       <option value="">Con mi aprobación previa (recomendado)</option>
       <option value="0">Precio directo al cliente (sin aprobación)</option>
@@ -222,26 +222,26 @@
 
     <details>
       <summary>📲 Canales avanzados (WhatsApp, teléfono, voz)</summary>
-      <label>WhatsApp — Token (Meta Cloud API)</label>
+      <label for="whatsappToken">WhatsApp — Token (Meta Cloud API)</label>
       <input id="whatsappToken" type="password" placeholder="EAAG... (opcional)" autocomplete="off">
       <div class="row">
-        <div><label>WhatsApp — Phone Number ID</label><input id="whatsappPhoneId" placeholder="1234567890"></div>
-        <div><label>WhatsApp — Verify Token</label><input id="whatsappVerifyToken" type="password" placeholder="mi-token" autocomplete="off"></div>
+        <div><label for="whatsappPhoneId">WhatsApp — Phone Number ID</label><input id="whatsappPhoneId" placeholder="1234567890"></div>
+        <div><label for="whatsappVerifyToken">WhatsApp — Verify Token</label><input id="whatsappVerifyToken" type="password" placeholder="mi-token" autocomplete="off"></div>
       </div>
       <button type="button" class="btn" id="btnProbarWa" style="margin-top:8px;">📶 Probar conexión de WhatsApp</button>
       <div id="waResultado" class="hint"></div>
       <div class="row" style="margin-top:14px;">
-        <div><label>Twilio — Account SID</label><input id="twilioAccountSid" placeholder="AC..."></div>
-        <div><label>Twilio — Auth Token</label><input id="twilioAuthToken" type="password" placeholder="••••" autocomplete="off"></div>
-        <div><label>Número del ChatVoice (E.164)</label><input id="twilioNumero" placeholder="+59899123456"><div class="hint">Se completa solo al comprar un número desde acá. Con cuenta online, las llamadas a este número las atiende TU asistente.</div></div>
+        <div><label for="twilioAccountSid">Twilio — Account SID</label><input id="twilioAccountSid" placeholder="AC..."></div>
+        <div><label for="twilioAuthToken">Twilio — Auth Token</label><input id="twilioAuthToken" type="password" placeholder="••••" autocomplete="off"></div>
+        <div><label for="twilioNumero">Número del ChatVoice (E.164)</label><input id="twilioNumero" placeholder="+59899123456"><div class="hint">Se completa solo al comprar un número desde acá. Con cuenta online, las llamadas a este número las atiende TU asistente.</div></div>
       </div>
       <div class="row">
-        <div><label>Deepgram API Key (voz→texto)</label><input id="deepgramApiKey" type="password" placeholder="••••" autocomplete="off"></div>
-        <div><label>ElevenLabs API Key (voz clonada)</label><input id="elevenlabsApiKey" type="password" placeholder="••••" autocomplete="off"></div>
+        <div><label for="deepgramApiKey">Deepgram API Key (voz→texto)</label><input id="deepgramApiKey" type="password" placeholder="••••" autocomplete="off"></div>
+        <div><label for="elevenlabsApiKey">ElevenLabs API Key (voz clonada)</label><input id="elevenlabsApiKey" type="password" placeholder="••••" autocomplete="off"></div>
       </div>
       <div class="row">
-        <div><label>ElevenLabs — Voice ID</label><input id="elevenlabsVoiceId" placeholder="voz clonada"></div>
-        <div><label>Webhook CRM (leads salientes)</label><input id="crmWebhookUrl" placeholder="https://tu-crm/webhook"></div>
+        <div><label for="elevenlabsVoiceId">ElevenLabs — Voice ID</label><input id="elevenlabsVoiceId" placeholder="voz clonada"></div>
+        <div><label for="crmWebhookUrl">Webhook CRM (leads salientes)</label><input id="crmWebhookUrl" placeholder="https://tu-crm/webhook"></div>
       </div>
       <div class="hint">Guardá primero el Account SID / Auth Token de Twilio acá arriba — la sección de números de abajo los necesita. Ningún canal necesita reiniciar el servidor: toma efecto apenas guardás.</div>
     </details>
@@ -252,7 +252,7 @@
       <div id="miNumero" class="hint" style="margin-top:8px;"></div>
       <div class="row" style="margin-top:10px;">
         <div>
-          <label>País</label>
+          <label for="paisNumero">País</label>
           <select id="paisNumero"><option value="UY">Uruguay (+598)</option><option value="US">Estados Unidos (+1)</option><option value="AR">Argentina (+54)</option></select>
         </div>
         <div style="display:flex;align-items:flex-end;">
@@ -270,19 +270,19 @@
 
     <details class="solo-vendedor">
       <summary>💳 Pagos (MercadoPago)</summary>
-      <label>MercadoPago — Access Token</label>
+      <label for="mercadopagoToken">MercadoPago — Access Token</label>
       <input id="mercadopagoToken" type="password" placeholder="APP_USR-... (cobros → payout a tu banco)" autocomplete="off">
       <div class="hint">Es OBLIGATORIO para cobrar: con tu Access Token, /comprar.html abre el checkout real de MercadoPago (tarjeta/saldo) y el dinero entra a tu cuenta MP; luego retirás a tu banco. Sin token, la compra no se puede completar (no se simula ningún pago).</div>
-      <label>Tu licencia (si compraste el plan Full con suscripción mensual)</label>
+      <label for="licenciaLocal">Tu licencia (si compraste el plan Full con suscripción mensual)</label>
       <input id="licenciaLocal" placeholder="Ej: MV-FULL-A1B2C3D4" autocomplete="off">
       <div class="hint">Sólo si elegiste la modalidad de <strong>suscripción mensual</strong> al comprar. Con esto, el programa chequea cada tanto que tu pago siga al día; si tu suscripción se cancela o falla un cobro, se desactiva el chat/voz con IA (el resto del programa sigue funcionando). Si compraste pago único, dejá esto vacío.</div>
     </details>
 
     <details class="solo-vendedor">
       <summary>✉️ Emails automáticos (bienvenida, prueba por vencer, licencia)</summary>
-      <label>Resend — API key</label>
+      <label for="resendApiKey">Resend — API key</label>
       <input id="resendApiKey" type="password" placeholder="re_... (resend.com — tier gratis)" autocomplete="off">
-      <label>Remitente</label>
+      <label for="emailFrom">Remitente</label>
       <input id="emailFrom" placeholder='Ej: MV Agendate IA <hola@tudominio.com>' autocomplete="off">
       <div class="hint">Con la API key de <a href="https://resend.com" target="_blank" rel="noreferrer">resend.com</a> (gratis hasta 100 emails/día) el programa envía solo: bienvenida al registrarse, aviso de "tu prueba vence" (2 días y 1 día antes), la licencia al confirmarse un pago, recargas de créditos y aviso de créditos bajos. Sin key no se envía nada y todo funciona igual. El aviso de vencimiento corre con el Cron diario de Vercel (ya configurado) o un cron externo a <code>/api/cron/diario</code>.</div>
     </details>
@@ -290,8 +290,8 @@
     <details class="solo-vendedor">
       <summary>🎁 Modo demostración (para mostrar el producto)</summary>
       <div class="row">
-        <div><label>Instancia de demo con cupo</label><select id="demoLimite"><option value="">No (producto completo)</option><option value="1">Sí (limitar usos)</option></select></div>
-        <div><label>Usos gratis con IA</label><input id="demoMaxUsos" type="number" placeholder="3"></div>
+        <div><label for="demoLimite">Instancia de demo con cupo</label><select id="demoLimite"><option value="">No (producto completo)</option><option value="1">Sí (limitar usos)</option></select></div>
+        <div><label for="demoMaxUsos">Usos gratis con IA</label><input id="demoMaxUsos" type="number" placeholder="3"></div>
       </div>
       <div class="hint">Con "Sí", las funciones de IA (chat y análisis de fotos) son gratis pero limitadas a N usos por visitante, con todas las opciones. En el producto vendido dejá "No" (ilimitado).</div>
       <div class="hint" style="margin-top:10px"><a href="/demo-caso.html"><strong>→ Preparar la demo para mostrar a un cliente</strong></a> — deja el catálogo de $100, la cita agendada y el cobro por MercadoPago listos para hacer el circuito completo en vivo.</div>
@@ -299,7 +299,7 @@
 
     <details class="solo-vendedor" id="detSeguridad">
       <summary>🔒 Seguridad</summary>
-      <label>Clave de administración (protege este panel y el importador)</label>
+      <label for="adminKeyNew">Clave de administración (protege este panel y el importador)</label>
       <input id="adminKeyNew" type="password" placeholder="dejá vacío para no cambiarla" autocomplete="off">
       <div class="hint">Si la definís, la próxima vez tendrás que pegarla arriba para entrar.</div>
       <div class="hint" style="margin-top:8px;">💡 Para <strong>vender</strong> el producto con tu API key ya embebida y oculta al público, en el servidor corré <code>npm run embeber-clave</code> — la clave viaja con el producto sin quedar a la vista.</div>
@@ -313,14 +313,14 @@
     <h2>🧰 Mi profesión / precios de mercado</h2>
     <div class="sub">Creá tu propia profesión u oficio (cualquier rubro con agenda y visitas: médicos, abogados, talleres, estética, etc.) con tus tipos de trabajo y precios. Y si querés, la IA investiga qué se cobra en el mercado de tu país y te sugiere los valores.</div>
 
-    <label>Nombre de la profesión / oficio</label>
+    <label for="coNombre">Nombre de la profesión / oficio</label>
     <div class="row">
       <input id="coNombre" placeholder="Ej: Médico a domicilio, Taller mecánico, Escribana">
       <label style="display:flex;align-items:center;gap:8px;margin:0;"><input type="checkbox" id="coHonorarios" style="width:auto;"> Cobra honorarios (sin materiales)</label>
     </div>
     <div class="row">
-      <div><label>Traslado por km</label><input id="coTrasladoKm" type="number" value="20"></div>
-      <div><label>Traslado mínimo</label><input id="coTrasladoMin" type="number" value="150"></div>
+      <div><label for="coTrasladoKm">Traslado por km</label><input id="coTrasladoKm" type="number" value="20"></div>
+      <div><label for="coTrasladoMin">Traslado mínimo</label><input id="coTrasladoMin" type="number" value="150"></div>
     </div>
     <label>Tipos de trabajo</label>
     <div id="coTrabajos"></div>
@@ -332,7 +332,7 @@
       <summary>🤖 Sugerir precios de mercado con IA</summary>
       <div class="hint">La IA estima qué se cobra hoy en tu país (según el país configurado arriba) por cada trabajo del oficio elegido — mano de obra o honorarios y materiales cuando corresponde. Son valores de referencia: revisalos y aplicalos si te cierran.</div>
       <div class="row" style="margin-top:10px;">
-        <div><label>Oficio a investigar</label><select id="ipOficio"></select></div>
+        <div><label for="ipOficio">Oficio a investigar</label><select id="ipOficio"></select></div>
         <div style="display:flex;align-items:flex-end;"><button type="button" class="btn" id="btnInvestigar">🔎 Investigar mercado</button></div>
       </div>
       <div id="ipResultado" style="margin-top:10px;font-size:.88rem;"></div>
@@ -515,19 +515,19 @@ function pintarEquipo() {
   $('#listaProfesionales').innerHTML = equipo.map((p, i) => `
     <div style="${i>0?'border-top:1px solid var(--line);margin-top:14px;padding-top:14px;':''}">
       <div class="row">
-        <div><label>Nombre</label><input data-campo="nombre" data-i="${i}" value="${esc(p.nombre||'')}" placeholder="Ej: Juan Pérez"></div>
-        <div><label>Oficio</label><select data-campo="oficio" data-i="${i}">${oficioOpts(p.oficio)}</select></div>
+        <div><label>Nombre</label><input data-campo="nombre" aria-label="Nombre del profesional" data-i="${i}" value="${esc(p.nombre||'')}" placeholder="Ej: Juan Pérez"></div>
+        <div><label>Oficio</label><select data-campo="oficio" aria-label="Oficio del profesional" data-i="${i}">${oficioOpts(p.oficio)}</select></div>
       </div>
       <div class="row">
-        <div><label>Inicio jornada</label><input type="time" data-campo="horarioInicio" data-i="${i}" value="${esc(p.horarioInicio||'08:00')}"></div>
-        <div><label>Fin jornada</label><input type="time" data-campo="horarioFin" data-i="${i}" value="${esc(p.horarioFin||'19:00')}"></div>
+        <div><label>Inicio jornada</label><input type="time" data-campo="horarioInicio" aria-label="Inicio de jornada" data-i="${i}" value="${esc(p.horarioInicio||'08:00')}"></div>
+        <div><label>Fin jornada</label><input type="time" data-campo="horarioFin" aria-label="Fin de jornada" data-i="${i}" value="${esc(p.horarioFin||'19:00')}"></div>
       </div>
       <div class="row">
-        <div><label>Almuerzo — inicio</label><input type="time" data-campo="almuerzoInicio" data-i="${i}" value="${esc(p.almuerzoInicio||'12:30')}"></div>
-        <div><label>Almuerzo — fin</label><input type="time" data-campo="almuerzoFin" data-i="${i}" value="${esc(p.almuerzoFin||'13:30')}"></div>
+        <div><label>Almuerzo — inicio</label><input type="time" data-campo="almuerzoInicio" aria-label="Almuerzo: hora de inicio" data-i="${i}" value="${esc(p.almuerzoInicio||'12:30')}"></div>
+        <div><label>Almuerzo — fin</label><input type="time" data-campo="almuerzoFin" aria-label="Almuerzo: hora de fin" data-i="${i}" value="${esc(p.almuerzoFin||'13:30')}"></div>
       </div>
       <div class="row">
-        <div><label>Días libres (0=domingo…6=sábado)</label><input data-campo="diasLibres" data-i="${i}" value="${esc(p.diasLibres??'0')}" placeholder="0,6"></div>
+        <div><label>Días libres (0=domingo…6=sábado)</label><input data-campo="diasLibres" aria-label="Dias libres (0=domingo a 6=sabado)" data-i="${i}" value="${esc(p.diasLibres??'0')}" placeholder="0,6"></div>
         <div style="display:flex;align-items:flex-end;"><button type="button" class="btn" style="background:#fdeaea;color:#b23;margin:0;" data-quitar="${i}">🗑 Quitar</button></div>
       </div>
     </div>`).join('') || '<div class="hint">Sin profesionales adicionales — se usa el único de arriba.</div>';

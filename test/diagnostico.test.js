@@ -66,6 +66,22 @@ test('refleja MercadoPago y sitioUrl configurados, sin exponer el token', async 
   assert.ok(!JSON.stringify(d).includes('TEST-token-bien-secreto'), 'el token nunca puede viajar en esta respuesta');
 });
 
+test('sin Twilio configurado, la telefonía responde 200 y no un error', async () => {
+  // Que Twilio no esté configurado es el estado normal de una instalación
+  // recién hecha. Con un status de error, el navegador marcaba rojo en la
+  // consola del panel en CADA carga —indistinguible de una falla real— y en
+  // monitoreo figuraba como error. El panel ya trata `ok:false` como "no hay
+  // nada que mostrar", así que el 200 no le cambia nada.
+  await fetch(`${base}/api/config`, { method: 'POST', headers: J,
+    body: JSON.stringify({ twilioAccountSid: '', twilioAuthToken: '' }) });
+  const r = await fetch(`${base}/api/telefonia/mis-numeros`);
+  assert.equal(r.status, 200);
+  const d = await r.json();
+  assert.equal(d.ok, false);
+  assert.equal(d.configurado, false);
+  assert.deepEqual(d.numeros, [], 'el panel itera esta lista: no puede venir sin definir');
+});
+
 test('es pública: no exige clave de administración', async () => {
   await fetch(`${base}/api/config`, { method: 'POST', headers: J, body: JSON.stringify({ adminKey: 'clave-secreta' }) });
   delete process.env.MV_ESCRITORIO;
