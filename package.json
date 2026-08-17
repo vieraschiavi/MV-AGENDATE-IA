@@ -33,7 +33,8 @@
     "test": "node --test --import ./scripts/aislar-datos-test.js",
     "preempaquetar-exe-legado": "node scripts/ofuscar.js --legado",
     "empaquetar-exe-legado": "electron-builder --win --x64 --publish never --config.nsis.artifactName=MV-Agendate-IA-Setup-Legado.exe",
-    "demo-caso": "node scripts/demo-caso.js"
+    "demo-caso": "node scripts/demo-caso.js",
+    "empaquetar-exe-firmado": "node scripts/firmar-exe.js"
   },
   "engines": {
     "node": ">=20"

@@ -32,6 +32,10 @@
   .cita .precio { color:var(--cel); font-weight:800; font-size:1.15rem; }
   .cita .titulo { font-weight:600; font-size:.98rem; }
   .cita .meta { font-size:.82rem; color:#64748b; }
+  .acciones { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .mini-btn { flex:1; min-width:110px; min-height:44px; display:flex; align-items:center; justify-content:center; gap:5px; background:#eef4fb; color:#16466e; border:1px solid #d6e3f0; border-radius:10px; font-size:.82rem; font-weight:700; cursor:pointer; text-decoration:none; padding:0 10px; font-family:inherit; }
+  .mini-btn.oro { background:#fff4dd; border-color:#f0d9a8; color:#7a5a10; }
+  .link-cobro { word-break:break-all; background:#f6f9fc; border:1px solid #e3e9f0; border-radius:9px; padding:9px; font-size:.75rem; margin-top:8px; color:#5a6b7c; }
   /* Cotizador */
   label { display:block; font-size:.78rem; font-weight:600; color:#54626f; margin:10px 0 4px; }
   input, select { width:100%; padding:12px; border:1.5px solid #d7e0ea; border-radius:12px; font-size:1rem; background:#fff; }
@@ -93,6 +97,13 @@
     <div id="chatMsgs"></div>
   </section>
 
+  <!-- CLIENTES (CRM) -->
+  <section class="vista" id="vClientes">
+    <h2>👥 Mis clientes</h2>
+    <input id="buscaCliente" placeholder="Buscar por nombre o teléfono" aria-label="Buscar cliente" style="margin-bottom:10px;">
+    <div id="listaClientes"></div>
+  </section>
+
   <!-- CONTACTO -->
   <section class="vista" id="vContacto">
     <h2>📞 Hablá con nosotros</h2>
@@ -112,6 +123,7 @@
 <nav>
   <button class="on" data-v="vHome"><span class="ic">🗓️</span>Agenda</button>
   <button data-v="vCotizar"><span class="ic">💰</span>Cotizar</button>
+  <button data-v="vClientes"><span class="ic">👥</span>Clientes</button>
   <button data-v="vChat"><span class="ic">💬</span>Chat</button>
   <button data-v="vContacto"><span class="ic">📞</span>Contacto</button>
 </nav>
@@ -122,6 +134,9 @@ const $ = (s) => document.querySelector(s);
 // como APK (Capacitor) se configura con el engranaje ⚙️ y queda guardada.
 const esApp = location.protocol === 'capacitor:' || location.protocol === 'file:' || location.hostname === 'localhost' && !location.pathname.startsWith('/movil');
 let API = esApp ? (localStorage.getItem('mvServidor') || '') : '';
+// Citas del dia en memoria: el cobro necesita el telefono y el nombre del
+// cliente para armar el mensaje de WhatsApp sin volver a pedirlos al servidor.
+let citasHoy = [];
 let sessionId = null;
 
 // --- MODO DEMOSTRACIÓN OFFLINE ---
@@ -162,13 +177,18 @@ modalCfg.innerHTML = `
   <div style="background:#fff;border-radius:18px;padding:22px;max-width:420px;width:100%;">
     <h2 style="color:#0f2a43;margin-bottom:6px;">⚙️ Servidor del negocio</h2>
     <p style="font-size:.85rem;color:#5a6b7c;margin-bottom:12px;">Pegá la dirección que te dio tu proveedor de MV Agendate IA (ej: https://tu-negocio.vercel.app). Sin conectar, la app funciona en <strong>modo demostración</strong> con catálogo de ejemplo.</p>
+    <label for="inSrv" style="font-size:.8rem;font-weight:600;color:#41535f;">Dirección del servidor</label>
     <input id="inSrv" placeholder="https://..." style="margin-bottom:12px;" autocapitalize="off" autocorrect="off">
+    <label for="inClave" style="font-size:.8rem;font-weight:600;color:#41535f;">Clave de administración</label>
+    <input id="inClave" type="password" placeholder="Solo vos" style="margin-bottom:6px;" autocapitalize="off" autocorrect="off" autocomplete="off">
+    <p style="font-size:.78rem;color:#7a8a9a;margin-bottom:12px;">Es la misma del panel de PC. Hace falta para cobrar, ver tus clientes y cambiar el estado de un trabajo. Queda guardada solo en este teléfono.</p>
     <button class="btn" id="btnSrvOk" style="margin-top:0;">Guardar y conectar</button>
     <button class="btn" id="btnSrvCerrar" style="margin-top:8px;background:#e8edf2;color:#22303e;">Cerrar</button>
   </div>`;
 document.body.appendChild(modalCfg);
 function abrirCfg() {
   modalCfg.querySelector('#inSrv').value = localStorage.getItem('mvServidor') || '';
+  modalCfg.querySelector('#inClave').value = localStorage.getItem('mvClaveAdmin') || '';
   modalCfg.style.display = 'grid';
 }
 document.getElementById('cfgSrv').onclick = abrirCfg;
@@ -177,11 +197,59 @@ modalCfg.querySelector('#btnSrvOk').onclick = () => {
   let url = modalCfg.querySelector('#inSrv').value.trim().replace(/\/$/, '');
   if (url && !/^https?:\/\//.test(url)) url = 'https://' + url;
   localStorage.setItem('mvServidor', url);
+  localStorage.setItem('mvClaveAdmin', modalCfg.querySelector('#inClave').value.trim());
   API = url;
   modalCfg.style.display = 'none';
   cargarOficios();
   cargarAgendaHoy();
+  cargarClientes();
 };
+
+// La clave viaja SOLO al servidor que configuró el dueño, en el header que
+// espera adminOCuenta. Sin clave, las funciones de gestión (cobrar, clientes,
+// cambiar estado) responden 401 y la app lo dice en vez de fallar en silencio.
+function cabecerasAdmin() {
+  const h = { 'Content-Type': 'application/json' };
+  const k = localStorage.getItem('mvClaveAdmin') || '';
+  if (k) h['X-Admin-Key'] = k;
+  return h;
+}
+function faltaServidor() { return esApp && !API; }
+function hayGestion() { return !faltaServidor() && !!(localStorage.getItem('mvClaveAdmin') || ''); }
+
+// ---- Clientes (CRM) ----
+// Es la agenda de contactos del negocio: en el teléfono lo que más sirve es
+// poder llamar o escribir por WhatsApp de una, sin copiar el número a mano.
+let clientesCargados = [];
+async function cargarClientes() {
+  const caja = $('#listaClientes');
+  if (!caja) return;
+  if (faltaServidor()) { caja.innerHTML = '<div class="card">Conectá el servidor de tu negocio con ⚙️ para ver tus clientes.</div>'; return; }
+  try {
+    const r = await fetch(API + '/api/clientes', { headers: cabecerasAdmin() });
+    if (!r.ok) throw new Error('no');
+    clientesCargados = await r.json();
+    pintarClientes();
+  } catch { caja.innerHTML = '<div class="card">No pude traer tus clientes del servidor.</div>'; }
+}
+function pintarClientes() {
+  const q = ($('#buscaCliente')?.value || '').toLowerCase().trim();
+  const lista = clientesCargados.filter((c) =>
+    !q || (c.nombre || '').toLowerCase().includes(q) || String(c.telefono || '').includes(q));
+  $('#listaClientes').innerHTML = lista.map((c) => {
+    const tel = String(c.telefono || '').replace(/\D/g, '');
+    return `<div class="card cita">
+      <div class="titulo">${c.nombre || 'Sin nombre'}</div>
+      <div class="meta">📞 ${c.telefono || '—'}${c.direccion ? ' · 📍 ' + c.direccion : ''}</div>
+      ${tel ? `<div class="acciones">
+        <a class="mini-btn" href="tel:${tel}">📞 Llamar</a>
+        <a class="mini-btn" href="https://wa.me/${tel}" target="_blank" rel="noopener">💬 WhatsApp</a>
+      </div>` : ''}
+    </div>`;
+  }).join('') || '<div class="card">Todavía no tenés clientes cargados.</div>';
+}
+$('#buscaCliente')?.addEventListener('input', pintarClientes);
+cargarClientes();
 
 // Tabs
 document.querySelectorAll('nav button').forEach((b) => b.onclick = () => {
@@ -197,16 +265,79 @@ function pintarCitas(citas) {
       <div class="precio">${c.cotizacion?.total ? '$ ' + c.cotizacion.total.toLocaleString('es-UY') : '—'}</div>
       <div class="titulo">${c.trabajoNombre} — ${c.clienteNombre}</div>
       <div class="meta">🕐 ${c.inicio}-${c.fin} · 📍 ${c.direccion || 'sin dirección'} · ${c.estado}</div>
+      ${filaGestion(c)}
     </div>`).join('') || '<div class="card">No tenés citas agendadas para hoy.</div>';
 }
+
+// Acciones de gestión sobre la cita — lo mismo que hace el panel de PC, pero
+// al alcance del pulgar mientras el profesional está en la calle.
+function filaGestion(c) {
+  if (!hayGestion()) return '';
+  if (c.cobro?.estado === 'pagado') {
+    return '<div class="meta" style="color:#1a7f37;font-weight:700;margin-top:8px;">✅ Cobrado</div>';
+  }
+  const acciones = [];
+  if (c.estado !== 'en_curso') acciones.push(`<button class="mini-btn" data-curso="${c.id}">▶️ Empezar</button>`);
+  if (c.estado !== 'terminada') acciones.push(`<button class="mini-btn" data-fin="${c.id}">✔️ Terminada</button>`);
+  if (c.cotizacion?.total) acciones.push(`<button class="mini-btn oro" data-cobrar="${c.id}">💳 Cobrar</button>`);
+  return `<div class="acciones">${acciones.join('')}</div><div id="cobro-${c.id}"></div>`;
+}
+
+// Cobro: el monto NO se pide ni se manda: lo pone el servidor con lo que ya
+// estaba cotizado. Igual que en el panel, para que no haya forma de cobrar de
+// más desde el teléfono.
+async function cobrarCita(id) {
+  const caja = document.getElementById('cobro-' + id);
+  caja.innerHTML = '<div class="meta">Generando el link…</div>';
+  try {
+    const r = await fetch(API + '/api/citas/' + encodeURIComponent(id) + '/cobrar',
+      { method: 'POST', headers: cabecerasAdmin(), body: '{}' });
+    const d = await r.json();
+    if (r.status === 401) throw new Error('Clave de administración incorrecta. Revisala en ⚙️.');
+    if (!r.ok) throw new Error(d.error || 'No se pudo generar el cobro.');
+    if (d.yaPagado) { caja.innerHTML = '<div class="meta" style="color:#1a7f37;font-weight:700;">✅ Ya estaba pagado</div>'; return; }
+    const cita = citasHoy.find((c) => c.id === id) || {};
+    const texto = `Hola ${cita.clienteNombre || ''}, te paso el link para abonar ${d.moneda || ''} ${d.monto || ''} por *${cita.trabajoNombre || 'el trabajo'}*: ${d.link}`;
+    // Mandarlo por WhatsApp es el motivo de tener esto en el teléfono: el
+    // profesional cobra en la puerta del cliente, sin volver a la computadora.
+    const wa = cita.telefono
+      ? `https://wa.me/${String(cita.telefono).replace(/\D/g, '')}?text=${encodeURIComponent(texto)}`
+      : `https://wa.me/?text=${encodeURIComponent(texto)}`;
+    caja.innerHTML =
+      `<a class="btn" style="margin-top:8px;display:block;text-align:center;text-decoration:none;" href="${wa}" target="_blank" rel="noopener">📲 Enviar link por WhatsApp</a>` +
+      `<div class="link-cobro">${d.link}</div>`;
+  } catch (e) {
+    caja.innerHTML = `<div class="meta" style="color:#b23;">${e.message}</div>`;
+  }
+}
+
+async function cambiarEstado(id, estado) {
+  try {
+    const r = await fetch(API + '/api/citas/' + encodeURIComponent(id) + '/estado',
+      { method: 'POST', headers: cabecerasAdmin(), body: JSON.stringify({ estado }) });
+    if (r.status === 401) { alert('Clave de administración incorrecta. Revisala en ⚙️.'); return; }
+    if (!r.ok) { const d = await r.json().catch(() => ({})); alert(d.error || 'No se pudo cambiar el estado.'); return; }
+    cargarAgendaHoy();
+  } catch { alert('No pude conectar con el servidor.'); }
+}
+
+// Delegación: los botones se recrean en cada refresco de la agenda.
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-cobrar],[data-curso],[data-fin]');
+  if (!b) return;
+  if (b.dataset.cobrar) cobrarCita(b.dataset.cobrar);
+  else if (b.dataset.curso) cambiarEstado(b.dataset.curso, 'en_curso');
+  else if (b.dataset.fin) cambiarEstado(b.dataset.fin, 'terminada');
+});
 async function cargarAgendaHoy() {
   if (esApp && !API) { $('#bannerDemo').style.display = 'block'; $('#listaCitas').innerHTML = '<div class="card">Conectá el servidor de tu negocio para ver tu agenda real.</div>'; return; }
   try {
     const hoy = new Date().toISOString().slice(0, 10);
     const r = await fetch(API + '/api/citas/dia/' + hoy);
     const citas = await r.json();
+    citasHoy = Array.isArray(citas) ? citas : [];
     $('#bannerDemo').style.display = 'none';
-    pintarCitas(citas);
+    pintarCitas(citasHoy);
   } catch { $('#bannerDemo').style.display = 'block'; $('#listaCitas').innerHTML = '<div class="card">No pude conectar con el servidor.</div>'; }
 }
 cargarAgendaHoy();
@@ -309,7 +440,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catc
 (function(){
   const DEST='vieraschiavi@gmail.com';
   const b=document.createElement('button');
-  b.textContent='✉ Contacto';
+  b.textContent='✉️ Contacto';
   b.style.cssText='position:fixed;right:14px;bottom:74px;z-index:9998;background:#1f7ae0;color:#fff;border:0;border-radius:24px;padding:11px 16px;font:600 .9rem system-ui;box-shadow:0 8px 22px #0006;';
   const ov=document.createElement('div');
   ov.style.cssText='position:fixed;inset:0;background:#0b1f33cc;z-index:9999;display:none;align-items:center;justify-content:center;padding:16px;';
