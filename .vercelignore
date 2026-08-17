@@ -5,7 +5,18 @@
 /voces/
 /promo/*.mp4
 /dist/
-/movil/
+# De /movil/ sube SOLO la app web (index.html, manifest.json, icon.svg, sw.js:
+# los mismos cuatro archivos que construir-apk-gradle.sh mete en la APK), para
+# que /movil se pueda abrir desde el dominio y mostrar la app del celular sin
+# instalar nada. Antes se excluía la carpeta entera y esa ruta daba 404.
+# Se deja afuera lo que no aplica a serverless: el proyecto Android, la carpeta
+# que genera Capacitor, sus dependencias y los PNG del ícono (el manifest usa
+# el .svg; los PNG son insumo del build de la APK, no de la web).
+/movil/android-apk/
+/movil/www/
+/movil/node_modules/
+/movil/package-lock.json
+/movil/*.png
 /data/
 *.log
 node_modules/
