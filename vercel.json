@@ -5,7 +5,7 @@
   "outputDirectory": "public",
   "functions": {
     "api/index.js": {
-      "includeFiles": "{src/data,descargas}/**",
+      "includeFiles": "{src/data,descargas,movil}/**",
       "maxDuration": 60
     }
   },
@@ -87,6 +87,14 @@
     {
       "source": "/veterinarios-a-domicilio",
       "destination": "/oficios/veterinarios-a-domicilio.html"
+    },
+    {
+      "source": "/movil/(.*)",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/movil",
+      "destination": "/api/index.js"
     },
     {
       "source": "/api/(.*)",
