@@ -31,6 +31,14 @@ let salidaServidor = ''; // últimas líneas de stdout/stderr del servidor, para
 let logStream = null;
 let avisarPuertoReal = null;
 const puertoReal = new Promise((resolve) => { avisarPuertoReal = resolve; });
+// Corte temprano para esperarServidor(): sin esto, un fallo detectado al
+// toque (falta el archivo, spawn tira error) igual esperaba los 30 segundos
+// completos del timeout y terminaba mostrando el mensaje genérico ENCIMA del
+// específico que ya se había mostrado — porque crearVentana() arranca su
+// propia espera en paralelo a iniciarServidor(), no encadenada.
+let avisarFalloTemprano = null;
+const falloTemprano = new Promise((_, reject) => { avisarFalloTemprano = reject; });
+falloTemprano.catch(() => {}); // por si nadie más lo escucha todavía: no es un rechazo sin manejar
 
 function logArchivo() {
   try {
@@ -69,6 +77,25 @@ function mostrarError(titulo, detalle) {
 
 function iniciarServidor() {
   logStream = fs.createWriteStream(logArchivo() || path.join(RAIZ, 'servidor.log'), { flags: 'a' });
+  logStream.write(`\n[main] ${new Date().toISOString()} arrancando — execPath=${process.execPath} servidor=${SERVIDOR} cwd=${RAIZ}\n`);
+
+  // Si el antivirus puso en cuarentena o borró el archivo (el instalador no
+  // está firmado digitalmente, así que es un blanco típico de falsos
+  // positivos), spawn() intenta ejecutar algo que no existe. En vez de dejar
+  // que eso termine en un timeout genérico de "no anunció su puerto" sin
+  // ninguna pista, se detecta ACÁ y se lo dice al cliente con precisión.
+  if (!fs.existsSync(SERVIDOR)) {
+    const msg = `Falta el archivo del servidor: ${SERVIDOR}\n\n` +
+      'Es lo que hace un antivirus cuando pone en cuarentena o borra un archivo del programa ' +
+      '(pasa con instaladores sin firma digital, como este). Revisá la cuarentena de tu antivirus ' +
+      'y restaurá la carpeta de instalación completa, o reinstalá el programa.';
+    logStream.write(`[main] ${msg}\n`);
+    const err = new Error(msg);
+    err.titulo = 'No encuentro un archivo del programa.';
+    avisarFalloTemprano(err);
+    return;
+  }
+
   const envExtra = { ELECTRON_RUN_AS_NODE: '1', PORT: String(PUERTO_PEDIDO), MV_ESCRITORIO: '1' };
   if (ownerConfig.diasPrueba !== null) envExtra.DIAS_PRUEBA = String(ownerConfig.diasPrueba);
   const env = { ...process.env, ...envExtra };
@@ -96,12 +123,28 @@ function iniciarServidor() {
   procesoServidor.stdout.on('data', capturar);
   procesoServidor.stderr.on('data', capturar);
   procesoServidor.on('error', (err) => {
-    mostrarError('No pude arrancar el servidor interno.', err.stack || err.message);
+    logStream?.write(`[main] error de spawn: ${err.stack || err.message}\n`);
+    const e = new Error(err.stack || err.message);
+    e.titulo = 'No pude arrancar el servidor interno.';
+    avisarFalloTemprano(e);
+    // Directo también, por si esto pasa DESPUÉS de que la ventana ya cargó el
+    // panel con éxito (un crash en caliente, no al arrancar): ahí
+    // esperarServidor ya terminó hace rato y nadie más va a mostrar esto.
+    mostrarError(e.titulo, e.message);
   });
-  procesoServidor.on('exit', (codigo, senial) => {
+  // 'close' y no 'exit': Node documenta que 'exit' puede dispararse ANTES de
+  // que termine de llegar el stdout/stderr bufferizado del proceso hijo — un
+  // proceso que muere rápido después de escribir un error podía mostrar acá
+  // "(sin salida)" con el error real todavía en tránsito. 'close' se dispara
+  // recién cuando los streams de stdio ya se cerraron del todo.
+  procesoServidor.on('close', (codigo, senial) => {
     procesoServidor = null;
     if (codigo && codigo !== 0) {
-      mostrarError(`El servidor se cerró solo (código ${codigo}).`, salidaServidor || `(sin salida)${senial ? ` señal: ${senial}` : ''}`);
+      const detalle = salidaServidor || `(sin salida)${senial ? ` señal: ${senial}` : ''}`;
+      const e = new Error(detalle);
+      e.titulo = `El servidor se cerró solo (código ${codigo}).`;
+      avisarFalloTemprano(e);
+      mostrarError(e.titulo, e.message); // idem: por si es un crash post-arranque
     }
   });
 }
@@ -113,7 +156,14 @@ function iniciarServidor() {
 async function esperarServidor(msMax = 30000) {
   const puerto = await Promise.race([
     puertoReal,
-    new Promise((_, reject) => setTimeout(() => reject(new Error('El servidor no anunció su puerto a tiempo.\n\n' + (salidaServidor || '(sin salida)'))), msMax).unref?.())
+    falloTemprano,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(
+      'El servidor no anunció su puerto a tiempo.\n\n' + (salidaServidor || '(sin salida)') +
+      '\n\nSi el detalle de arriba está vacío, revisá:\n' +
+      '  - Que tu antivirus no haya puesto en cuarentena algún archivo de la carpeta de instalación\n' +
+      '    (pasa con instaladores sin firma digital, como este).\n' +
+      '  - El log completo, que puede tener más que esta pantalla no alcanza a mostrar.'
+    )), msMax).unref?.())
   ]);
   await new Promise((resolve, reject) => {
     const probar = (restantes) => {
@@ -151,7 +201,7 @@ async function crearVentana() {
     // publicidad adentro de la app instalada.
     if (!ventana.isDestroyed()) ventana.loadURL(`http://localhost:${puerto}${RUTA_APP}`);
   } catch (e) {
-    mostrarError('No pude iniciar el servidor.', e.message);
+    mostrarError(e.titulo || 'No pude iniciar el servidor.', e.message);
   }
 }
 
