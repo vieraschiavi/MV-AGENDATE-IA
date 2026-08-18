@@ -55,7 +55,7 @@
     <img src="/logo-mv.svg" alt="MV" style="width:44px;height:44px;border-radius:10px;flex:0 0 auto;">
     <div>
       <h1>Configuración — MV Agendate IA</h1>
-      <p>Solo 3 datos para arrancar: quién sos, tu país y tu horario. Todo lo demás es opcional y vive en "Avanzado". ¿Preferís que te guíe paso a paso? <a href="#" id="btnAsistente" style="color:#e3a72f;font-weight:700;">🪄 Abrir el asistente guiado</a></p>
+      <p>Solo 3 datos para arrancar: quién sos, tu país y tu horario. Todo lo demás es opcional y vive en "Avanzado". ¿Preferís que te guíe paso a paso? <a href="#" id="btnAsistente" style="color:#e3a72f;font-weight:700;">Abrir el asistente guiado</a></p>
     </div>
   </div>
 </header>
@@ -77,7 +77,7 @@
   </div>
 
   <div class="card" id="cardLicencia" style="display:none;">
-    <h2>🎁 Prueba y licencia</h2>
+    <h2>Prueba y licencia</h2>
     <div class="sub" id="pruebaEstado">Cargando estado de la prueba…</div>
     <label for="codigoLicencia">Código de licencia (el que te llegó al comprar)</label>
     <input id="codigoLicencia" placeholder="Ej: MV-FULL-A1B2C3D4" autocomplete="off">
@@ -86,7 +86,7 @@
   </div>
 
   <form id="form" class="card">
-    <h2>👷 Vos y tu negocio</h2>
+    <h2>Vos y tu negocio</h2>
     <div class="sub">Con esto el asistente ya se presenta con tu nombre y cotiza en tu moneda.</div>
     <div class="row">
       <div><label for="nombreProfesional">Tu nombre (o el de tu negocio)</label><input id="nombreProfesional" placeholder="Juan Pérez"></div>
@@ -107,7 +107,7 @@
     </div>
     <div class="hint">Podés pegar una URL o subir una imagen (se guarda embebida). Si lo dejás vacío, usa el logo MV.</div>
 
-    <h2 style="margin-top:22px;">🌎 Tu país</h2>
+    <h2 style="margin-top:22px;">Tu país</h2>
     <div class="sub">Elegí tu país: la moneda de cotización y facturación se ajusta sola (o facturá en USD si preferís). El estimador de impuestos y el sugeridor de precios de mercado también usan esto.</div>
     <div class="row">
       <div><label for="pais">País</label><select id="pais"></select></div>
@@ -119,7 +119,7 @@
       </div>
     </div>
 
-    <h2 style="margin-top:22px;">🗓️ Jornada y descansos</h2>
+    <h2 style="margin-top:22px;">Jornada y descansos</h2>
     <div class="sub">El motor de agenda usa esto para no ofrecer horarios fuera de tu jornada, respetar tu almuerzo y no agendar en tus días libres.</div>
     <div class="row">
       <div><label for="horarioInicio">Inicio de jornada</label><input id="horarioInicio" type="time" value="08:00"></div>
@@ -134,8 +134,8 @@
     <input type="hidden" id="diasLibres">
 
     <details>
-      <summary>⚙️ Avanzado — IA propia, créditos y modo de cotización</summary>
-    <h3 style="margin:0 0 4px;">🔑 Usar mi propia clave de IA (opcional)</h3>
+      <summary>Avanzado — IA propia, créditos y modo de cotización</summary>
+    <h3 style="margin:0 0 4px;">Usar mi propia clave de IA (opcional)</h3>
     <div class="sub">La cuenta online ya viene con IA incluida (créditos) — esto es solo si preferís usar tu propia clave de Claude, ChatGPT o Gemini, o si instalaste la versión descargable.</div>
     <label for="proveedorIA">Proveedor de IA</label>
     <select id="proveedorIA">
@@ -189,7 +189,7 @@
     <label for="modeloIA" style="margin-top:12px;">Modelo a usar <span style="font-weight:400;color:#7a8a9a;">— acá controlás cuánto gastás</span></label>
     <div style="display:flex;gap:8px;align-items:flex-start;">
       <select id="modeloIA" style="flex:1;margin:0;"></select>
-      <button class="btn" type="button" id="btnActualizarModelos" style="margin:0;width:auto;white-space:nowrap;">🔄 Actualizar</button>
+      <button class="btn" type="button" id="btnActualizarModelos" style="margin:0;width:auto;white-space:nowrap;">Actualizar</button>
     </div>
     <div class="hint" id="modelosHint">
       Entre el modelo más caro y el más barato de un mismo proveedor hay <strong>10× o más de diferencia por token</strong>,
@@ -199,7 +199,7 @@
     <div class="hint">Se guarda en tu servidor, nunca se expone al cliente. Al guardar con una key válida, el chatbot pasa de "modo demo" a IA real automáticamente.</div>
 
     <div class="solo-vendedor">
-    <h3 style="margin:14px 0 4px;">💳 Créditos de IA (solo para el vendedor)</h3>
+    <h3 style="margin:14px 0 4px;">Créditos de IA (solo para el vendedor)</h3>
     <div class="sub">Si vendés cuentas SaaS, con TU key le vendés "créditos" a cada cuenta: usan tu IA y cada mensaje descuenta su saldo. Cuando se agota, la IA se corta hasta que recarguen por MercadoPago. (Si preferís que cada cuenta traiga su propia key, desactivalo.)</div>
     <div class="row">
       <div><label for="creditosSaas">Modo créditos</label><select id="creditosSaas"><option value="">Activado (vendés créditos)</option><option value="0">Desactivado (cada cuenta trae su key)</option></select></div>
@@ -210,7 +210,7 @@
     <div class="hint">El saldo se descuenta al costo real de la IA × el margen. Ej: con margen 2.5, US$ 10 de recarga ≈ US$ 4 de costo real = cientos de mensajes. Ajustá según tu estrategia.</div>
     </div>
 
-    <h3 style="margin:14px 0 4px;">✅ Aprobación de cotizaciones</h3>
+    <h3 style="margin:14px 0 4px;">✔ Aprobación de cotizaciones</h3>
     <div class="sub">El precio que calcula el asistente es un sugerido: por defecto NO se lo dice al cliente hasta que vos lo apruebes (o ajustes) desde el Panel. Te llega un aviso por WhatsApp con cada cotización pendiente.</div>
     <label for="aprobarCotizaciones">Modo de cotización del chatbot</label>
     <select id="aprobarCotizaciones">
@@ -221,14 +221,14 @@
     </details>
 
     <details>
-      <summary>📲 Canales avanzados (WhatsApp, teléfono, voz)</summary>
+      <summary>Canales avanzados (WhatsApp, teléfono, voz)</summary>
       <label for="whatsappToken">WhatsApp — Token (Meta Cloud API)</label>
       <input id="whatsappToken" type="password" placeholder="EAAG... (opcional)" autocomplete="off">
       <div class="row">
         <div><label for="whatsappPhoneId">WhatsApp — Phone Number ID</label><input id="whatsappPhoneId" placeholder="1234567890"></div>
         <div><label for="whatsappVerifyToken">WhatsApp — Verify Token</label><input id="whatsappVerifyToken" type="password" placeholder="mi-token" autocomplete="off"></div>
       </div>
-      <button type="button" class="btn" id="btnProbarWa" style="margin-top:8px;">📶 Probar conexión de WhatsApp</button>
+      <button type="button" class="btn" id="btnProbarWa" style="margin-top:8px;">Probar conexión de WhatsApp</button>
       <div id="waResultado" class="hint"></div>
       <div class="row" style="margin-top:14px;">
         <div><label for="twilioAccountSid">Twilio — Account SID</label><input id="twilioAccountSid" placeholder="AC..."></div>
@@ -247,7 +247,7 @@
     </details>
 
     <details>
-      <summary>📞 Número de teléfono (ChatVoice)</summary>
+      <summary>Número de teléfono (ChatVoice)</summary>
       <div class="hint">Buscá y activá un número real para que tus clientes llamen y los atienda el asistente — sin entrar nunca a la consola de Twilio. Necesitás el Account SID / Auth Token de Twilio cargados arriba primero.</div>
       <div id="miNumero" class="hint" style="margin-top:8px;"></div>
       <div class="row" style="margin-top:10px;">
@@ -256,20 +256,20 @@
           <select id="paisNumero"><option value="UY">Uruguay (+598)</option><option value="US">Estados Unidos (+1)</option><option value="AR">Argentina (+54)</option></select>
         </div>
         <div style="display:flex;align-items:flex-end;">
-          <button type="button" class="btn" id="btnBuscarNumeros">🔍 Buscar números disponibles</button>
+          <button type="button" class="btn" id="btnBuscarNumeros">Buscar números disponibles</button>
         </div>
       </div>
       <div id="numerosDisponibles"></div>
       <label style="margin-top:16px;">Llamame para probar (tu propio celular)</label>
       <div class="row">
         <input id="telefonoPrueba" placeholder="+598 9X XXX XXX">
-        <button type="button" class="btn gold" id="btnLlamarPrueba">📲 Llamar ahora</button>
+        <button type="button" class="btn gold" id="btnLlamarPrueba">Llamar ahora</button>
       </div>
       <div id="pruebaResultado" class="hint"></div>
     </details>
 
     <details class="solo-vendedor">
-      <summary>💳 Pagos (MercadoPago)</summary>
+      <summary>Pagos (MercadoPago)</summary>
       <label for="mercadopagoToken">MercadoPago — Access Token</label>
       <input id="mercadopagoToken" type="password" placeholder="APP_USR-... (cobros → payout a tu banco)" autocomplete="off">
       <div class="hint">Es OBLIGATORIO para cobrar: con tu Access Token, /comprar.html abre el checkout real de MercadoPago (tarjeta/saldo) y el dinero entra a tu cuenta MP; luego retirás a tu banco. Sin token, la compra no se puede completar (no se simula ningún pago).</div>
@@ -279,7 +279,7 @@
     </details>
 
     <details class="solo-vendedor">
-      <summary>✉️ Emails automáticos (bienvenida, prueba por vencer, licencia)</summary>
+      <summary>Emails automáticos (bienvenida, prueba por vencer, licencia)</summary>
       <label for="resendApiKey">Resend — API key</label>
       <input id="resendApiKey" type="password" placeholder="re_... (resend.com — tier gratis)" autocomplete="off">
       <label for="emailFrom">Remitente</label>
@@ -288,7 +288,7 @@
     </details>
 
     <details class="solo-vendedor">
-      <summary>🎁 Modo demostración (para mostrar el producto)</summary>
+      <summary>Modo demostración (para mostrar el producto)</summary>
       <div class="row">
         <div><label for="demoLimite">Instancia de demo con cupo</label><select id="demoLimite"><option value="">No (producto completo)</option><option value="1">Sí (limitar usos)</option></select></div>
         <div><label for="demoMaxUsos">Usos gratis con IA</label><input id="demoMaxUsos" type="number" placeholder="3"></div>
@@ -298,19 +298,19 @@
     </details>
 
     <details class="solo-vendedor" id="detSeguridad">
-      <summary>🔒 Seguridad</summary>
+      <summary>Seguridad</summary>
       <label for="adminKeyNew">Clave de administración (protege este panel y el importador)</label>
       <input id="adminKeyNew" type="password" placeholder="dejá vacío para no cambiarla" autocomplete="off">
       <div class="hint">Si la definís, la próxima vez tendrás que pegarla arriba para entrar.</div>
-      <div class="hint" style="margin-top:8px;">💡 Para <strong>vender</strong> el producto con tu API key ya embebida y oculta al público, en el servidor corré <code>npm run embeber-clave</code> — la clave viaja con el producto sin quedar a la vista.</div>
+      <div class="hint" style="margin-top:8px;">Para <strong>vender</strong> el producto con tu API key ya embebida y oculta al público, en el servidor corré <code>npm run embeber-clave</code> — la clave viaja con el producto sin quedar a la vista.</div>
     </details>
 
-    <button class="btn" type="submit">💾 Guardar configuración</button>
+    <button class="btn" type="submit">Guardar configuración</button>
     <div class="aviso" id="aviso"></div>
   </form>
 
   <div class="card">
-    <h2>🧰 Mi profesión / precios de mercado</h2>
+    <h2>Mi profesión / precios de mercado</h2>
     <div class="sub">Creá tu propia profesión u oficio (cualquier rubro con agenda y visitas: médicos, abogados, talleres, estética, etc.) con tus tipos de trabajo y precios. Y si querés, la IA investiga qué se cobra en el mercado de tu país y te sugiere los valores.</div>
 
     <label for="coNombre">Nombre de la profesión / oficio</label>
@@ -325,33 +325,33 @@
     <label>Tipos de trabajo</label>
     <div id="coTrabajos"></div>
     <button type="button" class="btn gold" id="btnAgregarTrabajo" style="margin-top:8px;">+ Agregar tipo de trabajo</button>
-    <button type="button" class="btn" id="btnGuardarOficio">💾 Guardar profesión en el catálogo</button>
+    <button type="button" class="btn" id="btnGuardarOficio">Guardar profesión en el catálogo</button>
     <div class="aviso" id="avisoOficio"></div>
 
     <details style="margin-top:14px;">
-      <summary>🤖 Sugerir precios de mercado con IA</summary>
+      <summary>Sugerir precios de mercado con IA</summary>
       <div class="hint">La IA estima qué se cobra hoy en tu país (según el país configurado arriba) por cada trabajo del oficio elegido — mano de obra o honorarios y materiales cuando corresponde. Son valores de referencia: revisalos y aplicalos si te cierran.</div>
       <div class="row" style="margin-top:10px;">
         <div><label for="ipOficio">Oficio a investigar</label><select id="ipOficio"></select></div>
-        <div style="display:flex;align-items:flex-end;"><button type="button" class="btn" id="btnInvestigar">🔎 Investigar mercado</button></div>
+        <div style="display:flex;align-items:flex-end;"><button type="button" class="btn" id="btnInvestigar">Investigar mercado</button></div>
       </div>
       <div id="ipResultado" style="margin-top:10px;font-size:.88rem;"></div>
-      <button type="button" class="btn gold" id="btnAplicarPrecios" style="display:none;">✅ Aplicar estos precios al catálogo</button>
+      <button type="button" class="btn gold" id="btnAplicarPrecios" style="display:none;">✔ Aplicar estos precios al catálogo</button>
       <div class="aviso" id="avisoPrecios"></div>
     </details>
   </div>
 
   <div class="card">
-    <h2>👷‍♂️ Equipo (varios profesionales)</h2>
+    <h2>Equipo (varios profesionales)</h2>
     <div class="sub">Si en la cuenta trabaja más de un profesional (ej. un estudio con 3 electricistas), cargalos acá — cada uno con su propio oficio, jornada y agenda; el chatbot le pregunta al cliente cuál corresponde antes de cotizar. Si dejás la lista vacía, se usa el profesional único de "Datos del profesional" y "Jornada y descansos" de arriba.</div>
     <div id="listaProfesionales"></div>
     <button type="button" class="btn gold" id="btnAgregarProfesional" style="margin-top:10px;">+ Agregar profesional</button>
-    <button type="button" class="btn" id="btnGuardarProfesionales">💾 Guardar equipo</button>
+    <button type="button" class="btn" id="btnGuardarProfesionales">Guardar equipo</button>
     <div class="aviso" id="avisoProfesionales"></div>
   </div>
 
   <div class="card">
-    <h2>🧪 Probar el chatbot</h2>
+    <h2>Probar el chatbot</h2>
     <div class="sub">Mandá un mensaje de prueba. Te dice si respondió la IA real o el modo demo.</div>
     <div class="test">
       <input id="testMsg" placeholder="Ej: Necesito instalar un tomacorriente" value="Hola, ¿cuánto sale instalar un tomacorriente?">
@@ -361,7 +361,7 @@
   </div>
 
   <p style="text-align:center;font-size:.8rem;color:#7a8a9a;">
-    <a class="link" href="/">← Volver a la landing</a> · <a class="link" href="/panel.html">Panel del día</a> · <a class="link" href="/dashboards.html">Dashboards</a> · <a class="link" href="/demo.html">Demo</a> · <a class="link" href="/ayuda.html">❓ Ayuda</a>
+    <a class="link" href="/">← Volver a la landing</a> · <a class="link" href="/panel.html">Panel del día</a> · <a class="link" href="/dashboards.html">Dashboards</a> · <a class="link" href="/demo.html">Demo</a> · <a class="link" href="/ayuda.html">Ayuda</a>
   </p>
 </div>
 
@@ -380,7 +380,7 @@ const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábad
 let diasLibresSet = new Set([0]);
 function pintarDiasLibres() {
   $('#diasLibresBox').innerHTML = DIAS.map((nombre, i) =>
-    `<span class="badge ${diasLibresSet.has(i) ? 'off' : 'on'}" data-dia="${i}" style="cursor:pointer;">${diasLibresSet.has(i) ? '🚫' : '✓'} ${nombre}</span>`).join('');
+    `<span class="badge ${diasLibresSet.has(i) ? 'off' : 'on'}" data-dia="${i}" style="cursor:pointer;">${diasLibresSet.has(i) ? '' : '✔'} ${nombre}</span>`).join('');
   $('#diasLibresBox').querySelectorAll('[data-dia]').forEach((el) => {
     el.onclick = () => {
       const d = Number(el.dataset.dia);
@@ -447,7 +447,7 @@ $('#btnGuardarOficio').onclick = async () => {
     const r = await fetch('/api/oficios', { method: 'POST', headers: headers(), body: JSON.stringify(body) });
     const d = await r.json();
     if (!r.ok || !d.ok) { a.textContent = d.error || 'No se pudo guardar.'; a.className = 'aviso err'; return; }
-    a.textContent = `✅ "${d.oficio.nombre}" guardado en el catálogo — ya se puede cotizar y agendar.`; a.className = 'aviso ok';
+    a.textContent = `✔ "${d.oficio.nombre}" guardado en el catálogo — ya se puede cotizar y agendar.`; a.className = 'aviso ok';
     await cargarOficiosUI();
   } catch { a.textContent = 'Error de red.'; a.className = 'aviso err'; }
   setTimeout(() => { a.className = 'aviso'; }, 7000);
@@ -457,7 +457,7 @@ $('#btnGuardarOficio').onclick = async () => {
 let sugerencia = null;
 $('#btnInvestigar').onclick = async () => {
   const out = $('#ipResultado');
-  out.textContent = '🔎 Investigando precios de mercado con IA… (puede tardar unos segundos)';
+  out.textContent = 'Investigando precios de mercado con IA… (puede tardar unos segundos)';
   $('#btnAplicarPrecios').style.display = 'none';
   try {
     const r = await fetch('/api/precios/sugerir', { method: 'POST', headers: headers(), body: JSON.stringify({ oficio: $('#ipOficio').value }) });
@@ -500,7 +500,7 @@ $('#btnAplicarPrecios').onclick = async () => {
     const r = await fetch('/api/oficios', { method: 'POST', headers: headers(), body: JSON.stringify(body) });
     const d = await r.json();
     if (!r.ok || !d.ok) { a.textContent = d.error || 'No se pudo aplicar.'; a.className = 'aviso err'; return; }
-    a.textContent = '✅ Precios de mercado aplicados al catálogo.'; a.className = 'aviso ok';
+    a.textContent = '✔ Precios de mercado aplicados al catálogo.'; a.className = 'aviso ok';
     await cargarOficiosUI();
   } catch { a.textContent = 'Error de red.'; a.className = 'aviso err'; }
   setTimeout(() => { a.className = 'aviso'; }, 7000);
@@ -528,7 +528,7 @@ function pintarEquipo() {
       </div>
       <div class="row">
         <div><label>Días libres (0=domingo…6=sábado)</label><input data-campo="diasLibres" aria-label="Dias libres (0=domingo a 6=sabado)" data-i="${i}" value="${esc(p.diasLibres??'0')}" placeholder="0,6"></div>
-        <div style="display:flex;align-items:flex-end;"><button type="button" class="btn" style="background:#fdeaea;color:#b23;margin:0;" data-quitar="${i}">🗑 Quitar</button></div>
+        <div style="display:flex;align-items:flex-end;"><button type="button" class="btn" style="background:#fdeaea;color:#b23;margin:0;" data-quitar="${i}">Quitar</button></div>
       </div>
     </div>`).join('') || '<div class="hint">Sin profesionales adicionales — se usa el único de arriba.</div>';
   $('#listaProfesionales').querySelectorAll('[data-campo]').forEach((el) => {
@@ -556,7 +556,7 @@ $('#btnGuardarProfesionales').onclick = async () => {
     const d = await r.json();
     if (!r.ok || !d.ok) { a.textContent = d.error || 'No se pudo guardar.'; a.className = 'aviso err'; return; }
     equipo = d.profesionales; pintarEquipo();
-    a.textContent = '✅ Equipo guardado.'; a.className = 'aviso ok';
+    a.textContent = '✔ Equipo guardado.'; a.className = 'aviso ok';
   } catch { a.textContent = 'Error de red al guardar.'; a.className = 'aviso err'; }
   setTimeout(() => { a.className = 'aviso'; }, 6000);
 };
@@ -709,7 +709,7 @@ if (localStorage.getItem('mvToken')) {
 function pintarBadges(estado) {
   const defs = [['ia','IA'],['whatsapp','WhatsApp'],['voz','Teléfono'],['vozPremium','Voz clonada'],['crm','CRM']];
   $('#badges').innerHTML = defs.map(([k,label]) =>
-    `<span class="badge ${estado?.[k]?'on':'off'}">${estado?.[k]?'✓':'○'} ${label}</span>`).join('');
+    `<span class="badge ${estado?.[k]?'on':'off'}">${estado?.[k]?'✔':'○'} ${label}</span>`).join('');
 }
 async function cargar() {
   try {
@@ -763,7 +763,7 @@ $('#form').addEventListener('submit', async (e) => {
     const d = await r.json();
     if (!r.ok || !d.ok) return aviso(d.error || 'No se pudo guardar.', false);
     pintarBadges(d.config.estado);
-    aviso(d.demo ? 'Guardado. Aún en modo demo (falta API key de Claude válida).' : '✅ Guardado. Chatbot con IA real activo.', true);
+    aviso(d.demo ? 'Guardado. Aún en modo demo (falta API key de Claude válida).' : '✔ Guardado. Chatbot con IA real activo.', true);
     if (nuevaAdmin) $('#adminKey').value = nuevaAdmin;
     // limpiar campos de secreto para que el placeholder muestre "cargada"
     setTimeout(cargar, 400);
@@ -775,7 +775,7 @@ $('#btnTest').onclick = async () => {
   try {
     const r = await fetch('/api/chat', { method:'POST', headers: headers(), body: JSON.stringify({ mensaje: $('#testMsg').value }) });
     const d = await r.json();
-    out.textContent = (d.demo ? '⚙️ [MODO DEMO — cargá tu API key para IA real]\n\n' : '🟢 [IA REAL — Claude]\n\n') + (d.respuesta || d.error || '');
+    out.textContent = (d.demo ? '[MODO DEMO — cargá tu API key para IA real]\n\n' : '✔ [IA REAL — Claude]\n\n') + (d.respuesta || d.error || '');
   } catch { out.textContent = 'No pude conectar con el servidor.'; }
 };
 
@@ -795,9 +795,9 @@ async function cargarPrueba() {
     const e = await (await fetch('/api/prueba')).json();
     if (!e.aplica) return; // en el host (Vercel) no aplica
     $('#cardLicencia').style.display = '';
-    if (e.licenciada) $('#pruebaEstado').innerHTML = '✅ <strong>Licencia activa.</strong> El programa está habilitado por completo.';
-    else if (e.vencida) $('#pruebaEstado').innerHTML = '⛔ <strong>Tu prueba gratis terminó.</strong> Activá tu licencia para volver a usar el programa.';
-    else $('#pruebaEstado').innerHTML = `🎁 <strong>Prueba gratis:</strong> te ${e.diasRestantes === 1 ? 'queda 1 día' : 'quedan ' + e.diasRestantes + ' días'}.`;
+    if (e.licenciada) $('#pruebaEstado').innerHTML = '✔ <strong>Licencia activa.</strong> El programa está habilitado por completo.';
+    else if (e.vencida) $('#pruebaEstado').innerHTML = '✕ <strong>Tu prueba gratis terminó.</strong> Activá tu licencia para volver a usar el programa.';
+    else $('#pruebaEstado').innerHTML = `<strong>Prueba gratis:</strong> te ${e.diasRestantes === 1 ? 'queda 1 día' : 'quedan ' + e.diasRestantes + ' días'}.`;
   } catch { /* sin conexión: no mostramos la tarjeta */ }
 }
 cargarPrueba();
@@ -808,7 +808,7 @@ $('#btnActivarLicencia').onclick = async () => {
     const r = await fetch('/api/licencia/activar', { method: 'POST', headers: headers(), body: JSON.stringify({ codigo }) });
     const d = await r.json();
     if (!r.ok || !d.ok) return aviso(d.error || 'No se pudo activar la licencia.', false);
-    aviso('✅ Licencia activada. ¡Gracias por tu compra!', true);
+    aviso('✔ Licencia activada. ¡Gracias por tu compra!', true);
     cargarPrueba();
   } catch { aviso('Error de red al activar la licencia.', false); }
 };
@@ -819,8 +819,8 @@ $('#btnProbarWa').onclick = async () => {
   try {
     const r = await fetch('/api/whatsapp/probar', { headers: headers() });
     const d = await r.json();
-    out.textContent = d.ok ? `✅ Conectado — ${d.numero}${d.nombre ? ' (' + d.nombre + ')' : ''}` : `⚠️ ${d.error}`;
-  } catch { out.textContent = '⚠️ No pude conectar con el servidor.'; }
+    out.textContent = d.ok ? `✔ Conectado — ${d.numero}${d.nombre ? ' (' + d.nombre + ')' : ''}` : `⚠ ${d.error}`;
+  } catch { out.textContent = '⚠ No pude conectar con el servidor.'; }
 };
 
 // ---------- Teléfono (ChatVoice): números Twilio ----------
@@ -833,9 +833,9 @@ async function cargarMiNumero() {
     if (!d.numeros.length) { el.textContent = 'Todavía no tenés ningún número activo.'; return; }
     // n.numero y n.sid vienen de la API de Twilio; se escapan igual, sobre todo
     // el sid que va dentro de un atributo.
-    el.innerHTML = '📍 ' + d.numeros.map((n) =>
+    el.innerHTML = '' + d.numeros.map((n) =>
       `<strong>${esc(n.numero)}</strong> ` +
-      `<button type="button" class="btnReapuntar" data-sid="${esc(n.sid)}" style="background:none;border:1px solid #cfd9e4;border-radius:8px;padding:3px 9px;font-size:.75rem;cursor:pointer;margin-left:4px;">🔗 Reapuntar webhook a este dominio</button>`
+      `<button type="button" class="btnReapuntar" data-sid="${esc(n.sid)}" style="background:none;border:1px solid #cfd9e4;border-radius:8px;padding:3px 9px;font-size:.75rem;cursor:pointer;margin-left:4px;">Reapuntar webhook a este dominio</button>`
     ).join('<br>');
     el.querySelectorAll('.btnReapuntar').forEach((btn) => {
       btn.onclick = async () => {
@@ -843,9 +843,9 @@ async function cargarMiNumero() {
         try {
           const r = await fetch('/api/telefonia/reapuntar-webhook', { method: 'POST', headers: headers(), body: JSON.stringify({ sid: btn.dataset.sid }) });
           const d2 = await r.json();
-          aviso(d2.ok ? `✅ Webhook actualizado: ${d2.voiceUrl}` : (d2.error || 'No se pudo reapuntar.'), d2.ok);
+          aviso(d2.ok ? `✔ Webhook actualizado: ${d2.voiceUrl}` : (d2.error || 'No se pudo reapuntar.'), d2.ok);
         } catch { aviso('Error de red al reapuntar el webhook.', false); }
-        btn.disabled = false; btn.textContent = '🔗 Reapuntar webhook a este dominio';
+        btn.disabled = false; btn.textContent = 'Reapuntar webhook a este dominio';
       };
     });
   } catch { el.textContent = ''; }
@@ -855,13 +855,13 @@ $('#btnBuscarNumeros').onclick = async () => {
   try {
     const r = await fetch('/api/telefonia/numeros-disponibles?pais=' + $('#paisNumero').value, { headers: headers() });
     const d = await r.json();
-    if (!d.ok) { cont.innerHTML = `<div class="hint">⚠️ ${esc(d.error)}</div>`; return; }
+    if (!d.ok) { cont.innerHTML = `<div class="hint">⚠ ${esc(d.error)}</div>`; return; }
     if (!d.numeros.length) { cont.innerHTML = '<div class="hint">No hay números disponibles para ese país ahora mismo. Probá otro.</div>'; return; }
     // n.numero y n.region vienen de la API de Twilio (número disponible para
     // comprar) — dato de API externa, se escapa igual que el resto.
     cont.innerHTML = d.numeros.map((n) =>
       `<div class="row" style="align-items:center;margin-top:8px;">` +
-        `<div>📞 <strong>${esc(n.numero)}</strong> — ${esc(n.region)} <span class="hint">(~USD ${esc(n.precio_ref_usd)}/mes ref.)</span></div>` +
+        `<div><strong>${esc(n.numero)}</strong> — ${esc(n.region)} <span class="hint">(~USD ${esc(n.precio_ref_usd)}/mes ref.)</span></div>` +
         `<button type="button" class="btn" style="margin-top:0;" data-numero="${esc(n.numero)}">Comprar y activar</button>` +
       `</div>`
     ).join('');
@@ -872,23 +872,23 @@ $('#btnBuscarNumeros').onclick = async () => {
           const r = await fetch('/api/telefonia/comprar-numero', { method: 'POST', headers: headers(), body: JSON.stringify({ numero: btn.dataset.numero }) });
           const d = await r.json();
           if (!d.ok) { aviso(d.error || 'No se pudo comprar el número.', false); btn.disabled = false; btn.textContent = 'Comprar y activar'; return; }
-          aviso(`✅ Número ${d.numero} activo — ya podés recibir llamadas.`, true);
+          aviso(`✔ Número ${d.numero} activo — ya podés recibir llamadas.`, true);
           cargarMiNumero();
           cont.innerHTML = '';
         } catch { aviso('Error de red al comprar el número.', false); btn.disabled = false; btn.textContent = 'Comprar y activar'; }
       };
     });
-  } catch { cont.innerHTML = '<div class="hint">⚠️ No pude conectar con el servidor.</div>'; }
+  } catch { cont.innerHTML = '<div class="hint">⚠ No pude conectar con el servidor.</div>'; }
 };
 $('#btnLlamarPrueba').onclick = async () => {
   const out = $('#pruebaResultado'); const tel = $('#telefonoPrueba').value.trim();
-  if (!tel) { out.textContent = '⚠️ Escribí un teléfono primero.'; return; }
+  if (!tel) { out.textContent = '⚠ Escribí un teléfono primero.'; return; }
   out.textContent = 'Llamando…';
   try {
     const r = await fetch('/api/telefonia/llamar-prueba', { method: 'POST', headers: headers(), body: JSON.stringify({ telefono: tel }) });
     const d = await r.json();
-    out.textContent = d.ok ? '✅ Llamando ahora — atendé tu celular.' : `⚠️ ${d.error}`;
-  } catch { out.textContent = '⚠️ No pude conectar con el servidor.'; }
+    out.textContent = d.ok ? '✔ Llamando ahora — atendé tu celular.' : `⚠ ${d.error}`;
+  } catch { out.textContent = '⚠ No pude conectar con el servidor.'; }
 };
 cargarMiNumero();
 </script>

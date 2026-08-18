@@ -1,0 +1,150 @@
+# Arma la APK de Android en un runner de GitHub —que ya trae el Android SDK—
+# y la publica como asset del mismo Release fijo que usa el instalador de
+# Windows. Mismo criterio que build-windows-exe.yml: nadie compila nada a mano.
+#
+# POR QUÉ EXISTE
+# La APK que se venía ofreciendo en /descargas se generó SIN los archivos web
+# adentro: 19 entradas, ninguna bajo assets/. MainActivity hace
+# loadUrl("file:///android_asset/www/index.html"), así que el cliente que la
+# instalaba abría una pantalla en blanco. El script de build sí copia los
+# assets; lo que faltaba era que alguien verificara el resultado. Por eso el
+# paso de verificación de abajo es la razón de ser de este workflow, no un
+# extra: si los assets no están, el job se cae ANTES de publicar nada.
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'movil/**'
+      - '!movil/android-apk/**'
+      - '.github/workflows/build-apk.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-apk
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # secrets no se puede usar en un if:. Se mapea a env del job, que si.
+    env:
+      HAY_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Capacitor 6 pide JDK 17.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Instalar platform y build-tools
+        run: sdkmanager --install "platforms;android-34" "build-tools;34.0.0"
+
+      # Los mismos cuatro archivos que sirve /movil en la web. Se copian acá
+      # (y no se confía en el script) para que el paso de verificación compare
+      # contra algo conocido.
+      - name: Preparar assets web
+        working-directory: movil
+        run: |
+          rm -rf www android
+          mkdir -p www
+          cp index.html manifest.json icon.svg sw.js www/
+          echo "Assets a empaquetar:"; ls -la www/
+
+      - name: Proyecto Capacitor
+        working-directory: movil
+        run: |
+          npm i @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+          npx cap add android
+          npx cap sync android
+
+      # El keystore va en secrets: firma release v1+v2+v3. Sin él sólo se puede
+      # hacer un APK debug, que se firma con la clave de depuración PÚBLICA de
+      # Android — cualquiera puede reempaquetarlo y firmarlo igual, y encima no
+      # se puede actualizar encima de una instalación anterior.
+      - name: Firmar y compilar release
+        if: env.HAY_KEYSTORE == 'true'
+        working-directory: movil
+        env:
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/mv-release.keystore
+          cat >> android/app/build.gradle <<'GRADLE'
+          android {
+              signingConfigs {
+                  release {
+                      storeFile file("../mv-release.keystore")
+                      storePassword System.getenv("KS_PASS")
+                      keyAlias System.getenv("KEY_ALIAS")
+                      keyPassword System.getenv("KEY_PASS")
+                  }
+              }
+              buildTypes { release { signingConfig signingConfigs.release } }
+          }
+          GRADLE
+          cd android && ./gradlew --no-daemon assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk ../MV-Agendate-IA.apk
+
+      - name: Compilar debug (sin keystore configurado)
+        if: env.HAY_KEYSTORE != 'true'
+        working-directory: movil/android
+        run: |
+          echo "::warning::Sin ANDROID_KEYSTORE_BASE64 en secrets: se genera una APK DEBUG. Sirve para probar, NO para distribuir a clientes."
+          ./gradlew --no-daemon assembleDebug
+          cp app/build/outputs/apk/debug/app-debug.apk ../MV-Agendate-IA.apk
+
+      # LA RAZÓN DE SER DE ESTE WORKFLOW: la APK que se publicó antes no tenía
+      # los assets y nadie se enteró hasta que un cliente la abrió en blanco.
+      - name: Verificar que la APK trae la app adentro
+        working-directory: movil
+        run: |
+          echo "Contenido bajo assets/:"
+          unzip -l MV-Agendate-IA.apk | grep -E "assets/" || true
+          if ! unzip -l MV-Agendate-IA.apk | grep -q "assets/public/index.html"; then
+            echo "::error::La APK no contiene assets/public/index.html — la app abriria en blanco. No se publica."
+            exit 1
+          fi
+          PESO=$(stat -c%s MV-Agendate-IA.apk)
+          echo "APK: $((PESO / 1024)) KiB"
+          # La app web sola pesa ~36 KB; una APK real ronda los MB. Menos de
+          # 500 KB significa que quedo a medias, como la anterior (107 KB).
+          if [ "$PESO" -lt 500000 ]; then
+            echo "::error::La APK pesa $PESO bytes: sospechosamente poco, seguramente quedo incompleta."
+            exit 1
+          fi
+
+      - name: Publicar en el release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: desktop-windows-latest
+          files: movil/MV-Agendate-IA.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Actualizar la APK que sirve la web
+        run: |
+          cp movil/MV-Agendate-IA.apk public/descargas/MV-Agendate-IA.apk
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/descargas/MV-Agendate-IA.apk
+          if git diff --cached --quiet; then
+            echo "La APK ya estaba al dia."
+            exit 0
+          fi
+          git commit -m "Actualizar APK con el build ${GITHUB_SHA::7}"
+          git pull --rebase origin main
+          git push origin HEAD:main
