@@ -93,3 +93,13 @@ test('es pública: no exige clave de administración', async () => {
     await fetch(`${base}/api/config`, { method: 'POST', headers: J, body: JSON.stringify({ adminKey: '' }) });
   }
 });
+
+test('en el programa instalado, "/" es el panel y no la pagina de venta', async () => {
+  // La landing existe para convencer a alguien de comprar. Al cliente que ya
+  // compro e instalo, mostrarle el "Compra ahora" adentro de su propio programa
+  // queda poco serio — y puede volver ahi con un clic y perderse. En el
+  // servidor web (sin MV_ESCRITORIO) "/" tiene que seguir siendo la landing.
+  const r = await fetch(`${base}/`, { redirect: 'manual' });
+  assert.equal(r.status, 302, 'el programa de escritorio no puede servir la landing en la raiz');
+  assert.equal(r.headers.get('location'), '/app/');
+});

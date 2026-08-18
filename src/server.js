@@ -137,6 +137,18 @@ app.use((req, res, next) => {
 // siempre. Ver src/channels/firmas.js.
 app.use(express.json({ limit: '2mb', verify: (req, _res, buf) => { req.rawBody = buf; } }));
 app.use(express.urlencoded({ extended: false })); // webhooks de Twilio llegan como form-encoded
+// En el PROGRAMA INSTALADO (escritorio), "/" es el panel — no la página de
+// venta. La landing existe para convencer a alguien de comprar; al cliente que
+// ya compró e instaló mostrarle el "Comprá ahora" adentro de su propio programa
+// queda poco serio, y encima puede volver ahí con un clic y perderse.
+// En el servidor web (Vercel) no aplica: ahí "/" tiene que seguir siendo la
+// landing, que es lo que ve un visitante.
+// Va ANTES del estático porque si no, express.static entrega public/index.html
+// y este redirect no llega a correr nunca.
+app.get('/', (req, res, next) => {
+  if (!process.env.MV_ESCRITORIO) return next();
+  res.redirect(302, RUTA_APP);
+});
 app.use(express.static(join(here, '../public')));
 app.use('/movil', express.static(join(here, '../movil'))); // app Android (PWA instalable)
 
