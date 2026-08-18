@@ -1,0 +1,119 @@
+# Instalador de la variante DUEÑO, publicado en GitHub pero CIFRADO.
+#
+# EL PROBLEMA QUE RESUELVE
+# La variante dueño no tiene límite de prueba: es el producto completo. Este
+# repo es PÚBLICO, y en un repo público tanto los releases como los artifacts
+# de Actions los descarga cualquiera. Por eso el workflow del .exe de cliente
+# dice, con todas las letras, que la variante dueño NO se publica: ya pasó una
+# vez que estuvo committeada y cualquiera se la bajaba con un clic.
+#
+# LA SOLUCIÓN
+# Se publica igual —para tenerla siempre a mano en GitHub— pero dentro de un
+# .7z con AES-256 y con los nombres de archivo cifrados (-mhe=on). Sin la
+# contraseña el archivo no se abre ni se puede ver qué contiene. Cualquiera
+# puede bajarlo; solo el dueño puede usarlo.
+#
+# NO CORRE SOLO: se dispara a mano (workflow_dispatch). La variante dueño se
+# arma cuando hace falta, no en cada push.
+name: Build owner installer (cifrado)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-owner-exe
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      TIENE_CLAVE: ${{ secrets.MV_LICENCIA_PRIVADA_PEM != '' }}
+      TIENE_PASS: ${{ secrets.OWNER_ZIP_PASSWORD != '' }}
+    steps:
+      - name: Comprobar secrets antes de empezar
+        shell: bash
+        run: |
+          FALTA=0
+          if [ "$TIENE_CLAVE" != "true" ]; then
+            echo "::error::Falta el secret MV_LICENCIA_PRIVADA_PEM (la clave Ed25519 que firma la licencia perpetua). Sin ella la variante dueño no se puede firmar, y una licencia sin firma no activa nada."
+            FALTA=1
+          fi
+          if [ "$TIENE_PASS" != "true" ]; then
+            echo "::error::Falta el secret OWNER_ZIP_PASSWORD. Sin contraseña el .7z quedaria abierto, y publicar la variante dueno sin cifrar en un repo PUBLICO es regalar el producto completo."
+            FALTA=1
+          fi
+          [ "$FALTA" = "0" ] || exit 1
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm ci
+
+      # La clave privada llega por env, nunca a disco: scripts/licencias-firma.js
+      # ya soporta MV_LICENCIA_PRIVADA_PEM justamente para este caso.
+      - name: Empaquetar variante dueño
+        env:
+          MV_LICENCIA_PRIVADA_PEM: ${{ secrets.MV_LICENCIA_PRIVADA_PEM }}
+        run: npm run empaquetar-exe-owner
+
+      # Antes de cifrar: confirmar que el .exe existe y que de verdad es la
+      # variante dueño. Publicar por error el de cliente bajo el nombre "Dueno"
+      # dejaria al dueno con una copia que se le vence a los 7 dias.
+      - name: Verificar que salio la variante correcta
+        shell: bash
+        run: |
+          EXE="dist-instalador/MV-Agendate-IA-Setup-Dueno.exe"
+          [ -f "$EXE" ] || { echo "::error::No se genero $EXE"; exit 1; }
+          PESO=$(stat -c%s "$EXE")
+          echo "$EXE -> $((PESO / 1024 / 1024)) MiB"
+          [ "$PESO" -gt 10000000 ] || { echo "::error::El .exe pesa $PESO bytes: quedo incompleto."; exit 1; }
+          # Lo que distingue a la variante dueno es que licencia-incluida.js
+          # lleve la licencia FIRMADA adentro. En la de cliente ese archivo sale
+          # con LICENCIA_INCLUIDA = '' (verificado corriendo licenciaVariante).
+          # Ojo: ACEPTA_LEGADO tambien vale false en las dos, asi que buscar
+          # "true" en el archivo no distingue nada.
+          if grep -q "LICENCIA_INCLUIDA = ''" src/store/licencia-incluida.js; then
+            echo "::error::licencia-incluida.js salio VACIO: esto es la variante de CLIENTE, no la del dueno. Publicarla dejaria al dueno con una copia que se vence a los 7 dias."
+            exit 1
+          fi
+          # Prefijo verificado contra scripts/firmar-licencia.js:83 — 'MVA1.'
+          grep -q "LICENCIA_INCLUIDA = 'MVA1\." src/store/licencia-incluida.js || {
+            echo "::error::La licencia incluida no tiene el formato firmado MVA1.<payload>.<firma>."; exit 1; }
+
+      - name: Cifrar con AES-256
+        shell: bash
+        env:
+          PASS: ${{ secrets.OWNER_ZIP_PASSWORD }}
+        run: |
+          # -mhe=on cifra tambien los NOMBRES: sin la clave no se ve ni que hay adentro.
+          7z a -t7z -mhe=on -p"$PASS" MV-Agendate-IA-Setup-Dueno.7z \
+            dist-instalador/MV-Agendate-IA-Setup-Dueno.exe
+          # Comprobar que sin contrasena no se puede listar el contenido.
+          if 7z l MV-Agendate-IA-Setup-Dueno.7z -p"clave-incorrecta" 2>/dev/null | grep -q "Setup-Dueno.exe"; then
+            echo "::error::El .7z expone los nombres de archivo sin la contrasena. No se publica."
+            exit 1
+          fi
+          echo "Cifrado OK: el contenido no se lista sin la clave correcta."
+
+      - name: Publicar en un release aparte
+        uses: softprops/action-gh-release@v2
+        with:
+          # Release propio, NO el "latest" que usa la web para vender: que el
+          # link de descarga publico nunca pueda resolver a este archivo.
+          tag_name: owner-cifrado
+          name: Variante dueño (cifrada — requiere contraseña)
+          make_latest: false
+          body: |
+            Instalador de la variante dueño, dentro de un .7z con AES-256 y nombres cifrados.
+            Sin la contraseña no se puede abrir ni ver el contenido.
+            No es una descarga para clientes: la versión que se vende está en el release `desktop-windows-latest`.
+          files: MV-Agendate-IA-Setup-Dueno.7z
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
