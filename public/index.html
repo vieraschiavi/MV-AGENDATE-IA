@@ -133,6 +133,7 @@
   .card{ border:1px solid var(--line); border-radius:18px; padding:24px; background:var(--card); transition:border-color .25s, transform .25s; }
   .card:hover{ border-color:rgba(47,157,255,.4); transform:translateY(-3px); }
   .card .ico{ font-size:1.5rem; }
+  .card .ico svg{ width:30px; height:30px; color:var(--cel,#1f7ae0); display:block; }
   .card h3{ margin:8px 0 6px; font-size:1rem; }
   .card p{ color:var(--sub); font-size:.86rem; }
 
@@ -146,7 +147,7 @@
   .plan .precio small{ font-size:.85rem; color:var(--sub); font-weight:600; }
   .plan ul{ list-style:none; flex:1; margin-bottom:18px; }
   .plan li{ padding:5px 0 5px 24px; position:relative; color:#c3d3e2; font-size:.86rem; }
-  .plan li::before{ content:'✓'; position:absolute; left:0; color:var(--verde); font-weight:800; }
+  .plan li::before{ content:'✔'; position:absolute; left:0; color:var(--verde); font-weight:800; }
   .plan a{ display:block; text-align:center; text-decoration:none; font-weight:800; padding:13px; border-radius:12px; }
   .p-azul{ background:var(--cel2); color:#fff; } .p-oro{ background:var(--oro); color:#241a05; } .p-verde{ background:var(--verde); color:#04240f; }
 
@@ -218,8 +219,8 @@
       <div class="msgs" id="msgs">
         <div class="m mu" data-i18n="m1">Hola! ¿Cuánto sale cambiar un tomacorriente doble y cuándo podés venir?</div>
         <div class="m mb" data-i18n-html="m2"><b>MV:</b> ¡Hola! El cambio de tomacorriente doble sale <b>$ 1.350</b> (mano de obra + materiales + traslado). Tengo lugar <b>mañana 14:30</b>. ¿Confirmamos?</div>
-        <div class="m mu" data-i18n="m3">Sí, dale, confirmá 👍</div>
-        <div class="m mb" data-i18n-html="m4"><b>MV:</b> Quedaste agendado ✅ Si Marcelo se atrasa, te aviso yo mismo por acá.</div>
+        <div class="m mu" data-i18n="m3">Sí, dale, confirmá </div>
+        <div class="m mb" data-i18n-html="m4"><b>MV:</b> Quedaste agendado ✔ Si Marcelo se atrasa, te aviso yo mismo por acá.</div>
       </div>
     </div>
   </div>
@@ -263,12 +264,12 @@
       <h2 data-i18n="feaH">Todo lo que necesita un profesional independiente</h2>
     </div>
     <div class="grid">
-      <div class="card rev"><span class="ico">🤖</span><h3 data-i18n="f1h">Chatbot con IA real</h3><p data-i18n="f1p">Claude, ChatGPT o Gemini — elegís el motor. Entiende, cotiza y deriva a un humano cuando hace falta.</p></div>
-      <div class="card rev d1"><span class="ico">🎙️</span><h3 data-i18n="f2h">Atiende el teléfono</h3><p data-i18n="f2p">ChatVoice con voz natural que cotiza y agenda por llamada.</p></div>
-      <div class="card rev d2"><span class="ico">✅</span><h3 data-i18n="f3h">El precio lo aprobás vos</h3><p data-i18n="f3p">El asistente sugiere; el cliente no ve un monto hasta tu OK desde el panel.</p></div>
-      <div class="card rev"><span class="ico">🗺️</span><h3 data-i18n="f4h">Traslados reales</h3><p data-i18n="f4p">Calcula distancia y tiempo de viaje antes de ofrecer un horario.</p></div>
-      <div class="card rev d1"><span class="ico">⏰️</span><h3 data-i18n="f5h">Aviso de atraso solo</h3><p data-i18n="f5p">Si un trabajo se estira, le escribe al próximo cliente por WhatsApp.</p></div>
-      <div class="card rev d2"><span class="ico">📱</span><h3 data-i18n="f6h">APK Android + PC</h3><p data-i18n="f6p">App nativa para el celular y programa de escritorio, mismos datos.</p></div>
+      <div class="card rev"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V4.5M9.5 13h.01M14.5 13h.01M9 17h6"/></svg></span><h3 data-i18n="f1h">Chatbot con IA real</h3><p data-i18n="f1p">Claude, ChatGPT o Gemini — elegís el motor. Entiende, cotiza y deriva a un humano cuando hace falta.</p></div>
+      <div class="card rev d1"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5v4"/></svg></span><h3 data-i18n="f2h">Atiende el teléfono</h3><p data-i18n="f2p">ChatVoice con voz natural que cotiza y agenda por llamada.</p></div>
+      <div class="card rev d2"><span class="ico">✔</span><h3 data-i18n="f3h">El precio lo aprobás vos</h3><p data-i18n="f3p">El asistente sugiere; el cliente no ve un monto hasta tu OK desde el panel.</p></div>
+      <div class="card rev"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3.5 3.5 6v14.5L9 18l6 2.5 5.5-2.5V3.5L15 6Z"/><path d="M9 3.5V18M15 6v14.5"/></svg></span><h3 data-i18n="f4h">Traslados reales</h3><p data-i18n="f4p">Calcula distancia y tiempo de viaje antes de ofrecer un horario.</p></div>
+      <div class="card rev d1"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 8.5V13l3 1.8M5 4 8 2M19 4l-3-2"/></svg></span><h3 data-i18n="f5h">Aviso de atraso solo</h3><p data-i18n="f5p">Si un trabajo se estira, le escribe al próximo cliente por WhatsApp.</p></div>
+      <div class="card rev d2"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></span><h3 data-i18n="f6h">APK Android + PC</h3><p data-i18n="f6p">App nativa para el celular y programa de escritorio, mismos datos.</p></div>
     </div>
   </div>
 </section>
@@ -384,8 +385,8 @@ window.MV_PT = {
   chatNombre:'Assistente do Marcelo — Eletricista', chatLinea:'● online',
   m1:'Oi! Quanto custa trocar uma tomada dupla e quando você pode vir?',
   m2:'<b>MV:</b> Olá! A troca da tomada dupla fica <b>R$ 180</b> (mão de obra + materiais + deslocamento). Tenho horário <b>amanhã às 14:30</b>. Confirmamos?',
-  m3:'Sim, pode confirmar 👍',
-  m4:'<b>MV:</b> Agendado ✅ Se o Marcelo atrasar, eu mesmo te aviso por aqui.',
+  m3:'Sim, pode confirmar ',
+  m4:'<b>MV:</b> Agendado ✔ Se o Marcelo atrasar, eu mesmo te aviso por aqui.',
   pasosH:'Da consulta ao pagamento, sem você atender o telefone', pasosP:'Um mesmo fluxo de ponta a ponta, 24 horas.',
   pa1h:'Escreve ou liga para você', pa1p:'WhatsApp, telefone ou o chat do seu site. O assistente responde na hora, no seu nome e no idioma do seu país.',
   pa2h:'Orça com os seus preços', pa2p:'Orçamento detalhado com mão de obra, materiais e deslocamento — sempre dentro da sua própria tabela.',
@@ -430,8 +431,8 @@ window.MV_EN = {
   chatNombre:"Marcelo's assistant — Electrician", chatLinea:'● online',
   m1:'Hi! How much to replace a double outlet and when can you come?',
   m2:'<b>MV:</b> Hi! Replacing a double outlet is around <b>$40</b> (labor + materials + travel). I have a slot <b>tomorrow at 2:30 pm</b>. Shall we confirm?',
-  m3:'Yes, go ahead 👍',
-  m4:'<b>MV:</b> Booked ✅ If Marcelo runs late, I\'ll let you know right here myself.',
+  m3:'Yes, go ahead ',
+  m4:'<b>MV:</b> Booked ✔ If Marcelo runs late, I\'ll let you know right here myself.',
   pasosH:'From inquiry to payment, without you answering the phone', pasosP:'One end-to-end flow, 24 hours a day.',
   pa1h:'Writes or calls you', pa1p:'WhatsApp, phone or your website chat. The assistant replies instantly, in your name and your country\'s language.',
   pa2h:'Quotes with your prices', pa2p:'Itemized quote with labor, materials and travel — always within your own price list.',

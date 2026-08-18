@@ -61,7 +61,8 @@
   .nav .marca { font-weight:800; font-size:1.08rem; display:flex; align-items:center; gap:10px; white-space:nowrap; }
   .nav .marca img { width:34px; height:34px; border-radius:8px; flex:0 0 auto; }
   .nav .marca span { color:var(--oro); }
-  .nav .links { display:flex; align-items:center; }
+  .nav .links { display:flex; align-items:center; flex-wrap:wrap; justify-content:flex-end; gap:6px; min-width:0; }
+  .nav .links > * { min-width:0; }
   .nav a { color:#cfdae4; text-decoration:none; margin-left:22px; font-size:.92rem; }
   .nav a:hover { color:#fff; }
   .nav a.cta { background:var(--oro); color:var(--azul); padding:9px 18px; border-radius:8px; font-weight:700; }
@@ -107,6 +108,7 @@
   .card h3 { color:var(--azul); margin-bottom:8px; font-size:1.1rem; }
   .card p { font-size:.93rem; color:#44535f; line-height:1.55; }
   .card .ico { font-size:1.9rem; margin-bottom:12px; display:block; }
+  .card .ico svg { width:34px; height:34px; color:var(--cel,#1f7ae0); display:block; }
 
   /* Cómo funciona — stepper interactivo */
   .como { background:var(--gris); max-width:none; }
@@ -157,7 +159,7 @@
   .precio small { font-size:.98rem; font-weight:400; color:#7a8895; }
   .precios ul { list-style:none; margin:16px 0; padding:0; flex:1; }
   .precios li { padding:6px 0; font-size:.9rem; color:#44535f; padding-left:22px; position:relative; }
-  .precios li::before { content:'✓'; color:var(--cel); font-weight:700; position:absolute; left:0; }
+  .precios li::before { content:'✔'; color:var(--cel); font-weight:700; position:absolute; left:0; }
   .precios a.cta-plan { display:block; text-decoration:none; text-align:center; font-weight:700; padding:13px; border-radius:10px; margin-top:6px; }
   .nota-var { font-size:.8rem; color:var(--sub); margin-top:12px; line-height:1.5; }
 
@@ -233,7 +235,7 @@
     <div class="m mu">Hola! Cuánto sale cambiar un tomacorriente doble y cuándo podés venir?</div>
     <div class="m mb"><b>MV:</b> ¡Hola! El cambio de tomacorriente doble sale <b>$ 1.350</b> (mano de obra + materiales + traslado a tu zona). Tengo lugar <b>mañana 14:30 a 15:30</b>. ¿Confirmamos esa dirección?</div>
     <div class="m mu">Sí, dale, confirmá para mañana</div>
-    <div class="m mb"><b>MV:</b> Quedaste agendado para mañana 14:30 ✅ Si Marcelo se atrasa 30 min o más, te aviso yo mismo por acá.</div>
+    <div class="m mb"><b>MV:</b> Quedaste agendado para mañana 14:30 ✔ Si Marcelo se atrasa 30 min o más, te aviso yo mismo por acá.</div>
   </div>
 </div>
 
@@ -329,15 +331,15 @@
     <p class="lead" data-i18n="funcLead">Pensado para el trabajo real de un oficio: se cotiza distinto según el trabajo, se agenda alrededor de los traslados, y el cliente necesita confirmación y una disculpa cuando algo se atrasa.</p>
   </div>
   <div class="grid">
-    <div class="card"><span class="ico">💬</span><h3 data-i18n="c1h">Chatbot con IA por WhatsApp</h3><p data-i18n="c1p">Conversa en español rioplatense usando el número del profesional, entiende el pedido y deriva a un humano cuando hace falta.</p></div>
-    <div class="card"><span class="ico">🎙️</span><h3 data-i18n="c2h">Atiende el teléfono</h3><p data-i18n="c2p">Voz natural rioplatense (Piper/ElevenLabs) que cotiza y agenda por llamada, tal como lo haría el profesional.</p></div>
-    <div class="card"><span class="ico">💰</span><h3 data-i18n="c3h">Cotizador multi-oficio</h3><p data-i18n="c3p">Presupuesto con mano de obra, materiales y traslado, siempre según la lista de precios que cargó el profesional — nunca un valor inventado.</p></div>
-    <div class="card"><span class="ico">🗺️</span><h3 data-i18n="c4h">Agenda con traslados reales</h3><p data-i18n="c4p">Calcula distancia y tiempo de viaje entre citas (Haversine + velocidad promedio configurable) antes de ofrecer un horario.</p></div>
-    <div class="card"><span class="ico">⏰️</span><h3 data-i18n="c5h">Aviso automático de atraso</h3><p data-i18n="c5p">Si un trabajo se extiende 30 minutos o más, le escribe solo al próximo cliente pidiendo disculpas por la demora — sin que el profesional haga nada.</p></div>
-    <div class="card"><span class="ico">🏠</span><h3 data-i18n="c6h">Confirma dirección y receptor</h3><p data-i18n="c6p">Valida la dirección contra la ficha del cliente y pregunta quién va a recibir al profesional si no es el titular de la cuenta.</p></div>
-    <div class="card"><span class="ico">👥</span><h3 data-i18n="c7h">CRM de clientes</h3><p data-i18n="c7p">Historial de trabajos, direcciones y contacto de cada cliente, siempre a mano para el próximo turno.</p></div>
-    <div class="card"><span class="ico">📊</span><h3 data-i18n="c8h">Dashboards completos</h3><p data-i18n="c8p">Trabajos y facturación por día, semana, mes y año, con comparativas mes a mes y año a año — exportable a Excel, CSV y PDF.</p></div>
-    <div class="card"><span class="ico">📱</span><h3 data-i18n="c9h">App PC + Android</h3><p data-i18n="c9p">Programa de escritorio y APK instalable en el celular, con la misma agenda y el mismo CRM sincronizados.</p></div>
+    <div class="card"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 12a8 8 0 0 1-11.5 7.2L3.5 20.5l1.3-5.5A8 8 0 1 1 20.5 12Z"/></svg></span><h3 data-i18n="c1h">Chatbot con IA por WhatsApp</h3><p data-i18n="c1p">Conversa en español rioplatense usando el número del profesional, entiende el pedido y deriva a un humano cuando hace falta.</p></div>
+    <div class="card"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5v4"/></svg></span><h3 data-i18n="c2h">Atiende el teléfono</h3><p data-i18n="c2p">Voz natural rioplatense (Piper/ElevenLabs) que cotiza y agenda por llamada, tal como lo haría el profesional.</p></div>
+    <div class="card"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5v19"/><path d="M16.5 6.5H9.75a2.75 2.75 0 0 0 0 5.5h4.5a2.75 2.75 0 0 1 0 5.5H7"/></svg></span><h3 data-i18n="c3h">Cotizador multi-oficio</h3><p data-i18n="c3p">Presupuesto con mano de obra, materiales y traslado, siempre según la lista de precios que cargó el profesional — nunca un valor inventado.</p></div>
+    <div class="card"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3.5 3.5 6v14.5L9 18l6 2.5 5.5-2.5V3.5L15 6Z"/><path d="M9 3.5V18M15 6v14.5"/></svg></span><h3 data-i18n="c4h">Agenda con traslados reales</h3><p data-i18n="c4p">Calcula distancia y tiempo de viaje entre citas (Haversine + velocidad promedio configurable) antes de ofrecer un horario.</p></div>
+    <div class="card"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 8.5V13l3 1.8M5 4 8 2M19 4l-3-2"/></svg></span><h3 data-i18n="c5h">Aviso automático de atraso</h3><p data-i18n="c5p">Si un trabajo se extiende 30 minutos o más, le escribe solo al próximo cliente pidiendo disculpas por la demora — sin que el profesional haga nada.</p></div>
+    <div class="card"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5 12 3.5l8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.5 20v-6h5v6"/></svg></span><h3 data-i18n="c6h">Confirma dirección y receptor</h3><p data-i18n="c6p">Valida la dirección contra la ficha del cliente y pregunta quién va a recibir al profesional si no es el titular de la cuenta.</p></div>
+    <div class="card"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 20v-1.6a4 4 0 0 0-4-4H6.5a4 4 0 0 0-4 4V20"/><circle cx="9.25" cy="7.5" r="3.5"/><path d="M21.5 20v-1.6a4 4 0 0 0-3-3.87"/></svg></span><h3 data-i18n="c7h">CRM de clientes</h3><p data-i18n="c7p">Historial de trabajos, direcciones y contacto de cada cliente, siempre a mano para el próximo turno.</p></div>
+    <div class="card"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 20.5h17M7 20.5v-7M12 20.5V6M17 20.5v-10"/></svg></span><h3 data-i18n="c8h">Dashboards completos</h3><p data-i18n="c8p">Trabajos y facturación por día, semana, mes y año, con comparativas mes a mes y año a año — exportable a Excel, CSV y PDF.</p></div>
+    <div class="card"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></span><h3 data-i18n="c9h">App PC + Android</h3><p data-i18n="c9p">Programa de escritorio y APK instalable en el celular, con la misma agenda y el mismo CRM sincronizados.</p></div>
   </div>
 </section>
 
