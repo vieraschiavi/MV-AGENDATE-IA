@@ -100,6 +100,11 @@ test('en el programa instalado, "/" es el panel y no la pagina de venta', async 
   // queda poco serio — y puede volver ahi con un clic y perderse. En el
   // servidor web (sin MV_ESCRITORIO) "/" tiene que seguir siendo la landing.
   const r = await fetch(`${base}/`, { redirect: 'manual' });
+  // Hay que consumir el cuerpo SIEMPRE, aunque no se use: con keep-alive, una
+  // respuesta sin leer deja el socket abierto, y el server.close() del after()
+  // se queda esperando esa conexion — el archivo de test no termina nunca y el
+  // job de CI cuelga sin fallar (que es peor que fallar: no dice por que).
+  await r.arrayBuffer();
   assert.equal(r.status, 302, 'el programa de escritorio no puede servir la landing en la raiz');
   assert.equal(r.headers.get('location'), '/app/');
 });
