@@ -68,7 +68,7 @@ function pintar(cita) {
   const monto = pagado ? cobro.montoPagado : cobro.monto;
   const moneda = cobro.moneda || '';
 
-  $('#ico').textContent = pagado ? '✅' : '⏳';
+  $('#ico').textContent = pagado ? '✔' : '⏳';
   $('#titulo').textContent = pagado ? '¡Listo, pago recibido!' : 'Tu pago se está acreditando';
   $('#lead').textContent = pagado
     ? 'Ya le avisamos al profesional y quedó registrado en su agenda.'
@@ -89,7 +89,7 @@ function pintar(cita) {
 
 async function consultar(intento = 0) {
   if (!citaId) {
-    $('#ico').textContent = '🤔';
+    $('#ico').textContent = '';
     $('#titulo').textContent = 'No sabemos de qué trabajo se trata';
     $('#lead').textContent = 'El link no traía la referencia del trabajo. Consultale al profesional.';
     return;
@@ -104,7 +104,7 @@ async function consultar(intento = 0) {
       setTimeout(() => consultar(intento + 1), 3000);
     }
   } catch {
-    $('#ico').textContent = '🤔';
+    $('#ico').textContent = '';
     $('#titulo').textContent = 'No pudimos leer el estado';
     $('#lead').textContent = 'Si ya pagaste, quedate tranquilo: el pago se registra igual. Consultale al profesional.';
   }

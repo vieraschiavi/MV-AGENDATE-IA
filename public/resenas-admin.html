@@ -74,7 +74,7 @@ function render(lista) {
   const pend = lista.filter((r) => !r.aprobada), pub = lista.filter((r) => r.aprobada);
   cont.innerHTML =
     (pend.length ? '<div class="card"><h1 style="font-size:1rem;">⏳ Pendientes de aprobar (' + pend.length + ')</h1>' + pend.map(fila).join('') + '</div>' : '') +
-    (pub.length ? '<div class="card"><h1 style="font-size:1rem;">✅ Publicadas (' + pub.length + ')</h1>' + pub.map(fila).join('') + '</div>' : '');
+    (pub.length ? '<div class="card"><h1 style="font-size:1rem;">✔ Publicadas (' + pub.length + ')</h1>' + pub.map(fila).join('') + '</div>' : '');
   cont.querySelectorAll('[data-acc]').forEach((b) => b.onclick = () => moderar(b.dataset.id, b.dataset.acc));
 }
 function fila(r) {
