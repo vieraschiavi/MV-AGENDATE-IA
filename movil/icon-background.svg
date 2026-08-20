@@ -1,9 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-  <!-- Fondo a sangre completa (el launcher aplica la forma/máscara) -->
+  <!-- Fondo a sangre completa (el launcher aplica la forma/máscara).
+       Las paradas del degradado son las del ícono canónico de MV Software
+       (public/marca/mv-logo.svg del portal): si acá se desvían, el ícono de
+       Android deja de ser el mismo que el del resto de los trece productos. -->
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#20456b"/>
-      <stop offset="1" stop-color="#0e2740"/>
+      <stop offset="0" stop-color="#1C3F63"/>
+      <stop offset="1" stop-color="#0D2440"/>
     </linearGradient>
   </defs>
   <rect width="1024" height="1024" fill="url(#bg)"/>
