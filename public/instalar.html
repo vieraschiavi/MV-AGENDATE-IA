@@ -45,6 +45,10 @@
   .sub{ text-align:center; color:var(--sub); margin-bottom:26px; }
   .pasos{ display:grid; gap:14px; }
   .paso{ display:flex; gap:14px; align-items:flex-start; border:1px solid var(--line); border-radius:14px; padding:16px 18px; background:#fff; }
+  .paso-clave{ border:2px solid var(--oro); background:#fffbeb; }
+  .paso-clave .ic{ background:#fdf0d5; }
+  .paso ol{ margin:8px 0 0 18px; padding:0; }
+  .paso ol li{ margin-bottom:4px; }
   .paso .ic{ flex:none; width:40px; height:40px; border-radius:11px; background:#eef4fb; display:flex; align-items:center; justify-content:center; font-size:1.3rem; }
   .paso h3{ color:var(--azul); font-size:1rem; margin-bottom:2px; }
   .paso p{ color:var(--sub); font-size:.9rem; }
@@ -92,7 +96,7 @@
   <p class="sub" style="display:none" data-i18n="apkSub">Una app Android de verdad: ícono propio, exportaciones que van a Descargas, WhatsApp y teléfono integrados. Pesa menos de 1 MB.</p>
   <div class="pasos" style="display:none">
     <div class="paso"><div class="ic">1</div><div><h3 data-i18n="apk1h">Descargá la APK</h3><p data-i18n="apk1p">Tocá "Descargar APK Android" arriba. Se baja en segundos.</p></div></div>
-    <div class="paso"><div class="ic">2</div><div><h3 data-i18n="apk2h">Permití la instalación</h3><p data-i18n="apk2p">Al abrirla, Android te pide permitir "instalar apps desconocidas" para tu navegador (es normal fuera de Play Store: es nuestra app oficial, firmada). Aceptá → Instalar.</p></div></div>
+    <div class="paso paso-clave"><div class="ic">2</div><div><h3 data-i18n="apk2h">Permití la instalación (paso clave, fuera de Play Store)</h3><p data-i18n-html="apk2p">Al abrir el archivo, Android bloquea la instalación por defecto — es lo normal para cualquier app fuera de Play Store, no es un error ni un virus. Se destraba en 3 toques:<ol><li>Tocá <b>"Configuración"</b> en el aviso que aparece.</li><li>Activá el interruptor <b>"Permitir de esta fuente"</b> (para el navegador o la app de Archivos que usaste para abrir la APK).</li><li>Volvé atrás con la flecha ← y tocá <b>"Instalar"</b>.</li></ol>Es un permiso puntual para esa app: no le da acceso libre a instalar cualquier cosa, solo autoriza esa vez.</p></div></div>
     <div class="paso"><div class="ic">3</div><div><h3 data-i18n="apk3h">Abrila y empezá</h3><p data-i18n="apk3p">Iniciá sesión con tu cuenta (o creala gratis). Si usás la versión de PC, mantené presionado el ícono → "Configurar servidor" y poné la dirección de tu PC.</p></div></div>
   </div>
 </section>
@@ -147,7 +151,7 @@ window.MV_PT = {
   apkH2: '🤖 APK Android (recomendada para o celular)',
   apkSub: 'Um app Android de verdade: ícone próprio, exportações que vão para Downloads, WhatsApp e telefone integrados. Pesa menos de 1 MB.',
   apk1h: 'Baixe a APK', apk1p: 'Toque em "Baixar APK Android" acima. Baixa em segundos.',
-  apk2h: 'Permita a instalação', apk2p: 'Ao abri-la, o Android pede para permitir "instalar apps desconhecidos" para o seu navegador (é normal fora da Play Store: é o nosso app oficial, assinado). Aceite → Instalar.',
+  apk2h: 'Permita a instalação (passo-chave, fora da Play Store)', apk2p: 'Ao abrir o arquivo, o Android bloqueia a instalação por padrão — é normal para qualquer app fora da Play Store, não é erro nem vírus. Destrava em 3 toques:<ol><li>Toque em <b>"Configurações"</b> no aviso que aparece.</li><li>Ative a chave <b>"Permitir desta fonte"</b> (para o navegador ou o app de Arquivos que você usou para abrir a APK).</li><li>Volte com a seta ← e toque em <b>"Instalar"</b>.</li></ol>É uma permissão pontual para esse app: não dá acesso livre para instalar qualquer coisa, só autoriza dessa vez.',
   apk3h: 'Abra e comece', apk3p: 'Entre com a sua conta (ou crie grátis). Se usa a versão de PC, mantenha pressionado o ícone → "Configurar servidor" e coloque o endereço do seu PC.',
   pwaH2: 'Sem baixar nada (app instalável / PWA)',
   pwaSub: 'Você também pode adicioná-lo à tela inicial direto do navegador — única opção no iPhone.',
@@ -183,7 +187,7 @@ window.MV_EN = {
   apkH2: '🤖 Android APK (recommended for phones)',
   apkSub: 'A real Android app: its own icon, exports that go to Downloads, WhatsApp and phone integrated. Under 1 MB.',
   apk1h: 'Download the APK', apk1p: 'Tap "Download Android APK" above. It downloads in seconds.',
-  apk2h: 'Allow the install', apk2p: 'When you open it, Android asks to allow "install unknown apps" for your browser (normal outside the Play Store: it\'s our official, signed app). Accept → Install.',
+  apk2h: 'Allow the install (key step, outside the Play Store)', apk2p: 'When you open the file, Android blocks the install by default — that\'s normal for any app outside the Play Store, not an error or a virus. It unlocks in 3 taps:<ol><li>Tap <b>"Settings"</b> on the warning that appears.</li><li>Turn on <b>"Allow from this source"</b> (for the browser or Files app you used to open the APK).</li><li>Go back with the ← arrow and tap <b>"Install"</b>.</li></ol>It\'s a one-time permission for that app: it doesn\'t grant free access to install anything, just authorizes that one time.',
   apk3h: 'Open it and start', apk3p: 'Sign in with your account (or create one free). If you use the PC version, long-press the icon → "Configure server" and enter your PC\'s address.',
   pwaH2: 'Without downloading anything (installable app / PWA)',
   pwaSub: 'You can also add it to your home screen straight from the browser — the only option on iPhone.',

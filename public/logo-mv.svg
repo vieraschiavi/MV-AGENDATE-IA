@@ -6,7 +6,6 @@
     </linearGradient>
   </defs>
   <rect x="8" y="8" width="1008" height="1008" rx="232" fill="url(#bg)"/>
-  <rect x="40" y="40" width="944" height="944" rx="200" fill="none" stroke="#4a6f98" stroke-width="10" opacity="0.7"/>
   <!-- M (blanco) — letra independiente, sin tocar la V -->
   <polyline points="87,700 87,360 297,590 507,360 507,700"
     fill="none" stroke="#ffffff" stroke-width="94" stroke-linejoin="miter" stroke-linecap="butt"/>
