@@ -8,7 +8,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { randomBytes, createHmac, timingSafeEqual, createPrivateKey, sign } from 'node:crypto';
-import { redisDisponible, kvGet, kvSet, kvDel, kvMGet, kvSAdd, kvSRem, kvSMembers } from './redis.js';
+import { redisDisponible, kvGet, kvSet, kvDel, kvMGet, kvSAdd, kvSRem, kvSMembers, kvIncrBy } from './redis.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const DIR = process.env.MV_DATOS_DIR || (process.env.VERCEL ? '/tmp/mvdata' : join(here, '../../data'));
@@ -316,4 +316,52 @@ export function archivoDeVersion(version) {
     ios: 'MV-Agendate-IA-Setup.exe',
     todas: 'MV-Agendate-IA-Setup.exe',
   }[version] || 'MV-Agendate-IA-Setup.exe';
+}
+
+// --- Monitor: cuántas veces se bajó cada paquete, y cuánto entró por ventas ---
+//
+// Lista fija (no un contador por nombre arbitrario): así un GET a
+// /descargas/../../lo-que-sea no crea claves nuevas en Redis por cada intento
+// de un bot, y el resumen siempre muestra los mismos cuatro nombres aunque
+// nunca se hayan descargado.
+const ARCHIVOS_DESCARGABLES = [
+  'MV-Agendate-IA-Setup.exe', 'MV-Agendate-IA-Setup-Demo.exe',
+  'MV-Agendate-IA-PC.zip', 'MV-Agendate-IA.apk'
+];
+const claveDescarga = (archivo) => `mvagendate:descargas:${archivo}`;
+
+/** Suma una descarga del paquete dado. Nombres fuera de la lista se ignoran. */
+export async function contarDescarga(archivo) {
+  if (!ARCHIVOS_DESCARGABLES.includes(archivo)) return;
+  await kvIncrBy(claveDescarga(archivo), 1);
+}
+
+/** Cuántas veces se bajó cada paquete desde que existe este contador. */
+export async function resumenDescargas() {
+  const valores = await kvMGet(ARCHIVOS_DESCARGABLES.map(claveDescarga));
+  const out = {};
+  ARCHIVOS_DESCARGABLES.forEach((archivo, i) => { out[archivo] = Number(valores[i]) || 0; });
+  return out;
+}
+
+/** Pedidos y plata: cuántos se pagaron, cuánto entró, desglosado por plan. */
+export async function resumenVentas() {
+  const pedidos = await listarPedidos();
+  const pagados = pedidos.filter((p) => p.estado === 'pagado');
+  const porPlan = {};
+  for (const plan of Object.keys(PLANES)) {
+    const deEsePlan = pagados.filter((p) => p.plan === plan);
+    porPlan[plan] = {
+      nombre: PLANES[plan].nombre,
+      cantidad: deEsePlan.length,
+      revenue_usd: deEsePlan.reduce((suma, p) => suma + (p.total_usd || 0), 0)
+    };
+  }
+  return {
+    pedidos_totales: pedidos.length,
+    pedidos_pagados: pagados.length,
+    pedidos_pendientes: pedidos.length - pagados.length,
+    revenue_usd_total: pagados.reduce((suma, p) => suma + (p.total_usd || 0), 0),
+    por_plan: porPlan
+  };
 }
