@@ -62,8 +62,19 @@ async function cargar() {
   } catch { aviso('No pude conectar.', false); }
 }
 
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
 function render(d) {
   const v = d.ventas, desc = d.descargas, cta = d.cuentas_saas;
+  const demos = d.solicitudes_demo || [];
+  const fecha = (s) => { try { return new Date(s).toLocaleDateString('es'); } catch { return ''; } };
+  const filasDemo = demos.map((s) => `<tr>
+    <td>${esc(s.nombre)}<br><span style="color:var(--sub);font-size:.8rem;">${esc(s.email)}</span></td>
+    <td>${esc(s.empresa)}${s.oficio ? '<br><span style="color:var(--sub);font-size:.8rem;">' + esc(s.oficio) + '</span>' : ''}</td>
+    <td>${esc(s.pais)}</td>
+    <td>${esc(s.estado)}${s.pedidos > 1 ? ' <b>(pidió ' + s.pedidos + '×)</b>' : ''}</td>
+    <td>${fecha(s.ultimo)}</td>
+  </tr>`).join('');
   const filasPlan = Object.entries(v.por_plan).map(([k, p]) =>
     `<tr><td>${p.nombre}</td><td>${p.cantidad}</td><td>USD ${p.revenue_usd}</td></tr>`).join('');
   const filasDesc = Object.entries(desc).map(([archivo, n]) =>
@@ -76,7 +87,14 @@ function render(d) {
         <div class="num"><div class="v">${v.pedidos_pagados}</div><div class="l">Pedidos pagados</div></div>
         <div class="num"><div class="v">${v.pedidos_pendientes}</div><div class="l">Pedidos sin pagar / abandonados</div></div>
         <div class="num"><div class="v">${cta.total}</div><div class="l">Cuentas SaaS registradas</div></div>
+        <div class="num"><div class="v">${demos.length}</div><div class="l">Pedidos de demo (leads)</div></div>
       </div>
+    </div>
+    <div class="card">
+      <h2>Pedidos de demo</h2>
+      <div class="sub">Quién pidió ver la demo. La demo no es pública: se muestra en vivo, uno a uno.</div>
+      <table><thead><tr><th>Quién</th><th>Empresa</th><th>País</th><th>Estado</th><th>Último pedido</th></tr></thead>
+      <tbody>${filasDemo || '<tr><td colspan="5" class="empty">Todavía no pidió nadie.</td></tr>'}</tbody></table>
     </div>
     <div class="card">
       <h2>Por plan</h2>

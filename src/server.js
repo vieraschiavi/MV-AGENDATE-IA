@@ -45,6 +45,7 @@ import {
 import * as suscripciones from './store/suscripciones.js';
 import { generarLinkDeCobro } from './store/cobro-trabajo.js';
 import { prepararCasoDemo } from './store/demo-caso.js';
+import * as solicitudesDemo from './store/solicitudes-demo.js';
 import { existsSync } from 'node:fs';
 import whatsapp, { enviarWhatsApp, probarConexion as probarConexionWhatsapp } from './channels/whatsapp.js';
 import * as tw from './store/twilio.js';
@@ -204,6 +205,14 @@ const visitante = (req) => req.headers['x-visitor-id'] || req.body?.sessionId ||
 app.post('/api/chat', limitar({ nombre: 'chat', max: 20, ventanaSeg: 60,
   mensaje: 'Muchos mensajes seguidos.' }), async (req, res) => {
   if (await esBot(req)) return res.status(403).json({ error: 'Acceso denegado.' });
+  // La demo dejó de ser pública: se muestra en vivo, 1:1 y a pedido. Ver
+  // puedeUsarAgente() — el cliente que pagó y la cuenta SaaS no se tocan.
+  if (!puedeUsarAgente(req)) {
+    return res.status(403).json({
+      error: 'La demo no es pública: se muestra en vivo, uno a uno. Pedila en /demo.html y coordinamos.',
+      demoBajoPedido: true
+    });
+  }
   if (!iaHabilitada()) return res.status(402).json({ error: motivoSuspension() });
   const { mensaje, sessionId } = req.body ?? {};
   if (!mensaje || typeof mensaje !== 'string') {
@@ -481,6 +490,51 @@ app.get('/api/demo-estado', (req, res) => {
   res.json({ demoLimitada: demoLimitada(), restantes: usosRestantes(visitante(req)) });
 });
 
+// --- Pedidos de demo (la demo ya no es pública: se muestra 1:1 y agendada) ---
+// El aviso al dueño es un email HTML y los campos los escribe un desconocido:
+// sin escapar, un nombre con <script> o con etiquetas rotas le llega inyectado
+// en su propia bandeja.
+const escaparHtml = (s) => String(s ?? '')
+  .replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// El límite es bajo a propósito: es un formulario que una persona llena una
+// vez, no algo que se use seguido. Sin esto, un bot llena la lista de leads de
+// basura y el dueño recibe un mail por cada intento.
+app.post('/api/demo/solicitar', limitar({ nombre: 'demo-solicitar', max: 3, ventanaSeg: 3600,
+  mensaje: 'Ya mandaste tu pedido. Te escribimos a la brevedad.' }), async (req, res) => {
+  if (await esBot(req)) return res.status(403).json({ error: 'Acceso denegado.' });
+  const r = await solicitudesDemo.registrarSolicitud(req.body ?? {});
+  if (!r.ok) return res.status(400).json(r);
+
+  // El aviso por email es la capa de notificación, no la de registro: la
+  // solicitud ya quedó guardada arriba. Si Resend no está configurado o falla,
+  // el lead igual aparece en /monitor.html — no se pierde nadie por eso.
+  const s = r.solicitud;
+  const destino = cfg('emailDemos') || process.env.EMAIL_DEMOS;
+  if (destino) {
+    emails.enviarEmailAsync({
+      para: destino,
+      asunto: `Pedido de demo: ${s.nombre} (${s.empresa}, ${s.pais})`,
+      html: `<p><b>${escaparHtml(s.nombre)}</b> pidió una demo.</p>
+<ul>
+  <li>Email: ${escaparHtml(s.email)}</li>
+  <li>País: ${escaparHtml(s.pais)}</li>
+  <li>Empresa: ${escaparHtml(s.empresa)}</li>
+  ${s.oficio ? `<li>Oficio/rubro: ${escaparHtml(s.oficio)}</li>` : ''}
+  ${s.pedidos > 1 ? `<li><b>Ya había pedido antes</b> (${s.pedidos} veces)</li>` : ''}
+</ul>
+${s.mensaje ? `<p>Mensaje:<br>${escaparHtml(s.mensaje)}</p>` : ''}`
+    });
+  } else {
+    console.warn('[demo] Pedido de demo guardado pero SIN aviso por email: configurá EMAIL_DEMOS.');
+  }
+  res.json({ ok: true, repetida: r.repetida });
+});
+app.get('/api/demo/solicitudes', soloAdmin, async (_req, res) => res.json(await solicitudesDemo.listarSolicitudes()));
+app.post('/api/demo/solicitudes/marcar', soloAdmin, async (req, res) => {
+  const r = await solicitudesDemo.marcarSolicitud(req.body?.email, req.body?.estado);
+  res.status(r.ok ? 200 : 400).json(r);
+});
+
 /** Compara dos secretos sin filtrar por timing cuántos caracteres coinciden. */
 function igualSeguro(a, b) {
   const ba = Buffer.from(String(a ?? ''), 'utf8');
@@ -507,6 +561,36 @@ function soloAdmin(req, res, next) {
     return res.status(401).json({ error: 'Panel deshabilitado: configurá ADMIN_KEY.' });
   }
   return next();
+}
+
+/**
+ * ¿Esta request puede conversar con el agente de IA?
+ *
+ * La demo dejó de ser pública (ver store/solicitudes-demo.js): un chat abierto
+ * en la web dejaba que cualquiera —competencia incluida— le sacara al agente
+ * cómo cotiza, cómo repregunta y cómo arma la agenda, que es justamente lo que
+ * diferencia al producto. Ahora la demo se muestra 1:1 y agendada.
+ *
+ * Lo que se cierra es SOLO la demo pública del sitio hosteado. Sigue abierto
+ * para todos los que ya tienen derecho a usar el agente, en el mismo orden de
+ * casos que usa soloAdmin:
+ *   - el programa instalado (PC/APK): es un cliente que pagó;
+ *   - una cuenta SaaS autenticada: paga su suscripción y prueba SU asistente;
+ *   - el dueño con la clave de administración (así /config.html sigue andando);
+ *   - desarrollo local sin clave configurada.
+ */
+function puedeUsarAgente(req) {
+  if (process.env.MV_ESCRITORIO) return true;
+  if (req.cuentaId !== 'default') return true;
+  // Escape hatch, apagado por default. public/widget.js —el chat que el
+  // profesional embebe en SU web para SUS clientes— no manda ninguna
+  // credencial, así que cae acá. Quien hostee su propio servidor lo prende con
+  // DEMO_PUBLICA=1; en el sitio de venta de MV queda apagado, que es el caso
+  // que motivó cerrar la demo.
+  if (cfg('demoPublica') === '1' || cfg('demoPublica') === 'true') return true;
+  const clave = cfg('adminKey');
+  if (clave) return igualSeguro(req.headers['x-admin-key'], clave);
+  return !(process.env.VERCEL || process.env.NODE_ENV === 'production');
 }
 
 // Rutas del workspace (citas/clientes/cotizaciones): en la cuenta 'default'
@@ -1086,14 +1170,22 @@ app.get('/api/licencias', soloAdmin, async (_req, res) => res.json(await lic.lis
 // Monitor del dueño: totales de ventas/descargas/cuentas en una sola llamada,
 // para no tener que cruzar a mano /api/licencias + /api/admin/cuentas.
 app.get('/api/admin/resumen', soloAdmin, async (_req, res) => {
-  const [ventas, descargas, cuentasSaas] = await Promise.all([
-    lic.resumenVentas(), lic.resumenDescargas(), cuentas.listarCuentas()
+  const [ventas, descargas, cuentasSaas, demos] = await Promise.all([
+    lic.resumenVentas(), lic.resumenDescargas(), cuentas.listarCuentas(),
+    solicitudesDemo.listarSolicitudes()
   ]);
   const cuentasPorEstado = cuentasSaas.reduce((acc, c) => {
     acc[c.estado] = (acc[c.estado] || 0) + 1;
     return acc;
   }, {});
-  res.json({ ventas, descargas, cuentas_saas: { total: cuentasSaas.length, por_estado: cuentasPorEstado } });
+  res.json({
+    ventas, descargas,
+    cuentas_saas: { total: cuentasSaas.length, por_estado: cuentasPorEstado },
+    // Los pedidos de demo son los leads: quién pidió verla, de dónde y de qué
+    // empresa. Van enteros (no solo el total) porque el monitor es la pantalla
+    // donde el dueño decide a quién contactar.
+    solicitudes_demo: demos
+  });
 });
 app.post('/api/descarga/generar', soloAdmin, (req, res) => {
   const version = String(req.body?.version || 'pc');

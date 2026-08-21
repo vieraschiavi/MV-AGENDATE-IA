@@ -90,6 +90,16 @@ const ENV = {
   adminKey: 'ADMIN_KEY',
   demoLimite: 'DEMO_LIMITE',      // '1' = instancia de demostración con cupo
   demoMaxUsos: 'DEMO_MAX_USOS',   // usos gratis antes de bloquear (default 3)
+  // '1' = dejar el chat del agente ABIERTO a visitantes sin credencial.
+  // Apagado por default: en el sitio de venta, un chat abierto le regala a
+  // cualquiera —competencia incluida— cómo cotiza y agenda el asistente, que
+  // es el trabajo de ingeniería del producto (ver store/solicitudes-demo.js).
+  // Se prende sólo si hosteás TU propio servidor y embebés public/widget.js en
+  // tu web para que te escriban TUS clientes: ese widget no manda credencial.
+  demoPublica: 'DEMO_PUBLICA',
+  // A dónde avisar cuando alguien pide una demo. Sin esto el pedido igual se
+  // guarda y se ve en /monitor.html, pero no llega ningún mail.
+  emailDemos: 'EMAIL_DEMOS',
   costoInputMusd: 'COSTO_INPUT_MUSD',   // USD por millón de tokens de entrada (ref)
   costoOutputMusd: 'COSTO_OUTPUT_MUSD', // USD por millón de tokens de salida (ref)
   // Créditos de IA (modo SaaS): el vendedor pone su key y le vende créditos a
@@ -178,7 +188,7 @@ function cargar() {
  * el oficio, país, precios y credenciales de ESA cuenta sin cambios de código.
  * Los overrides no aplican a las claves del vendedor (admin, pagos, licencia).
  */
-const NUNCA_OVERRIDE = new Set(['adminKey', 'mercadopagoToken', 'jwtSecret', 'licenciaLocal', 'demoLimite', 'demoMaxUsos', 'sitioUrl', 'preapprovalPlanFull', 'preapprovalPlanSaas', 'resendApiKey', 'emailFrom', 'descargaExeUrl']);
+const NUNCA_OVERRIDE = new Set(['adminKey', 'mercadopagoToken', 'jwtSecret', 'licenciaLocal', 'demoLimite', 'demoMaxUsos', 'demoPublica', 'emailDemos', 'sitioUrl', 'preapprovalPlanFull', 'preapprovalPlanSaas', 'resendApiKey', 'emailFrom', 'descargaExeUrl']);
 export function get(clave) {
   const ov = overridesActivos();
   if (ov && !NUNCA_OVERRIDE.has(clave) && ov[clave] !== undefined && ov[clave] !== '') return ov[clave];

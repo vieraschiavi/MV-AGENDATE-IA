@@ -4,336 +4,180 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Demo — MV Agendate IA</title>
+<title>Pedir una demo — MV Agendate IA</title>
 <link rel="icon" href="/logo-mv.svg" type="image/svg+xml">
-<meta name="description" content="Probá gratis el asistente: chateá con él, pedí un presupuesto real y mirá cómo arma los horarios teniendo en cuenta el traslado entre citas.">
+<meta name="description" content="Te mostramos MV Agendate IA en vivo, uno a uno: cómo cotiza con tu lista de precios, cómo arma la agenda con los traslados reales y cómo avisa los retrasos solo.">
 <link rel="canonical" href="https://mv-agendate-ia.vercel.app/demo.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="MV Agendate IA">
-<meta property="og:title" content="Demo en vivo — MV Agendate IA">
-<meta property="og:description" content="Probá gratis el asistente: chateá con él, pedí un presupuesto real y mirá cómo arma los horarios teniendo en cuenta el traslado entre citas.">
+<meta property="og:title" content="Pedir una demo — MV Agendate IA">
+<meta property="og:description" content="Demo en vivo, uno a uno. Te mostramos el asistente funcionando con un caso real de tu oficio.">
 <meta property="og:url" content="https://mv-agendate-ia.vercel.app/demo.html">
 <meta property="og:image" content="https://mv-agendate-ia.vercel.app/logo-mv.png">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Demo en vivo — MV Agendate IA">
-<meta name="twitter:description" content="Probá gratis el asistente: chateá con él, pedí un presupuesto real y mirá cómo arma los horarios teniendo en cuenta el traslado entre citas.">
+<meta name="twitter:title" content="Pedir una demo — MV Agendate IA">
+<meta name="twitter:description" content="Demo en vivo, uno a uno. Te mostramos el asistente funcionando con un caso real de tu oficio.">
 <meta name="twitter:image" content="https://mv-agendate-ia.vercel.app/logo-mv.png">
-
 <style>
-  :root { --azul:#0f2a43; --cel:#1f7ae0; --oro:#e3a72f; --gris:#f4f6f9; }
-  * { margin:0; box-sizing:border-box; font-family:'Segoe UI', system-ui, sans-serif; }
-  body { background:var(--gris); color:#22303e; }
-  header { background:var(--azul); color:#fff; padding:18px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
-  header a { color:var(--oro); text-decoration:none; font-weight:600; }
-  main { max-width:1100px; margin:24px auto; padding:0 16px; display:grid; grid-template-columns:1fr 1fr; gap:24px; }
-  @media (max-width:860px){ main{grid-template-columns:1fr;} }
-  .col { background:#fff; border-radius:14px; box-shadow:0 4px 18px #0001; overflow:hidden; display:flex; flex-direction:column; }
-  .col h2 { background:var(--azul); color:#fff; font-size:1.05rem; padding:14px 18px; }
-  /* Chat */
-  #mensajes { flex:1; min-height:380px; max-height:520px; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; }
-  .msg { max-width:82%; padding:10px 14px; border-radius:14px; font-size:.95rem; line-height:1.45; white-space:pre-wrap; }
-  .msg.user { align-self:flex-end; background:var(--cel); color:#fff; border-bottom-right-radius:4px; }
-  .msg.bot { align-self:flex-start; background:var(--gris); border-bottom-left-radius:4px; }
-  form.chat { display:flex; gap:8px; padding:12px; border-top:1px solid #e4e9ef; }
-  form.chat input { flex:1; padding:12px 14px; border:1px solid #cfd8e0; border-radius:10px; font-size:1rem; }
-  button { background:var(--cel); color:#fff; border:0; border-radius:10px; padding:12px 20px; font-size:1rem; font-weight:600; cursor:pointer; }
-  button:disabled { opacity:.5; }
-  .chips { padding:0 16px 12px; display:flex; flex-wrap:wrap; gap:8px; }
-  .chips span { background:#e8f0fb; color:var(--cel); border-radius:20px; padding:6px 12px; font-size:.82rem; cursor:pointer; }
-  /* Cotizador */
-  .cot { padding:18px; display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .cot label { font-size:.82rem; font-weight:600; color:#54626f; display:block; margin-bottom:4px; }
-  .cot input, .cot select { width:100%; padding:10px; border:1px solid #cfd8e0; border-radius:8px; font-size:.95rem; }
-  .cot .full { grid-column:1/-1; }
-  #resultado { margin:0 18px 18px; padding:16px; border-radius:10px; background:var(--gris); display:none; }
-  #resultado .rango { font-size:1.5rem; font-weight:800; color:var(--azul); }
-  #resultado small { color:#5a6b7c; display:block; margin-top:6px; }
-  #horarios { padding:0 18px 18px; }
-  .horario { background:#e8f0fb; border-radius:10px; padding:10px 12px; margin-top:8px; font-size:.88rem; }
-  /* En el celular, inputs a 16px (evita el zoom automático de iOS al enfocar). */
-  @media (max-width:640px){ .cot input, .cot select, form.chat input { font-size:16px; } }
+  :root{ --azul:#0f2a43; --azul2:#0b1f33; --cel:#1f7ae0; --verde:#2ea043; --oro:#e3a72f; --line:#e6ebf1; --tinta:#22303e; --sub:#5a6b7c; --gris:#f4f6f9; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:system-ui,-apple-system,'Segoe UI',sans-serif; background:var(--gris); color:var(--tinta); line-height:1.6; }
+  .nav{ background:#fff; border-bottom:1px solid var(--line); padding:12px 6%; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .nav .marca{ display:flex; align-items:center; gap:8px; font-weight:800; color:var(--azul); min-width:0; }
+  .nav img{ width:30px; height:30px; }
+  .nav a{ color:var(--cel); text-decoration:none; font-weight:600; font-size:.92rem; }
+  .nav .der{ margin-left:auto; display:flex; gap:14px; align-items:center; flex-wrap:wrap; min-width:0; }
+  .hero{ background:linear-gradient(160deg,var(--azul),var(--azul2)); color:#fff; padding:46px 6% 40px; text-align:center; }
+  .hero h1{ font-size:clamp(1.5rem,4vw,2.2rem); margin:0 0 12px; }
+  .hero p{ color:#cfe0ee; max-width:620px; margin:0 auto; }
+  .kicker{ display:inline-block; background:rgba(227,167,47,.16); color:var(--oro); font-weight:800; font-size:.76rem; letter-spacing:.04em; padding:6px 13px; border-radius:999px; margin-bottom:14px; }
+  main{ max-width:900px; margin:-24px auto 40px; padding:0 16px; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:16px; padding:24px; margin-bottom:16px; box-shadow:0 6px 24px rgba(15,42,67,.06); }
+  h2{ font-size:1.12rem; margin:0 0 6px; color:var(--azul); }
+  .sub{ color:var(--sub); font-size:.92rem; margin:0 0 18px; }
+  .campos{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:620px){ .campos{ grid-template-columns:1fr; } }
+  .campo.ancho{ grid-column:1 / -1; }
+  label{ display:block; font-size:.83rem; font-weight:600; color:var(--sub); margin-bottom:5px; }
+  input,select,textarea{ width:100%; padding:11px 13px; border:1px solid #cbd5e1; border-radius:9px; font-size:16px; font-family:inherit; background:#fff; color:var(--tinta); }
+  textarea{ resize:vertical; min-height:84px; }
+  input:focus,select:focus,textarea:focus{ outline:2px solid var(--cel); outline-offset:1px; border-color:var(--cel); }
+  .btn{ background:var(--cel); color:#fff; border:0; border-radius:10px; padding:14px 26px; font-weight:800; cursor:pointer; font-size:1rem; width:100%; margin-top:18px; }
+  .btn:disabled{ opacity:.6; cursor:not-allowed; }
+  .aviso{ margin-top:12px; font-size:.9rem; min-height:1.3em; }
+  .lista{ list-style:none; padding:0; margin:0; }
+  .lista li{ padding:9px 0 9px 28px; position:relative; border-bottom:1px solid var(--line); font-size:.94rem; }
+  .lista li:last-child{ border-bottom:0; }
+  .lista li::before{ content:'✔'; position:absolute; left:0; color:var(--verde); font-weight:800; }
+  .ok{ text-align:center; padding:12px 0; }
+  .ok .tick{ font-size:2.4rem; color:var(--verde); }
+  .porque{ background:#f8fafc; border-left:3px solid var(--oro); border-radius:0 10px 10px 0; padding:14px 16px; font-size:.9rem; color:var(--sub); }
+  footer{ padding:22px 6%; text-align:center; color:var(--sub); font-size:.82rem; border-top:1px solid var(--line); }
+  footer a{ color:var(--cel); }
 </style>
 </head>
 <body>
 
-<header>
-  <span style="display:flex;align-items:center;gap:10px;"><img src="/logo-mv.svg" alt="MV" style="width:34px;height:34px;border-radius:8px;"><strong id="hTitulo">MV Agendate IA — Demo en vivo</strong></span>
-  <span style="display:flex;align-items:center;gap:12px;">
-    <select id="selIdioma" aria-label="Idioma / Idioma" style="padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;font-size:15px;">
-      <option value="es">🇺🇾 Español</option>
-      <option value="pt">🇧🇷 Português</option>
-      <option value="en">🇬🇧 English</option>
-    </select>
-    <a id="hVolver" href="/">← Volver</a>
-  </span>
-</header>
+<div class="nav">
+  <div class="marca"><img src="/logo-mv.svg" alt="MV">MV Agendate IA</div>
+  <div class="der">
+    <a href="/">← Inicio</a>
+    <a href="/comprar.html">Planes</a>
+    <a href="/instalar.html">Instalar</a>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="kicker">DEMO EN VIVO, UNO A UNO</div>
+  <h1>Te mostramos el asistente funcionando con tu caso</h1>
+  <p>No es un video grabado ni un chat de juguete: nos conectamos, cargamos un trabajo real de tu oficio y ves cómo cotiza, cómo agenda y cómo avisa un retraso. Dura unos 20 minutos.</p>
+</div>
 
 <main>
-  <div class="col">
-    <h2 id="hChat">💬 Hablá con el asistente del profesional</h2>
-    <div id="mensajes"></div>
-    <div class="chips" id="chips">
-      <span onclick="sugerir(this)">¿Cuánto sale instalar un tomacorriente?</span>
-      <span onclick="sugerir(this)">Necesito un electricista para mañana</span>
-      <span onclick="sugerir(this)">¿Tenés horarios esta semana?</span>
-    </div>
-    <form class="chat" id="formChat">
-      <input id="entrada" placeholder="Escribí tu mensaje..." autocomplete="off" />
-      <button type="submit" id="btnEnviar">Enviar</button>
+  <div class="card" id="tarjeta">
+    <h2>Pedí tu demo</h2>
+    <p class="sub">Dejanos estos datos y coordinamos día y hora por email.</p>
+
+    <form id="form" novalidate>
+      <div class="campos">
+        <div class="campo">
+          <label for="nombre">Nombre y apellido *</label>
+          <input id="nombre" name="nombre" autocomplete="name" required>
+        </div>
+        <div class="campo">
+          <label for="email">Email *</label>
+          <input id="email" name="email" type="email" autocomplete="email" required>
+        </div>
+        <div class="campo">
+          <label for="pais">País *</label>
+          <input id="pais" name="pais" autocomplete="country-name" required>
+        </div>
+        <div class="campo">
+          <label for="empresa">Empresa *</label>
+          <input id="empresa" name="empresa" autocomplete="organization" required>
+        </div>
+        <div class="campo ancho">
+          <label for="oficio">Oficio o rubro <span style="font-weight:400;">(opcional)</span></label>
+          <input id="oficio" name="oficio" placeholder="Electricista, plomero, veterinaria, taller…">
+        </div>
+        <div class="campo ancho">
+          <label for="mensaje">¿Qué te gustaría ver? <span style="font-weight:400;">(opcional)</span></label>
+          <textarea id="mensaje" name="mensaje" placeholder="Contanos cómo agendás y cotizás hoy, y en qué se te va el tiempo."></textarea>
+        </div>
+      </div>
+      <button class="btn" type="submit" id="enviar">Pedir la demo →</button>
+      <div class="aviso" id="aviso" role="status" aria-live="polite"></div>
     </form>
   </div>
 
-  <div class="col">
-    <h2 id="hCot">💰 Cotizador instantáneo</h2>
-    <form class="cot" id="formCot">
-      <div><label id="lOficio" for="selOficio">Oficio</label><select name="oficio" id="selOficio"></select></div>
-      <div><label id="lTrabajo" for="selTrabajo">Trabajo</label><select name="trabajo" id="selTrabajo"></select></div>
-      <div><label id="lDistancia" for="demoDistancia">Distancia estimada (km)</label><input name="distanciaKm" id="demoDistancia" type="number" value="5" /></div>
-      <div><label id="lUrgencia" for="demoUrgencia">Urgencia</label><select name="urgencia" id="demoUrgencia"><option value="normal">Normal (agendado)</option><option value="mismo_dia">Mismo día</option><option value="urgente">Urgente</option></select></div>
-      <div class="full"><label id="lHorario" for="demoHorario">Horario</label><select name="horario" id="demoHorario"><option value="habil">Horario hábil</option><option value="nocturno">Nocturno (después de 20h)</option><option value="feriado">Feriado</option></select></div>
-      <div class="full"><button type="submit" id="btnCotizar" style="width:100%;">Cotizar</button></div>
-    </form>
-    <div id="resultado"></div>
-    <div id="horarios"></div>
+  <div class="card">
+    <h2>Qué vas a ver</h2>
+    <ul class="lista">
+      <li>Una cotización real armada con una lista de precios como la tuya — el asistente nunca inventa montos.</li>
+      <li>La agenda del día calculando el traslado entre una cita y la otra, con los descansos.</li>
+      <li>El aviso automático de retraso al próximo cliente, sin que vos toques nada.</li>
+      <li>El panel: clientes, trabajos del mes y facturación.</li>
+      <li>Los precios y cómo queda instalado en tu PC y en tu celular.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>¿Por qué no hay una demo abierta?</h2>
+    <p class="porque">Porque lo que distingue a este producto no es la pantalla: es cómo el asistente repregunta, cotiza y arma la agenda. Eso es el trabajo de ingeniería, y una demo abierta lo regala. Mostrártelo en vivo nos lleva el mismo tiempo y a vos te sirve más: preguntás lo que quieras sobre tu propio caso.</p>
   </div>
 </main>
 
-<script src="/js/seguro.js"></script>
-<script src="/js/mensajes.js"></script>
+<footer>MV Agendate IA · Turnos y presupuestos con IA para cualquier profesión u oficio de LATAM · <a href="/">Inicio</a> · <a href="/comprar.html">Planes</a> · <a href="/instalar.html">Instalar</a></footer>
+
 <script>
 const $ = (s) => document.querySelector(s);
-const esc = window.escaparHtml;
-let sessionId = null;
-
-// --- Multiidioma es/pt (la web y la demo entienden ambos, igual que el chatbot) ---
-const I18N = {
-  es: {
-    titulo: 'MV Agendate IA — Demo en vivo', volver: '← Volver',
-    chat: '💬 Hablá con el asistente del profesional', cot: '💰 Cotizador instantáneo',
-    oficio: 'Oficio', trabajo: 'Trabajo', distancia: 'Distancia estimada (km)',
-    urgencia: 'Urgencia', horario: 'Horario', cotizar: 'Cotizar', enviar: 'Enviar',
-    placeholder: 'Escribí tu mensaje...', escribiendo: 'Escribiendo…',
-    saludo: '¡Hola! Soy el asistente virtual del profesional Contame qué necesitás y te paso presupuesto y horarios disponibles.',
-    errconn: 'No pude conectar con el servidor.',
-    chips: ['¿Cuánto sale instalar un tomacorriente?', 'Necesito un electricista para mañana', '¿Tenés horarios esta semana?'],
-    duracion: 'Duración estimada', minutos: 'minutos', propuestos: 'Horarios propuestos para mañana:', traslado: 'traslado',
-    labMano: 'Mano de obra', labMat: 'Materiales', labTras: 'Traslado', labHon: 'Honorarios',
-    cotizando: 'Calculando el presupuesto…',
-    errCotizar: '⚠️ No pudimos calcular el presupuesto. Revisá tu conexión y probá de nuevo.',
-    errHorarios: '⚠️ No pudimos proponer horarios ahora. El presupuesto de arriba es válido igual.',
-    errCatalogo: '⚠️ No pudimos cargar el catálogo de trabajos. Recargá la página para volver a intentar.',
-    urg: { normal: 'Normal (agendado)', mismo_dia: 'Mismo día', urgente: 'Urgente' },
-    hor: { habil: 'Horario hábil', nocturno: 'Nocturno (después de 20h)', feriado: 'Feriado' }
-  },
-  pt: {
-    titulo: 'MV Agendate IA — Demo ao vivo', volver: '← Voltar',
-    chat: '💬 Fale com o assistente do profissional', cot: '💰 Orçamento instantâneo',
-    oficio: 'Profissão', trabajo: 'Serviço', distancia: 'Distância estimada (km)',
-    urgencia: 'Urgência', horario: 'Horário', cotizar: 'Orçar', enviar: 'Enviar',
-    placeholder: 'Escreva sua mensagem...', escribiendo: 'Escrevendo…',
-    saludo: 'Olá! Sou o assistente virtual do profissional Me conte o que você precisa e te passo orçamento e horários disponíveis.',
-    errconn: 'Não consegui conectar ao servidor.',
-    chips: ['Quanto custa instalar uma tomada?', 'Preciso de um eletricista para amanhã', 'Tem horários esta semana?'],
-    duracion: 'Duração estimada', minutos: 'minutos', propuestos: 'Horários propostos para amanhã:', traslado: 'deslocamento',
-    labMano: 'Mão de obra', labMat: 'Materiais', labTras: 'Deslocamento', labHon: 'Honorários',
-    cotizando: 'Calculando o orçamento…',
-    errCotizar: '⚠️ Não conseguimos calcular o orçamento. Verifique sua conexão e tente de novo.',
-    errHorarios: '⚠️ Não conseguimos propor horários agora. O orçamento acima continua válido.',
-    errCatalogo: '⚠️ Não conseguimos carregar o catálogo de trabalhos. Recarregue a página para tentar de novo.',
-    urg: { normal: 'Normal (agendado)', mismo_dia: 'Mesmo dia', urgente: 'Urgente' },
-    hor: { habil: 'Horário comercial', nocturno: 'Noturno (após 20h)', feriado: 'Feriado' }
-  },
-  en: {
-    titulo: 'MV Agendate IA — Live demo', volver: '← Back',
-    chat: '💬 Chat with the pro\'s assistant', cot: '💰 Instant quoter',
-    oficio: 'Trade', trabajo: 'Job', distancia: 'Estimated distance (km)',
-    urgencia: 'Urgency', horario: 'Time', cotizar: 'Quote', enviar: 'Send',
-    placeholder: 'Type your message...', escribiendo: 'Typing…',
-    saludo: 'Hi! I\'m the professional\'s virtual assistant Tell me what you need and I\'ll give you a quote and available times.',
-    errconn: 'Could not connect to the server.',
-    chips: ['How much to install an outlet?', 'I need an electrician for tomorrow', 'Any slots this week?'],
-    duracion: 'Estimated duration', minutos: 'minutes', propuestos: 'Proposed times for tomorrow:', traslado: 'travel',
-    labMano: 'Labor', labMat: 'Materials', labTras: 'Travel', labHon: 'Fee',
-    cotizando: 'Calculating the quote…',
-    errCotizar: "⚠️ We couldn't calculate the quote. Check your connection and try again.",
-    errHorarios: "⚠️ We couldn't propose time slots right now. The quote above is still valid.",
-    errCatalogo: "⚠️ We couldn't load the job catalogue. Reload the page to try again.",
-    urg: { normal: 'Normal (scheduled)', mismo_dia: 'Same day', urgente: 'Urgent' },
-    hor: { habil: 'Business hours', nocturno: 'After hours (after 8pm)', feriado: 'Holiday' }
-  }
-};
-let idioma = localStorage.getItem('mvIdioma')
-  || (() => { const n = (navigator.language || '').toLowerCase(); return n.startsWith('pt') ? 'pt' : n.startsWith('en') ? 'en' : 'es'; })();
-if (!I18N[idioma]) idioma = 'es';
-const T = () => I18N[idioma];
-
-function aplicarIdioma() {
-  const t = T();
-  document.documentElement.lang = idioma === 'pt' ? 'pt-BR' : idioma === 'en' ? 'en' : 'es';
-  $('#hTitulo').textContent = t.titulo;
-  $('#hVolver').textContent = t.volver;
-  $('#hChat').textContent = t.chat;
-  $('#hCot').textContent = t.cot;
-  $('#lOficio').textContent = t.oficio;
-  $('#lTrabajo').textContent = t.trabajo;
-  $('#lDistancia').textContent = t.distancia;
-  $('#lUrgencia').textContent = t.urgencia;
-  $('#lHorario').textContent = t.horario;
-  $('#btnCotizar').textContent = t.cotizar;
-  $('#btnEnviar').textContent = t.enviar;
-  $('#entrada').placeholder = t.placeholder;
-  const chips = document.querySelectorAll('#chips span');
-  t.chips.forEach((c, i) => { if (chips[i]) chips[i].textContent = c; });
-  // Opciones de los select de urgencia y horario (traducidas por valor)
-  document.querySelectorAll('select[name="urgencia"] option').forEach((o) => { if (t.urg && t.urg[o.value]) o.textContent = t.urg[o.value]; });
-  document.querySelectorAll('select[name="horario"] option').forEach((o) => { if (t.hor && t.hor[o.value]) o.textContent = t.hor[o.value]; });
-  $('#selIdioma').value = idioma;
+function aviso(msg, ok) {
+  const a = $('#aviso');
+  a.textContent = msg;
+  a.style.color = ok ? '#1a7f37' : '#c0392b';
 }
 
-// Pintado de mensajes centralizado en public/js/mensajes.js (con test de
-// regresión XSS en test/mensajes.test.js) — el texto puede venir del cliente
-// final o de la IA, nunca se inserta como HTML.
-function agregar(texto, quien) { return window.agregarMensaje($('#mensajes'), texto, 'msg ' + quien); }
-
-aplicarIdioma();
-agregar(T().saludo, 'bot');
-
-$('#selIdioma').addEventListener('change', (e) => {
-  idioma = I18N[e.target.value] ? e.target.value : 'es';
-  localStorage.setItem('mvIdioma', idioma);
-  aplicarIdioma();
-  // Reiniciamos la charla para que el saludo y el hilo queden en el nuevo idioma.
-  sessionId = null;
-  $('#mensajes').innerHTML = '';
-  agregar(T().saludo, 'bot');
-});
-
-function sugerir(el) { $('#entrada').value = el.textContent; $('#formChat').requestSubmit(); }
-
-$('#formChat').addEventListener('submit', async (e) => {
+$('#form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const texto = $('#entrada').value.trim();
-  if (!texto) return;
-  agregar(texto, 'user');
-  $('#entrada').value = '';
-  $('#btnEnviar').disabled = true;
-  const pensando = agregar(T().escribiendo, 'bot');
+  const datos = {
+    nombre: $('#nombre').value, email: $('#email').value, pais: $('#pais').value,
+    empresa: $('#empresa').value, oficio: $('#oficio').value, mensaje: $('#mensaje').value
+  };
+  // Validación mínima acá para no gastar un viaje al servidor; la de verdad
+  // (la que cuenta) está en el servidor, que es donde se guarda el lead.
+  if (!datos.nombre.trim() || !datos.email.trim() || !datos.pais.trim() || !datos.empresa.trim()) {
+    return aviso('Completá nombre, email, país y empresa.', false);
+  }
+
+  const btn = $('#enviar');
+  btn.disabled = true;
+  const textoOriginal = btn.textContent;
+  btn.textContent = 'Enviando…';
+  aviso('', true);
+
   try {
-    const r = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mensaje: texto, sessionId, idioma })
+    const r = await fetch('/api/demo/solicitar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos)
     });
-    const data = await r.json();
-    sessionId = data.sessionId || sessionId;
-    pensando.textContent = data.respuesta || data.error || 'Error inesperado.';
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      btn.disabled = false;
+      btn.textContent = textoOriginal;
+      return aviso(d.error || 'No pudimos enviar tu pedido. Probá de nuevo en un rato.', false);
+    }
+    $('#tarjeta').innerHTML = `<div class="ok">
+      <div class="tick">✔</div>
+      <h2>Listo, ${d.repetida ? 'te tenemos anotado' : 'recibimos tu pedido'}</h2>
+      <p class="sub">Te escribimos a <b>${datos.email.replace(/[&<>"]/g, '')}</b> para coordinar día y hora. Suele ser dentro de las 24&nbsp;horas hábiles.</p>
+      <p class="sub">Mientras tanto podés mirar <a href="/comprar.html">los planes</a> o <a href="/instalar.html">cómo se instala</a>.</p>
+    </div>`;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch {
-    pensando.textContent = T().errconn;
-  } finally {
-    $('#btnEnviar').disabled = false;
-    $('#entrada').focus();
+    btn.disabled = false;
+    btn.textContent = textoOriginal;
+    aviso('No pudimos conectar. Revisá tu conexión y probá de nuevo.', false);
   }
-});
-
-// ---------- Cotizador ----------
-let oficios = [];
-// Los nombres de oficio/trabajo los escribe el profesional, así que se cargan
-// con la API del DOM: new Option() trata el texto como texto y no como HTML.
-function llenarSelect(sel, items) {
-  sel.replaceChildren();
-  for (const it of items) sel.add(new Option(it.nombre, it.clave));
-}
-async function cargarOficios() {
-  try {
-    const r = await fetch('/api/oficios');
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    oficios = await r.json();
-    if (!Array.isArray(oficios) || !oficios.length) throw new Error('catálogo vacío');
-    llenarSelect($('#selOficio'), oficios);
-    actualizarTrabajos();
-  } catch (e) {
-    // Sin catálogo el formulario queda inservible: se avisa en vez de dejar los
-    // selects vacíos y mudos.
-    console.error('[demo] no se pudo cargar el catálogo de oficios:', e);
-    const caja = $('#resultado');
-    caja.style.display = 'block';
-    caja.textContent = T().errCatalogo;
-    const btn = $('#formCot')?.querySelector('button[type="submit"], button:not([type])');
-    if (btn) { btn.disabled = true; btn.style.opacity = '.55'; }
-  }
-}
-function actualizarTrabajos() {
-  const of = oficios.find(o => o.clave === $('#selOficio').value) || oficios[0];
-  llenarSelect($('#selTrabajo'), of?.trabajos || []);
-}
-$('#selOficio').addEventListener('change', actualizarTrabajos);
-cargarOficios();
-
-$('#formCot').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  const body = Object.fromEntries(fd.entries());
-  body.distanciaKm = Number(body.distanciaKm) || 0;
-  const caja = $('#resultado');
-  const btnCot = e.target.querySelector('button[type="submit"], button:not([type])');
-  // Estado de carga: antes el usuario apretaba "Cotizar" y no pasaba nada
-  // visible hasta que respondía el servidor (o nunca, si fallaba).
-  caja.style.display = 'block';
-  caja.textContent = T().cotizando;
-  if (btnCot) btnCot.disabled = true;
-  let d;
-  try {
-    const r = await fetch('/api/cotizar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    if (!r.ok && r.status !== 400) throw new Error('HTTP ' + r.status);
-    d = await r.json();
-  } catch (err) {
-    console.error('[demo] falló la cotización:', err);
-    caja.textContent = T().errCotizar;
-    if (btnCot) btnCot.disabled = false;
-    return;
-  }
-  if (btnCot) btnCot.disabled = false;
-  // textContent: d.error es texto, no HTML — y así no depende de que el
-  // servidor nunca mande marcado adentro del mensaje de error.
-  if (d.error) { caja.textContent = '⚠️ ' + d.error; return; }
-  const sim = d.simbolo || '$';
-  const etiqueta = d.tipo_cobro === 'honorarios' ? T().labHon : T().labMano;
-  caja.innerHTML =
-    '<div class="rango">' + sim + ' ' + d.total.toLocaleString(idioma === 'pt' ? 'pt-BR' : idioma === 'en' ? 'en-US' : 'es-UY') + ' <span style="font-size:.9rem;color:#5a6b7c;">' + (d.moneda || '') + '</span></div>' +
-    T().duracion + ': <strong>' + d.duracion_estimada_min + ' ' + T().minutos + '</strong>' +
-    '<small>' + etiqueta + ': ' + sim + d.desglose.mano_obra +
-      (d.tipo_cobro === 'honorarios' && !d.desglose.materiales ? '' : ' · ' + T().labMat + ': ' + sim + d.desglose.materiales) +
-      ' · ' + T().labTras + ': ' + sim + d.desglose.traslado + '</small>' +
-    '<small>' + esc(d.trabajo) + ' (' + esc(d.oficio) + ')</small>';
-
-  // Horarios de ejemplo, para mostrar el motor de agenda con traslados.
-  const hoy = new Date();
-  const manana = new Date(hoy.getTime() + 86400000);
-  let propuestos;
-  try {
-    const rh = await fetch('/api/agenda/proponer', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        fecha: manana.toISOString().slice(0, 10), diaSemana: manana.getDay(),
-        ubicacionCliente: { lat: -34.90 + Math.random() * 0.03, lng: -56.16 + Math.random() * 0.03 },
-        duracionMin: d.duracion_estimada_min,
-        citasDelDia: [{ inicio: '09:00', fin: '10:00', ubicacion: { lat: -34.91, lng: -56.15 } }]
-      })
-    });
-    if (!rh.ok) throw new Error('HTTP ' + rh.status);
-    propuestos = await rh.json();
-  } catch (err) {
-    // La cotización de arriba ya se mostró bien; sólo falla esta sección.
-    console.error('[demo] no se pudieron proponer horarios:', err);
-    $('#horarios').textContent = T().errHorarios;
-    return;
-  }
-  $('#horarios').innerHTML = propuestos.propuestas?.length
-    ? '<strong>' + T().propuestos + '</strong>' + propuestos.propuestas.map(p => `<div class="horario">🕐 ${p.inicio} - ${p.fin} (${T().traslado}: ${p.traslado_previo_min + p.traslado_posterior_min} min)</div>`).join('')
-    : (propuestos.motivo_descarte ? `<div class="horario">${propuestos.motivo_descarte}</div>` : '');
 });
 </script>
-<script type="module" src="/js/botid-init.js"></script>
-<script src="/js/pwa.js" defer></script>
 </body>
 </html>
