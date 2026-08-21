@@ -20,6 +20,8 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { get as cfg, setConfig } from './config.js';
 import { DIAS_PRUEBA_CLIENTE, DIAS_FIJADOS } from './dias-prueba.js';
+import { firmaConfigurada } from './licencia-clave.js';
+import { verificar as verificarFirma } from './licencia-firma.js';
 
 const MS_DIA = 86400000;
 
@@ -58,12 +60,47 @@ function diasPrueba() {
   return Number.isFinite(n) ? n : DIAS_PRUEBA_CLIENTE;
 }
 
-/** Largo mínimo de un código de licencia (el que emite la compra es más largo). */
+/** Largo mínimo de un código de licencia del formato VIEJO (sin firma). */
 const MIN_LICENCIA = 6;
 
-/** true si el código guardado puede ser una licencia de verdad. */
+/**
+ * Licencias del formato viejo que se siguen aceptando, separadas por coma.
+ *
+ * Existe para no dejar afuera a quien compró ANTES de que las licencias se
+ * firmaran: su código no tiene firma y nunca va a poder tenerla. Es una lista
+ * explícita —no un patrón— justamente para que nadie pueda fabricarse una
+ * propia siguiendo el formato. Los códigos salen del panel: /api/licencias.
+ *
+ *   MV_LICENCIAS_HEREDADAS=MV-FULL-A1B2C3D4,MV-BASICO-99887766
+ */
+function heredadas() {
+  return String(process.env.MV_LICENCIAS_HEREDADAS || '')
+    .split(',')
+    .map((s) => s.trim().toUpperCase())
+    .filter(Boolean);
+}
+
+/**
+ * true si el código es una licencia de verdad.
+ *
+ * ANTES ESTO ERA `codigo.length >= 6`, y punto. Verificado corriendo el módulo:
+ * activarLicencia("abcdef") devolvía ok y dejaba licenciada:true para siempre.
+ * O sea que el candado de los 7 días se levantaba tipeando cualquier cosa y el
+ * plan Full de US$ 299 quedaba desbloqueado sin pagar. Ahora la licencia se
+ * verifica contra la clave pública embebida (store/licencia-clave.js), que sólo
+ * puede haber firmado el servidor de ventas con su clave privada.
+ *
+ * Mientras la clave pública no esté pegada, el candado firmado está apagado y
+ * se conserva el criterio viejo — así el repo tal cual está hoy no cambia de
+ * comportamiento ni deja a nadie afuera. Ver licencia-clave.js: "Cómo se
+ * enciende".
+ */
 function licenciaValida(codigo) {
-  return String(codigo || '').trim().length >= MIN_LICENCIA;
+  const c = String(codigo || '').trim();
+  if (!c) return false;
+  if (!firmaConfigurada()) return c.length >= MIN_LICENCIA;
+  if (verificarFirma(c)) return true;
+  return heredadas().includes(c.toUpperCase());
 }
 
 /**

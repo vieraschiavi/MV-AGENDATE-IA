@@ -28,6 +28,8 @@ import * as trabajos from './store/trabajos.js';
 import * as cuentas from './store/cuentas.js';
 import * as cotizaciones from './store/cotizaciones.js';
 import { estadoPrueba, pruebaBloqueada, activarLicencia } from './store/prueba.js';
+import { firmaConfigurada } from './store/licencia-clave.js';
+import { puedeFirmar } from './store/licencia-firma.js';
 import { estadoCreditos, acreditar, bonoBienvenida, PACKS as PACKS_CREDITOS } from './store/creditos.js';
 import * as emails from './store/emails.js';
 import * as resenas from './store/resenas.js';
@@ -1034,7 +1036,15 @@ app.use(whatsapp);   // GET/POST /webhook/whatsapp
 app.use(voz);        // POST /webhook/voz y /webhook/voz/turno (vía rápida)
 app.use(vozPremium); // POST /webhook/voz-premium (pipeline ASR+TTS) + WS /voz-stream
 
-app.get('/salud', (_req, res) => res.json({ ok: true, demo: enModoDemo() }));
+app.get('/salud', (_req, res) => res.json({
+  ok: true,
+  demo: enModoDemo(),
+  // Si esto viene en false, el candado del producto está apagado: la copia
+  // instalada acepta cualquier código como licencia. Ver store/licencia-clave.js.
+  licenciasFirmadas: firmaConfigurada(),
+  // Y esto dice si ESTE proceso (el servidor de ventas) puede emitirlas.
+  puedeEmitirLicencias: puedeFirmar()
+}));
 
 // Error handler global. Los 4 argumentos no son decorativos: es por la cantidad
 // que Express distingue un manejador de errores de un middleware común.
@@ -1097,6 +1107,13 @@ if (process.env.VERCEL) {
       console.log('   Configuración/API key: /config.html');
       console.log('   Página de venta: /      Demo chat+voz: /demo.html');
       console.log('   Webhooks: /webhook/whatsapp  /webhook/voz  /webhook/voz-premium');
+      // Se avisa fuerte porque es plata: mientras no esté el par de claves, la
+      // copia instalada toma por buena cualquier licencia y los 7 días de
+      // prueba se levantan tipeando cualquier cosa. Ver store/licencia-clave.js.
+      if (!firmaConfigurada()) {
+        console.log('\n   ⚠  LICENCIAS SIN FIRMAR: la copia instalada acepta cualquier código.');
+        console.log('      Para cerrarlo:  node scripts/licencia-par.js');
+      }
       const ips = ipsLocales();
       if (ips.length) {
         console.log('\n   📱 Para usar la app en el CELULAR (sin instalar nada), conectá el teléfono');

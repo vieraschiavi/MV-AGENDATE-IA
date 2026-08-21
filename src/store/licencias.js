@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { randomBytes, createHmac, timingSafeEqual } from 'node:crypto';
 import { redisDisponible, kvGet, kvSet, kvDel, kvMGet, kvSAdd, kvSRem, kvSMembers } from './redis.js';
+import { firmar as firmarLicencia } from './licencia-firma.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const DIR = process.env.MV_DATOS_DIR || (process.env.VERCEL ? '/tmp/mvdata' : join(here, '../../data'));
@@ -169,6 +170,27 @@ export async function crearPedido({ plan, version = 'pc', email, nombre, recurre
  * secreto, así que seguir el patrón no sirve para fabricarse una.
  */
 function licenciaDePedido(pedido) {
+  // Camino bueno: licencia FIRMADA con Ed25519, que la copia instalada puede
+  // verificar sola con la clave pública embebida. El código de abajo (HMAC) no
+  // es verificable del lado del cliente —el cliente no tiene ni debe tener el
+  // secreto—, así que con él la app terminaba aceptando cualquier cosa.
+  // Ver store/licencia-clave.js.
+  //
+  // Es igual de determinístico que el viejo: para el mismo pedido, Ed25519
+  // firma siempre lo mismo, así que dos avisos del mismo pago que se confirmen
+  // a la vez siguen emitiendo EXACTAMENTE la misma licencia.
+  const firmada = firmarLicencia({
+    id: pedido.id,
+    plan: pedido.plan,
+    // El pago único no vence. La suscripción tampoco vence por firma: la corta
+    // estadoLicencia.js consultando al servidor central, que es lo que sabe si
+    // el cobro del mes entró.
+    exp: null
+  });
+  if (firmada) return firmada;
+
+  // Sin MV_LICENSE_PRIVATE_KEY configurada se sigue emitiendo el código viejo,
+  // para no romper el flujo de compra mientras el par de claves no exista.
   const firma = createHmac('sha256', secretoDescarga())
     .update(`licencia:${pedido.id}`)
     .digest('hex')
