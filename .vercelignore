@@ -20,3 +20,10 @@
 /data/
 *.log
 node_modules/
+
+# Los instaladores YA NO se publican. La demo pasó a ser bajo pedido (formulario
+# en /instalar.html -> demo 1 a 1), así que un .exe accesible por URL sería el
+# agujero exacto que ese cambio vino a cerrar: sacar el link del HTML no alcanza
+# si el archivo sigue servido y la dirección se adivina.
+# La entrega al que compra va por /descargar/<token>, que el servidor autoriza.
+/public/descargas/
