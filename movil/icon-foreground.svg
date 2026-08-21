@@ -1,9 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-  <!-- Sólo las letras MV, centradas en la zona segura del ícono adaptativo -->
-  <g transform="translate(512,512) scale(0.86) translate(-538,-530)">
-    <polyline points="87,700 87,360 297,590 507,360 507,700"
-      fill="none" stroke="#ffffff" stroke-width="94" stroke-linejoin="miter" stroke-linecap="butt"/>
-    <polyline points="637,264 787,700 937,264"
-      fill="none" stroke="#5cb531" stroke-width="103" stroke-linejoin="miter" stroke-linecap="butt"/>
+  <!-- Sólo las letras MV, centradas en la zona segura del ícono adaptativo.
+       Son los MISMOS glifos del ícono canónico (M/V trabadas, de DejaVu Sans
+       Bold convertidas a path): antes acá había dos polyline con la M y la V
+       separadas, que es otro dibujo. El bloque de letras del canónico mide
+       633x321 y su centro cae en (562, 490); se lo lleva al centro del lienzo
+       y se lo achica a 0.9 para no salirse de la zona segura del launcher. -->
+  <g transform="translate(512,512) scale(0.9) translate(-561.9,-489.7)">
+    <g transform="translate(205,650) scale(0.21484375,-0.21484375)">
+      <path fill="#FFFFFF" d="M188 1493H678L1018 694L1360 1493H1849V0H1485V1092L1141 287H897L553 1092V0H188Z"/>
+    </g>
+    <g transform="translate(540,650) scale(0.21484375,-0.21484375)">
+      <path fill="#82C544" d="M10 1493H397L793 391L1188 1493H1575L1022 0H563Z"/>
+    </g>
   </g>
 </svg>
