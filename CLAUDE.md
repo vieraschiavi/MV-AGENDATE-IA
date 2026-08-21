@@ -34,6 +34,7 @@ final siempre lo aprueba el profesional antes de comunicárselo al cliente.
 |---|---|
 | Instalar deps | `npm ci` (o `npm install` si no hay lockfile fresco) |
 | Correr tests | `npm test` (= `node --test`) |
+| Correr el linter | `npm run lint` (= `eslint .`) |
 | Servidor de desarrollo (watch) | `npm run dev` (= `node --watch src/server.js`) |
 | Servidor (sin watch) | `npm run servidor` (= `node src/server.js`) |
 | Lanzador versión PC | `npm start` (= `node src/programa.js`) |
@@ -42,8 +43,12 @@ final siempre lo aprueba el profesional antes de comunicárselo al cliente.
 | Empaquetar paquete PC (zip) | `npm run empaquetar-pc` |
 | Empaquetar instalador Windows (.exe) | `npm run empaquetar-exe` (cliente) / `-demo` / `-owner` / `-todos` |
 
-> No hay linter configurado. No hay build step del panel (el bundle de Vite está
-> commiteado en `public/app/`). El deploy lo maneja Vercel; ver `vercel.json`.
+> **CI corre `npm run lint` ANTES de `npm test`** (ver `.github/workflows/tests.yml`): si
+> el lint falla, los tests ni se ejecutan y el PR queda en rojo con la suite en verde.
+> Reproducí lo mismo a mano antes de pushear: `npm run lint && npm test`.
+>
+> No hay build step del panel (el bundle de Vite está commiteado en `public/app/`).
+> El deploy lo maneja Vercel; ver `vercel.json`.
 
 ## Estructura
 
@@ -71,7 +76,7 @@ docs/                 CANALES.md y documentación
 1. **Plan** (`/plan`): explorá en modo solo-lectura, identificá los archivos a tocar y
    proponé un plan. Esperá aprobación antes de editar.
 2. **Cambio**: hacé la edición mínima y enfocada. Respetá ESM y las convenciones de abajo.
-3. **Test** (`/test`): corré `npm test`. No sigas si hay tests en rojo.
+3. **Test** (`/test`): corré `npm run lint && npm test`. No sigas si alguno da rojo.
 4. **Ship** (`/ship`): `git add` selectivo, commit descriptivo, push a la rama de trabajo,
    y PR en **draft**.
 
@@ -91,7 +96,7 @@ docs/                 CANALES.md y documentación
 ## Do / Don't
 
 **Do**
-- Correr `npm test` antes de cada commit.
+- Correr `npm run lint && npm test` antes de cada commit (CI corre el lint primero).
 - Mantener paridad de comportamiento entre single-tenant (cuenta `default`) y SaaS.
 - Usar `git status` / `git diff` para revisar antes de commitear.
 - Leer `docs/CANALES.md` antes de tocar WhatsApp/voz/cron.

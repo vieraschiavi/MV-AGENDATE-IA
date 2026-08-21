@@ -21,7 +21,6 @@ import { JSDOM } from 'jsdom';
 const AQUI = dirname(fileURLToPath(import.meta.url));
 const RAIZ = dirname(AQUI);
 
-const SEGURO_SRC = readFileSync(join(RAIZ, 'public/js/seguro.js'), 'utf8');
 const MENSAJES_SRC = readFileSync(join(RAIZ, 'public/js/mensajes.js'), 'utf8');
 const WIDGET_SRC = readFileSync(join(RAIZ, 'public/widget.js'), 'utf8');
 
