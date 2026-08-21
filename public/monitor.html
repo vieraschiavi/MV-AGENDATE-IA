@@ -1,0 +1,104 @@
+<!doctype html>
+<!-- © 2026 Martín Viera. Todos los derechos reservados. -->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monitor de ventas — MV Agendate IA</title>
+<link rel="icon" href="/logo-mv.svg" type="image/svg+xml">
+<meta name="robots" content="noindex">
+<style>
+  :root{ --azul:#0f2a43; --cel:#1f7ae0; --verde:#2ea043; --oro:#e3a72f; --line:#e6ebf1; --tinta:#22303e; --sub:#5a6b7c; --gris:#f4f6f9; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:system-ui,-apple-system,'Segoe UI',sans-serif; background:var(--gris); color:var(--tinta); }
+  header{ background:var(--azul); color:#fff; padding:16px 22px; display:flex; align-items:center; gap:12px; }
+  header img{ width:32px; height:32px; } header a{ margin-left:auto; color:var(--oro); text-decoration:none; }
+  .wrap{ max-width:980px; margin:26px auto; padding:0 16px; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  h1{ font-size:1.3rem; margin:0 0 4px; } h2{ font-size:1rem; margin:0 0 12px; }
+  .sub{ color:var(--sub); font-size:.9rem; margin-bottom:14px; }
+  label{ font-size:.82rem; color:var(--sub); display:block; margin-bottom:4px; }
+  input{ width:100%; padding:11px 13px; border:1px solid #cbd5e1; border-radius:9px; font-size:16px; }
+  .btn{ background:var(--cel); color:#fff; border:0; border-radius:9px; padding:11px 18px; font-weight:700; cursor:pointer; font-size:.92rem; white-space:nowrap; }
+  #aviso{ font-size:.86rem; margin-top:8px; min-height:1.2em; }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; }
+  .num{ background:var(--gris); border-radius:11px; padding:14px 16px; }
+  .num .v{ font-size:1.6rem; font-weight:800; color:var(--azul); }
+  .num .l{ font-size:.78rem; color:var(--sub); }
+  table{ width:100%; border-collapse:collapse; font-size:.9rem; }
+  th,td{ text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); }
+  th{ color:var(--sub); font-weight:700; font-size:.78rem; text-transform:uppercase; }
+  .empty{ color:var(--sub); text-align:center; padding:24px; }
+</style>
+</head>
+<body>
+<header><img src="/logo-mv.svg" alt="MV"><strong>Monitor de ventas</strong><a href="/">← Inicio</a></header>
+<div class="wrap">
+  <div class="card">
+    <h1>Clientes, descargas y plata generada</h1>
+    <div class="sub">Solo para el dueño del producto. Los números salen de los pedidos reales (MercadoPago) y de las cuentas SaaS — nada acá es una proyección.</div>
+    <div style="display:flex; gap:10px;">
+      <input id="admin" type="password" placeholder="X-Admin-Key" autocomplete="off">
+      <button class="btn" id="cargar">Cargar</button>
+    </div>
+    <div id="aviso"></div>
+  </div>
+  <div id="cont"></div>
+</div>
+<script>
+const $ = (s) => document.querySelector(s);
+function headers() { const h = { 'Content-Type': 'application/json' }; const k = $('#admin').value.trim(); if (k) h['X-Admin-Key'] = k; return h; }
+function aviso(m, ok) { const a = $('#aviso'); a.textContent = m; a.style.color = ok ? '#1a7f37' : '#c0392b'; }
+
+async function cargar() {
+  try {
+    const r = await fetch('/api/admin/resumen', { headers: headers() });
+    if (r.status === 401) return aviso('Clave inválida.', false);
+    if (!r.ok) return aviso('Error del servidor (' + r.status + ').', false);
+    const d = await r.json();
+    localStorage.setItem('mvAdminKey', $('#admin').value.trim());
+    render(d);
+    aviso('Actualizado.', true);
+  } catch { aviso('No pude conectar.', false); }
+}
+
+function render(d) {
+  const v = d.ventas, desc = d.descargas, cta = d.cuentas_saas;
+  const filasPlan = Object.entries(v.por_plan).map(([k, p]) =>
+    `<tr><td>${p.nombre}</td><td>${p.cantidad}</td><td>USD ${p.revenue_usd}</td></tr>`).join('');
+  const filasDesc = Object.entries(desc).map(([archivo, n]) =>
+    `<tr><td>${archivo}</td><td>${n}</td></tr>`).join('');
+  $('#cont').innerHTML = `
+    <div class="card">
+      <h2>Plata generada</h2>
+      <div class="grid">
+        <div class="num"><div class="v">USD ${v.revenue_usd_total}</div><div class="l">Total cobrado (pagos confirmados)</div></div>
+        <div class="num"><div class="v">${v.pedidos_pagados}</div><div class="l">Pedidos pagados</div></div>
+        <div class="num"><div class="v">${v.pedidos_pendientes}</div><div class="l">Pedidos sin pagar / abandonados</div></div>
+        <div class="num"><div class="v">${cta.total}</div><div class="l">Cuentas SaaS registradas</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Por plan</h2>
+      <table><thead><tr><th>Plan</th><th>Vendidos</th><th>Revenue</th></tr></thead><tbody>${filasPlan}</tbody></table>
+    </div>
+    <div class="card">
+      <h2>Cuentas SaaS por estado</h2>
+      <table><thead><tr><th>Estado</th><th>Cantidad</th></tr></thead><tbody>${
+        Object.entries(cta.por_estado).map(([e, n]) => `<tr><td>${e}</td><td>${n}</td></tr>`).join('') || '<tr><td colspan="2" class="empty">Sin cuentas todavía.</td></tr>'
+      }</tbody></table>
+    </div>
+    <div class="card">
+      <h2>Descargas por paquete</h2>
+      <div class="sub">Cuenta desde que se agregó este monitor — no incluye descargas anteriores a hoy.</div>
+      <table><thead><tr><th>Archivo</th><th>Descargas</th></tr></thead><tbody>${filasDesc}</tbody></table>
+    </div>
+  `;
+}
+
+$('#cargar').onclick = cargar;
+$('#admin').value = localStorage.getItem('mvAdminKey') || '';
+if ($('#admin').value) cargar();
+</script>
+</body>
+</html>

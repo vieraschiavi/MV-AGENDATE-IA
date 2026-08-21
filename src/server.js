@@ -149,6 +149,12 @@ app.get('/', (req, res, next) => {
   if (!process.env.MV_ESCRITORIO) return next();
   res.redirect(302, RUTA_APP);
 });
+// Cuenta las descargas directas (botones de instalar.html: prueba gratis, sin
+// pago) ANTES de servirlas como estático, para que el monitor de ventas
+// (/api/admin/resumen) sepa cuánta gente llegó a bajar el paquete y no solo
+// cuánta pagó. lic.contarDescarga ignora cualquier nombre que no sea uno de
+// los cuatro paquetes reales — así un bot pidiendo basura no ensucia el conteo.
+app.get('/descargas/:archivo', (req, res, next) => { lic.contarDescarga(req.params.archivo); next(); });
 app.use(express.static(join(here, '../public')));
 app.use('/movil', express.static(join(here, '../movil'))); // app Android (PWA instalable)
 
@@ -1077,6 +1083,18 @@ app.get('/api/pedido/:id', async (req, res) => {
 });
 app.post('/api/pago/confirmar', soloAdmin, async (req, res) => { const r = await lic.confirmarPago(req.body?.id); res.status(r.ok ? 200 : 400).json(r); });
 app.get('/api/licencias', soloAdmin, async (_req, res) => res.json(await lic.listarPedidos()));
+// Monitor del dueño: totales de ventas/descargas/cuentas en una sola llamada,
+// para no tener que cruzar a mano /api/licencias + /api/admin/cuentas.
+app.get('/api/admin/resumen', soloAdmin, async (_req, res) => {
+  const [ventas, descargas, cuentasSaas] = await Promise.all([
+    lic.resumenVentas(), lic.resumenDescargas(), cuentas.listarCuentas()
+  ]);
+  const cuentasPorEstado = cuentasSaas.reduce((acc, c) => {
+    acc[c.estado] = (acc[c.estado] || 0) + 1;
+    return acc;
+  }, {});
+  res.json({ ventas, descargas, cuentas_saas: { total: cuentasSaas.length, por_estado: cuentasPorEstado } });
+});
 app.post('/api/descarga/generar', soloAdmin, (req, res) => {
   const version = String(req.body?.version || 'pc');
   const token = lic.firmarDescarga(version, Number(req.body?.dias) || 30);
@@ -1096,7 +1114,7 @@ app.get('/descargar/:token', async (req, res) => {
     join(here, '../dist', nombre),
   ];
   const archivo = candidatos.find((f) => existsSync(f));
-  if (archivo) return res.download(archivo, nombre);
+  if (archivo) { lic.contarDescarga(nombre); return res.download(archivo, nombre); }
   // Si el .exe no está commiteado en public/descargas/ (ver empaquetar-exe),
   // como respaldo redirigimos al último build publicado en GitHub Releases.
   const urlExterna = cfg('descargaExeUrl');
