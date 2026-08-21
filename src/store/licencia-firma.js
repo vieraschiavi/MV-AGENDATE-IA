@@ -20,13 +20,47 @@
  * repo no tiene ninguna en src/ y no vale la pena romper eso por esto.
  */
 import { sign, verify, createPrivateKey, createPublicKey } from 'node:crypto';
+import { readFileSync, existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { PUBLICA, PREFIJO, firmaConfigurada } from './licencia-clave.js';
 
 const b64u = (b) => Buffer.from(b).toString('base64url');
 
+/**
+ * La clave privada, de donde esté.
+ *
+ * Dos lugares, en este orden:
+ *   1. process.env — es como la recibe el sitio en Vercel.
+ *   2. el archivo .env de la raíz — es donde la deja
+ *      scripts/configurar-licencias.js en la máquina del dueño.
+ *
+ * El paso 2 hace falta porque este repo NO carga .env en ningún lado: la
+ * configuración del programa vive en data/config.json y la pone /config.html.
+ * Sin esta lectura, la clave quedaba escrita en un archivo que nadie mira y
+ * `licencia-emitir.js` decía "no hay clave privada" con la clave ahí al lado.
+ *
+ * Se lee sólo esta variable a propósito, y no se vuelca todo el .env en
+ * process.env: un .env con la clave de Anthropic o el token de MercadoPago no
+ * tiene por qué terminar expuesto en el entorno de un proceso que sólo
+ * necesita firmar.
+ */
+function pemDeArchivo() {
+  try {
+    const env = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '.env');
+    if (!existsSync(env)) return null;
+    const linea = readFileSync(env, 'utf8')
+      .split(/\r?\n/)
+      .find((l) => l.trim().startsWith('MV_LICENSE_PRIVATE_KEY='));
+    if (!linea) return null;
+    const valor = linea.slice(linea.indexOf('=') + 1).trim().replace(/^["']|["']$/g, '');
+    return valor || null;
+  } catch { return null; }
+}
+
 /** La privada sólo existe en el servidor de ventas. Nunca en la copia vendida. */
 function privada() {
-  const pem = process.env.MV_LICENSE_PRIVATE_KEY;
+  const pem = process.env.MV_LICENSE_PRIVATE_KEY || pemDeArchivo();
   if (!pem) return null;
   try {
     // La variable de entorno suele venir con los saltos de línea escapados
