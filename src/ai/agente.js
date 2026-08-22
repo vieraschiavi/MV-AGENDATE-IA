@@ -21,6 +21,7 @@ import { cuentaActiva, overridesActivos } from '../store/contextoCuenta.js';
 import { creditosHabilitado, haySaldo, consumir } from '../store/creditos.js';
 import { get as cfg, listarProfesionales } from '../store/config.js';
 import { registrarUso } from '../store/uso.js';
+import { incluyeAgenteIA } from '../store/plan.js';
 
 const telefonoProfesional = () => cfg('agenciaTelefono') || '+598 99 000 000';
 
@@ -559,6 +560,13 @@ function modoCreditos() {
 
 export async function conversar(sessionId, texto, canal = 'webchat') {
   if (!iaConfigurada()) return responderDemo(sessionId, texto, canal);
+  // El agente con IA es lo que separa al plan Full del Básico (ver store/plan.js:
+  // hasta ahora el plan venía firmado adentro de la licencia y NADIE lo miraba).
+  // Se cae a la lógica local, igual que sin API key: el cliente del profesional
+  // siempre recibe una respuesta y nunca ve un texto sobre licencias. Va acá, en
+  // el único punto por el que pasan los cuatro canales (webchat, WhatsApp, voz y
+  // voz premium), para que no se pueda agregar un canal nuevo y olvidarlo.
+  if (!incluyeAgenteIA()) return responderDemo(sessionId, texto, canal);
   // Modo créditos: si la cuenta se quedó sin saldo, atendemos con la lógica
   // local (sin costo) en vez de cortar — el cliente nunca ve un error; el
   // profesional recarga para volver a la IA completa.
