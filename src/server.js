@@ -28,6 +28,7 @@ import * as trabajos from './store/trabajos.js';
 import * as cuentas from './store/cuentas.js';
 import * as cotizaciones from './store/cotizaciones.js';
 import { estadoPrueba, pruebaBloqueada, activarLicencia } from './store/prueba.js';
+import { incluyeAgenteIA, MOTIVO_SIN_IA } from './store/plan.js';
 import { estadoCreditos, acreditar, bonoBienvenida, PACKS as PACKS_CREDITOS } from './store/creditos.js';
 import * as emails from './store/emails.js';
 import * as resenas from './store/resenas.js';
@@ -1152,7 +1153,14 @@ app.get('/api/cron/diario', async (_req, res) => {
 });
 
 // --- Prueba gratis de la copia descargada (banner + activación de licencia) ---
-app.get('/api/prueba', (_req, res) => res.json(estadoPrueba()));
+// Se agrega qué incluye el plan pagado. Sin esto, un cliente con licencia
+// Básico ve que el chatbot le responde con la lógica local y cree que la IA
+// está rota — y escribe a soporte en vez de entender que compró otro plan.
+app.get('/api/prueba', (_req, res) => res.json({
+  ...estadoPrueba(),
+  incluyeIA: incluyeAgenteIA(),
+  motivoSinIA: incluyeAgenteIA() ? '' : MOTIVO_SIN_IA
+}));
 app.post('/api/licencia/activar', soloAdmin, (req, res) => {
   const r = activarLicencia(req.body?.codigo);
   res.status(r.ok ? 200 : 400).json(r);
