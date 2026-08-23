@@ -1019,6 +1019,25 @@ app.post('/api/comprar', limitar({ nombre: 'comprar', max: 10, ventanaSeg: 300,
     await lic.descartarPedidoPendiente(r.pedido.id).catch(() => {});
     return res.status(502).json({ ok: false, error: pago.error || 'No pude iniciar el pago con MercadoPago. Probá de nuevo en unos minutos.' });
   }
+  // Recién ACÁ hay intención de compra real: MercadoPago ya devolvió un
+  // checkout de verdad, no solo alguien que abrió /comprar.html. Es la señal
+  // para decidir en vivo si conviene subir de plan una plataforma que cobra
+  // por uso — nunca antes, porque hasta este punto podía no haber pasado nada.
+  const destinoAlerta = cfg('emailAlertaCompra') || cfg('emailDemos');
+  if (destinoAlerta) {
+    emails.enviarEmailAsync({
+      para: destinoAlerta,
+      asunto: `Alguien está por comprar: ${lic.PLANES[r.pedido.plan]?.nombre || r.pedido.plan} (USD ${r.pedido.total_usd})`,
+      html: `<p>Se generó un checkout real de MercadoPago recién.</p>
+<ul>
+  <li>Plan: ${escaparHtml(lic.PLANES[r.pedido.plan]?.nombre || r.pedido.plan)}</li>
+  <li>Monto: USD ${escaparHtml(r.pedido.total_usd)}</li>
+  <li>Email: ${escaparHtml(r.pedido.email)}</li>
+  <li>Pedido: ${escaparHtml(r.pedido.id)}</li>
+</ul>
+<p>Todavía no pagó — esto es la intención de compra, no la confirmación. El pago se avisa aparte cuando MercadoPago lo confirme.</p>`
+    });
+  }
   return res.json({ ok: true, pedido: r.pedido, init_point: pago.init_point, recurrente: !!r.pedido.recurrente });
 });
 

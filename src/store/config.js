@@ -100,6 +100,15 @@ const ENV = {
   // A dónde avisar cuando alguien pide una demo. Sin esto el pedido igual se
   // guarda y se ve en /monitor.html, pero no llega ningún mail.
   emailDemos: 'EMAIL_DEMOS',
+  // A dónde avisar cuando alguien inicia un checkout de verdad (llegó a
+  // MercadoPago con un init_point real, no solo abrió /comprar.html). Sirve
+  // para decidir EN VIVO si conviene subir de plan una plataforma que cobra
+  // por uso (ej. Vercel Pro) recién cuando hay intención de compra real, en
+  // vez de pagarla de antemano sin saber si va a entrar una venta. Si no está
+  // configurada, cae en emailDemos (mismo dueño, misma bandeja, un env menos
+  // que cargar); vacía del todo = sin aviso, el pedido igual queda en
+  // /monitor.html.
+  emailAlertaCompra: 'EMAIL_ALERTA_COMPRA',
   costoInputMusd: 'COSTO_INPUT_MUSD',   // USD por millón de tokens de entrada (ref)
   costoOutputMusd: 'COSTO_OUTPUT_MUSD', // USD por millón de tokens de salida (ref)
   // Créditos de IA (modo SaaS): el vendedor pone su key y le vende créditos a
@@ -188,7 +197,7 @@ function cargar() {
  * el oficio, país, precios y credenciales de ESA cuenta sin cambios de código.
  * Los overrides no aplican a las claves del vendedor (admin, pagos, licencia).
  */
-const NUNCA_OVERRIDE = new Set(['adminKey', 'mercadopagoToken', 'jwtSecret', 'licenciaLocal', 'demoLimite', 'demoMaxUsos', 'demoPublica', 'emailDemos', 'sitioUrl', 'preapprovalPlanFull', 'preapprovalPlanSaas', 'resendApiKey', 'emailFrom', 'descargaExeUrl']);
+const NUNCA_OVERRIDE = new Set(['adminKey', 'mercadopagoToken', 'jwtSecret', 'licenciaLocal', 'demoLimite', 'demoMaxUsos', 'demoPublica', 'emailDemos', 'emailAlertaCompra', 'sitioUrl', 'preapprovalPlanFull', 'preapprovalPlanSaas', 'resendApiKey', 'emailFrom', 'descargaExeUrl']);
 export function get(clave) {
   const ov = overridesActivos();
   if (ov && !NUNCA_OVERRIDE.has(clave) && ov[clave] !== undefined && ov[clave] !== '') return ov[clave];
