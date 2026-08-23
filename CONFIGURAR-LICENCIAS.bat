@@ -2,7 +2,12 @@
 chcp 65001 >nul
 setlocal EnableExtensions
 title MV Agendate IA - Configurar el sistema de licencias
-REM © 2026 Martín Viera. Todos los derechos reservados.
+REM (c) 2026 Martin Viera. Todos los derechos reservados.
+REM
+REM Sin tildes ni simbolos especiales a proposito: chcp 65001 + un caracter no
+REM ASCII cerca de la linea "title" corrompe el parseo de cmd.exe (paso de
+REM "title" a "tle" + un comando fantasma "M") - el mismo motivo por el que
+REM INSTALAR.bat e INICIAR.bat tampoco usan tildes.
 REM
 REM Deja el sistema de licencias listo para vender, con un doble clic.
 REM
