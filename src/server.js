@@ -1024,7 +1024,16 @@ app.post('/api/comprar', limitar({ nombre: 'comprar', max: 10, ventanaSeg: 300,
   // para decidir en vivo si conviene subir de plan una plataforma que cobra
   // por uso — nunca antes, porque hasta este punto podía no haber pasado nada.
   const destinoAlerta = cfg('emailAlertaCompra') || cfg('emailDemos');
-  if (destinoAlerta) {
+  // Guarda de idempotencia: un cliente indeciso que toca "Comprar" varias
+  // veces para el MISMO plan genera un pedido nuevo cada vez (a propósito,
+  // es dato real para /monitor.html), pero no tiene que generar un mail
+  // nuevo cada vez. 10 minutos de silencio por email+plan alcanza para tapar
+  // los reintentos de una sola sesión de compra sin esconder un intento
+  // GENUINO más tarde (cambió de plan, o lo volvió a pensar más tarde).
+  const claveAlerta = `mvagendate:alerta-compra:${String(r.pedido.email).toLowerCase()}:${r.pedido.plan}`;
+  const yaAvisado = destinoAlerta && await kvGet(claveAlerta);
+  if (destinoAlerta && !yaAvisado) {
+    await kvSet(claveAlerta, '1', { ex: 600 });
     emails.enviarEmailAsync({
       para: destinoAlerta,
       asunto: `Alguien está por comprar: ${lic.PLANES[r.pedido.plan]?.nombre || r.pedido.plan} (USD ${r.pedido.total_usd})`,

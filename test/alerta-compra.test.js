@@ -78,6 +78,43 @@ test('con EMAIL_ALERTA_COMPRA configurado: un checkout real dispara el aviso, co
   }
 });
 
+test('cliente indeciso: tocar "Comprar" varias veces para el MISMO plan manda UN solo mail', async () => {
+  await fetch(`${base}/api/config`, { method: 'POST', headers: J,
+    body: JSON.stringify({ emailAlertaCompra: 'dueno@test.com', resendApiKey: 're_test_123' }) });
+  try {
+    await conFetchMock(async (llamadasResend) => {
+      for (let i = 0; i < 3; i++) {
+        const r = await fetch(`${base}/api/comprar`, { method: 'POST', headers: J,
+          body: JSON.stringify({ plan: 'full', email: 'indeciso@test.com', version: 'pc' }) });
+        assert.equal(r.status, 200, `intento ${i + 1}: el checkout tiene que seguir andando igual`);
+      }
+      await new Promise((res) => setTimeout(res, 30));
+      assert.equal(llamadasResend.length, 1, 'tres clics del mismo plan = un solo mail, no tres');
+    });
+  } finally {
+    await fetch(`${base}/api/config`, { method: 'POST', headers: J,
+      body: JSON.stringify({ emailAlertaCompra: '', resendApiKey: '' }) });
+  }
+});
+
+test('cambiar de plan SÍ manda un mail nuevo — no es el mismo intento, es otra señal', async () => {
+  await fetch(`${base}/api/config`, { method: 'POST', headers: J,
+    body: JSON.stringify({ emailAlertaCompra: 'dueno@test.com', resendApiKey: 're_test_123' }) });
+  try {
+    await conFetchMock(async (llamadasResend) => {
+      await fetch(`${base}/api/comprar`, { method: 'POST', headers: J,
+        body: JSON.stringify({ plan: 'basico', email: 'cambia-de-idea@test.com', version: 'pc' }) });
+      await fetch(`${base}/api/comprar`, { method: 'POST', headers: J,
+        body: JSON.stringify({ plan: 'full', email: 'cambia-de-idea@test.com', version: 'pc' }) });
+      await new Promise((res) => setTimeout(res, 30));
+      assert.equal(llamadasResend.length, 2, 'basico y full son intenciones distintas: las dos avisan');
+    });
+  } finally {
+    await fetch(`${base}/api/config`, { method: 'POST', headers: J,
+      body: JSON.stringify({ emailAlertaCompra: '', resendApiKey: '' }) });
+  }
+});
+
 test('sin EMAIL_ALERTA_COMPRA pero con EMAIL_DEMOS: cae en la misma bandeja del dueño', async () => {
   await fetch(`${base}/api/config`, { method: 'POST', headers: J,
     body: JSON.stringify({ emailDemos: 'dueno-demos@test.com', resendApiKey: 're_test_123' }) });
