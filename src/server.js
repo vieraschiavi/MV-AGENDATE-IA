@@ -1019,6 +1019,34 @@ app.post('/api/comprar', limitar({ nombre: 'comprar', max: 10, ventanaSeg: 300,
     await lic.descartarPedidoPendiente(r.pedido.id).catch(() => {});
     return res.status(502).json({ ok: false, error: pago.error || 'No pude iniciar el pago con MercadoPago. Probá de nuevo en unos minutos.' });
   }
+  // Recién ACÁ hay intención de compra real: MercadoPago ya devolvió un
+  // checkout de verdad, no solo alguien que abrió /comprar.html. Es la señal
+  // para decidir en vivo si conviene subir de plan una plataforma que cobra
+  // por uso — nunca antes, porque hasta este punto podía no haber pasado nada.
+  const destinoAlerta = cfg('emailAlertaCompra') || cfg('emailDemos');
+  // Guarda de idempotencia: un cliente indeciso que toca "Comprar" varias
+  // veces para el MISMO plan genera un pedido nuevo cada vez (a propósito,
+  // es dato real para /monitor.html), pero no tiene que generar un mail
+  // nuevo cada vez. 10 minutos de silencio por email+plan alcanza para tapar
+  // los reintentos de una sola sesión de compra sin esconder un intento
+  // GENUINO más tarde (cambió de plan, o lo volvió a pensar más tarde).
+  const claveAlerta = `mvagendate:alerta-compra:${String(r.pedido.email).toLowerCase()}:${r.pedido.plan}`;
+  const yaAvisado = destinoAlerta && await kvGet(claveAlerta);
+  if (destinoAlerta && !yaAvisado) {
+    await kvSet(claveAlerta, '1', { ex: 600 });
+    emails.enviarEmailAsync({
+      para: destinoAlerta,
+      asunto: `Alguien está por comprar: ${lic.PLANES[r.pedido.plan]?.nombre || r.pedido.plan} (USD ${r.pedido.total_usd})`,
+      html: `<p>Se generó un checkout real de MercadoPago recién.</p>
+<ul>
+  <li>Plan: ${escaparHtml(lic.PLANES[r.pedido.plan]?.nombre || r.pedido.plan)}</li>
+  <li>Monto: USD ${escaparHtml(r.pedido.total_usd)}</li>
+  <li>Email: ${escaparHtml(r.pedido.email)}</li>
+  <li>Pedido: ${escaparHtml(r.pedido.id)}</li>
+</ul>
+<p>Todavía no pagó — esto es la intención de compra, no la confirmación. El pago se avisa aparte cuando MercadoPago lo confirme.</p>`
+    });
+  }
   return res.json({ ok: true, pedido: r.pedido, init_point: pago.init_point, recurrente: !!r.pedido.recurrente });
 });
 
