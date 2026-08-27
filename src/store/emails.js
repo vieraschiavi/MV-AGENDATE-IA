@@ -17,6 +17,13 @@ import { kvGet, kvSet } from './redis.js';
 
 const API = 'https://api.resend.com/emails';
 
+// nombre lo elige quien se registra o quien compra — sin escapar, un nombre
+// con <script> o etiquetas rotas queda inyectado en el email que se manda a
+// esa misma persona (self-XSS, pero rompe la garantía de escapar todo dato
+// de terceros antes de insertarlo en HTML).
+const esc = (s) => String(s ?? '')
+  .replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
 export function emailsActivos() { return !!cfg('resendApiKey'); }
 const remitente = () => cfg('emailFrom') || 'MV Agendate IA <onboarding@resend.dev>';
 
@@ -64,7 +71,7 @@ const btn = (url, texto) => `<a href="${url}" style="display:inline-block;backgr
 export const PLANTILLAS = {
   bienvenida: (idioma, { nombre, url, bonoCreditos }) => idioma === 'pt' ? {
     asunto: 'Bem-vindo ao MV Agendate IA — seus 14 dias grátis começaram',
-    html: marco(`<h2 style="margin:0 0 8px;color:#0f2a43;">Olá${nombre ? ` ${nombre}` : ''}! 👋</h2>
+    html: marco(`<h2 style="margin:0 0 8px;color:#0f2a43;">Olá${nombre ? ` ${esc(nombre)}` : ''}! 👋</h2>
       <p>Sua conta está pronta e você tem <strong>14 dias grátis</strong> com tudo habilitado: orçamentos com IA, agenda otimizada, CRM e dashboards.</p>
       ${bonoCreditos ? `<p>🎁 De presente, sua conta já vem com <strong>US$ ${bonoCreditos} em créditos de IA</strong>: é o que faz o chatbot e o ChatVoice funcionarem. Cada conversa desconta centavos do saldo; quando acabar, você recarrega em um toque (os packs maiores dão bônus).</p>` : ''}
       <p>Primeiro passo: entre e complete o assistente de configuração (2 minutos).</p>
@@ -72,7 +79,7 @@ export const PLANTILLAS = {
       <p style="font-size:13px;color:#5a6b7c;">Depois, se quiser continuar, a assinatura custa USD 15/mês pelo MercadoPago. Cancele quando quiser.</p>`),
   } : {
     asunto: 'Bienvenido a MV Agendate IA — arrancaron tus 14 días gratis',
-    html: marco(`<h2 style="margin:0 0 8px;color:#0f2a43;">¡Hola${nombre ? ` ${nombre}` : ''}! 👋</h2>
+    html: marco(`<h2 style="margin:0 0 8px;color:#0f2a43;">¡Hola${nombre ? ` ${esc(nombre)}` : ''}! 👋</h2>
       <p>Tu cuenta ya está lista y tenés <strong>14 días gratis</strong> con todo habilitado: cotizaciones con IA, agenda optimizada, CRM y dashboards.</p>
       ${bonoCreditos ? `<p>🎁 De regalo, tu cuenta ya viene con <strong>US$ ${bonoCreditos} en créditos de IA</strong>: es lo que hace funcionar el chatbot y el ChatVoice. Cada conversación descuenta centavos del saldo; cuando se acaba, recargás en un toque (los packs grandes traen bonificación).</p>` : ''}
       <p>Primer paso: entrá y completá el asistente de configuración (2 minutos).</p>
@@ -82,13 +89,13 @@ export const PLANTILLAS = {
 
   trialPorVencer: (idioma, { nombre, dias, url }) => idioma === 'pt' ? {
     asunto: dias === 1 ? 'Seu teste grátis termina amanhã' : `Seu teste grátis termina em ${dias} dias`,
-    html: marco(`<h2 style="margin:0 0 8px;color:#0f2a43;">Olá${nombre ? ` ${nombre}` : ''},</h2>
+    html: marco(`<h2 style="margin:0 0 8px;color:#0f2a43;">Olá${nombre ? ` ${esc(nombre)}` : ''},</h2>
       <p>${dias === 1 ? 'Amanhã' : `Em ${dias} dias`} termina o seu teste grátis do MV Agendate IA. Para não perder seu assistente, sua agenda e seus clientes, ative a assinatura (USD 15/mês pelo MercadoPago).</p>
       ${btn(url, 'Ativar assinatura →')}
       <p style="font-size:13px;color:#5a6b7c;">Seus dados ficam guardados: se ativar depois, tudo continua onde estava.</p>`),
   } : {
     asunto: dias === 1 ? 'Tu prueba gratis termina mañana' : `Tu prueba gratis termina en ${dias} días`,
-    html: marco(`<h2 style="margin:0 0 8px;color:#0f2a43;">Hola${nombre ? ` ${nombre}` : ''},</h2>
+    html: marco(`<h2 style="margin:0 0 8px;color:#0f2a43;">Hola${nombre ? ` ${esc(nombre)}` : ''},</h2>
       <p>${dias === 1 ? 'Mañana' : `En ${dias} días`} termina tu prueba gratis de MV Agendate IA. Para no perder tu asistente, tu agenda y tus clientes, activá la suscripción (USD 15/mes por MercadoPago).</p>
       ${btn(url, 'Activar suscripción →')}
       <p style="font-size:13px;color:#5a6b7c;">Tus datos quedan guardados: si activás más adelante, todo sigue donde estaba.</p>`),
@@ -96,14 +103,14 @@ export const PLANTILLAS = {
 
   compraConfirmada: (idioma, { nombre, plan, licencia, urlDescarga }) => idioma === 'pt' ? {
     asunto: `Sua licença do MV Agendate IA (${plan})`,
-    html: marco(`<h2 style="margin:0 0 8px;color:#0f2a43;">Obrigado pela sua compra${nombre ? `, ${nombre}` : ''}! 🎉</h2>
+    html: marco(`<h2 style="margin:0 0 8px;color:#0f2a43;">Obrigado pela sua compra${nombre ? `, ${esc(nombre)}` : ''}! 🎉</h2>
       <p>Pagamento confirmado. Esta é a sua licença — guarde este email:</p>
       <p style="background:#f6f9fc;border:1px solid #e6ebf1;border-radius:10px;padding:12px;text-align:center;font-family:monospace;font-size:18px;"><strong>${licencia}</strong></p>
       ${urlDescarga ? btn(urlDescarga, '⬇ Baixar o programa') : ''}
       <p style="font-size:13px;color:#5a6b7c;">Na primeira vez que abrir o programa, insira este código para ativá-lo.</p>`),
   } : {
     asunto: `Tu licencia de MV Agendate IA (${plan})`,
-    html: marco(`<h2 style="margin:0 0 8px;color:#0f2a43;">¡Gracias por tu compra${nombre ? `, ${nombre}` : ''}! 🎉</h2>
+    html: marco(`<h2 style="margin:0 0 8px;color:#0f2a43;">¡Gracias por tu compra${nombre ? `, ${esc(nombre)}` : ''}! 🎉</h2>
       <p>El pago está confirmado. Esta es tu licencia — guardá este email:</p>
       <p style="background:#f6f9fc;border:1px solid #e6ebf1;border-radius:10px;padding:12px;text-align:center;font-family:monospace;font-size:18px;"><strong>${licencia}</strong></p>
       ${urlDescarga ? btn(urlDescarga, '⬇ Descargar el programa') : ''}

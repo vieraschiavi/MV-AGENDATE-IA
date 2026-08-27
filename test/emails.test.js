@@ -34,6 +34,20 @@ test('las plantillas renderizan en español y portugués con sus datos', () => {
   assert.match(PLANTILLAS.trialPorVencer('es', { dias: 1, url: 'u' }).asunto, /mañana/);
 });
 
+test('un nombre con HTML no queda inyectado sin escapar en el email', () => {
+  const nombre = '<img src=x onerror=alert(1)>';
+  for (const clave of ['bienvenida', 'trialPorVencer', 'compraConfirmada']) {
+    for (const idi of ['es', 'pt']) {
+      const { html } = PLANTILLAS[clave](idi, {
+        nombre, url: 'https://x', dias: 2, plan: 'full',
+        licencia: 'MV-FULL-ABC', urlDescarga: 'https://x/d',
+      });
+      assert.ok(!html.includes(nombre), `${clave}/${idi} no debe contener el HTML crudo`);
+      assert.ok(html.includes('&lt;img'), `${clave}/${idi} debe escapar el nombre`);
+    }
+  }
+});
+
 test('consumir avisa UNA sola vez al cruzar el umbral de saldo bajo', async () => {
   setConfig({ creditosSaas: '', creditosBono: '3', creditosMargen: '2.5', costoInputMusd: '15', costoOutputMusd: '75' });
   const id = `c-${Date.now()}-umbral`;

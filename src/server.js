@@ -1193,7 +1193,7 @@ app.post('/api/licencia/activar', soloAdmin, (req, res) => {
   const r = activarLicencia(req.body?.codigo);
   res.status(r.ok ? 200 : 400).json(r);
 });
-app.get('/api/pedido/:id', async (req, res) => {
+app.get('/api/pedido/:id', limitar({ nombre: 'pedido', max: 20, ventanaSeg: 60 }), async (req, res) => {
   const p = await lic.obtenerPedido(req.params.id);
   if (!p) return res.status(404).json({ ok: false, error: 'No existe' });
   res.json({
