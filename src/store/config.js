@@ -57,7 +57,7 @@ const ENV = {
   aprobarCotizaciones: 'APROBAR_COTIZACIONES',
   agenciaNombre: 'AGENCIA_NOMBRE',         // nombre comercial mostrado en fichas/exportaciones
   agenciaTelefono: 'AGENCIA_TELEFONO',
-  sitioUrl: 'SITIO_URL',                   // dominio público del deploy (para back_urls de MercadoPago, ej. https://mv-agendate-ia.vercel.app)
+  sitioUrl: 'SITIO_URL',                   // dominio público del deploy (para back_urls de MercadoPago, ej. https://www.mvbusinesscalendar.com)
   logoUrl: 'LOGO_URL',            // logo del profesional (URL o data-URI) para fichas/exportaciones
   horarioInicio: 'HORARIO_INICIO',       // HH:MM inicio de la jornada laboral
   horarioFin: 'HORARIO_FIN',             // HH:MM fin de la jornada laboral

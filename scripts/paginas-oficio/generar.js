@@ -22,7 +22,7 @@ import { fileURLToPath } from 'node:url';
 
 const AQUI = dirname(fileURLToPath(import.meta.url));
 const RAIZ = dirname(dirname(AQUI));
-const SITIO = 'https://mv-agendate-ia.vercel.app';
+const SITIO = 'https://www.mvbusinesscalendar.com';
 
 const oficios = JSON.parse(readFileSync(join(RAIZ, 'src/data/oficios.json'), 'utf8'));
 const copy = JSON.parse(readFileSync(join(AQUI, 'contenido.json'), 'utf8'));
