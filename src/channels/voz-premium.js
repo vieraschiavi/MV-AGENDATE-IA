@@ -16,6 +16,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { conversar } from '../ai/agente.js';
 import { piperDisponible, sintetizarUlaw as piperUlaw } from './tts-piper.js';
 import { get as cfg } from '../store/config.js';
+import { idiomaActivo } from '../ai/cotizador.js';
 import { runConCuenta } from '../store/contextoCuenta.js';
 import { cuentaPorNumeroVoz, obtenerOverrides } from '../store/configCuentas.js';
 import { listarCuentaIds } from '../store/cuentas.js';
@@ -136,8 +137,13 @@ export function montarVozPremium(httpServer) {
     const log = (...a) => console.log('[voz-premium]', ...a);
 
     function abrirDeepgram() {
+      // Igual que vozTwilio() en voz.js: el ASR tiene que escuchar en el
+      // idioma real del profesional, no siempre en español — si no, un
+      // cliente brasileño (cuenta en portugués) queda transcripto con un
+      // modelo en el idioma equivocado.
+      const idiomaDg = idiomaActivo() === 'pt' ? 'pt-BR' : 'es';
       const url =
-        'wss://api.deepgram.com/v1/listen?model=nova-2&language=es&encoding=mulaw&sample_rate=8000' +
+        `wss://api.deepgram.com/v1/listen?model=nova-2&language=${idiomaDg}&encoding=mulaw&sample_rate=8000` +
         '&punctuate=true&smart_format=true&interim_results=false&endpointing=400';
       dgWs = new WebSocket(url, { headers: { Authorization: `Token ${DG()}` } });
       // Una conexión que llegó a abrirse limpia la cuenta de reintentos: el
