@@ -19,6 +19,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { vozDelIdioma } from '../src/channels/tts-piper.js';
+import { VOZ_POLLY, FRASES } from '../src/channels/voz.js';
 
 const RAIZ = dirname(dirname(fileURLToPath(import.meta.url)));
 const leer = (rel) => readFileSync(join(RAIZ, rel), 'utf8');
@@ -49,12 +50,24 @@ test('el ASR de Deepgram sigue el idioma activo, no una constante', () => {
   assert.match(js, /pt-BR/, 'el ASR ya no contempla portugués');
 });
 
-test('el canal estándar elige voz y locale de Twilio por idioma', () => {
-  // Este ya estaba bien; el test lo fija para que siga estándolo.
-  const js = leer('src/channels/voz.js');
-  assert.match(js, /idiomaActivo\(\)\s*===\s*'pt'/, 'voz.js dejó de distinguir portugués');
-  assert.match(js, /pt-BR/, 'voz.js perdió el locale de portugués');
-  assert.match(js, /es-MX|es-AR|es-US/, 'voz.js perdió el locale de español');
+test('en el canal estándar, cada idioma tiene voz Y frases (o ninguna de las dos)', () => {
+  // Son las dos mitades de hablar un idioma: voz sin frases lee español con
+  // acento ajeno; frases sin voz hace lo inverso. Cuando esto era un ternario
+  // (`=== 'pt' ? pt-BR : es-MX`) el desfasaje era invisible.
+  const conVoz = Object.keys(VOZ_POLLY).sort();
+  const conFrases = Object.keys(FRASES).sort();
+  assert.deepEqual(
+    conVoz, conFrases,
+    `voz.js: idiomas con voz [${conVoz}] != idiomas con frases [${conFrases}] — ` +
+    'agregar el que falta, o sacar el que sobra'
+  );
+  // Y el locale de cada voz tiene que ser de ese idioma, no de otro.
+  for (const [idioma, { lang }] of Object.entries(VOZ_POLLY)) {
+    assert.ok(
+      lang.toLowerCase().startsWith(idioma),
+      `voz.js: el idioma "${idioma}" usa el locale "${lang}", que es de otro idioma`
+    );
+  }
 });
 
 test('nada informa el nombre de la voz con una constante en español', () => {

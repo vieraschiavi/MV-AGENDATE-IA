@@ -22,9 +22,17 @@ import { idiomaActivo } from '../ai/cotizador.js';
 import { runConCuenta } from '../store/contextoCuenta.js';
 
 // Voz de Twilio (Polly) e idioma del <Gather> según el país configurado.
-const vozTwilio = () => (idiomaActivo() === 'pt'
-  ? { lang: 'pt-BR', voz: 'Polly.Camila-Neural' }
-  : { lang: 'es-MX', voz: 'Polly.Mia-Neural' });
+//
+// Las claves de acá tienen que ser LAS MISMAS que las de FRASES (más abajo):
+// son las dos mitades de hablar un idioma. Un idioma con voz pero sin frases
+// lee texto en español con acento de otro lado; uno con frases pero sin voz
+// hace lo inverso. Antes esto era un ternario `=== 'pt' ? ... : español`, que
+// hacía imposible notar el desfasaje. Un test verifica que coincidan.
+export const VOZ_POLLY = {
+  es: { lang: 'es-MX', voz: 'Polly.Mia-Neural' },
+  pt: { lang: 'pt-BR', voz: 'Polly.Camila-Neural' },
+};
+const vozTwilio = () => VOZ_POLLY[idiomaActivo()] || VOZ_POLLY.es;
 import { cuentaPorNumeroVoz } from '../store/configCuentas.js';
 import { listarCuentaIds } from '../store/cuentas.js';
 import { limitar } from '../store/limites.js';
@@ -88,7 +96,9 @@ const NOMBRE_PROFESIONAL = () => cfg('nombreProfesional') || cfg('agenciaNombre'
 const TTL_AUDIO = 300; // 5 min — de sobra para que Twilio lo pida apenas generado
 
 // Frases fijas del sistema en el idioma del país (es/pt).
-const FRASES = {
+// Se exporta junto con VOZ_POLLY para que el test pueda comprobar que ambos
+// cubren exactamente los mismos idiomas.
+export const FRASES = {
   es: {
     saludo: (n) => `Hola, te comunicaste con ${n}. Soy tu asistente virtual. Contame qué trabajo necesitás y te paso presupuesto y horarios disponibles.`,
     noEscuche: 'No te escuché. Llamanos de nuevo cuando quieras. ¡Hasta luego!',
