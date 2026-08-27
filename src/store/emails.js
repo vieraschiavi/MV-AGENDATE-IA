@@ -152,7 +152,7 @@ export function enviarPlantilla(nombre, idioma, para, datos) {
 
 // ---------- Ayudas de alto nivel (buscan email/idioma de la cuenta) ----------
 
-const urlBase = () => cfg('sitioUrl') || 'https://mv-agendate-ia.vercel.app';
+const urlBase = () => cfg('sitioUrl') || 'https://www.mvbusinesscalendar.com';
 
 async function idiomaDeCuenta(cuentaId) {
   try {

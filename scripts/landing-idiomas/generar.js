@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 
 const AQUI = dirname(fileURLToPath(import.meta.url));
 const RAIZ = dirname(dirname(AQUI));
-const SITIO = 'https://mv-agendate-ia.vercel.app';
+const SITIO = 'https://www.mvbusinesscalendar.com';
 
 // public/index.html es a la vez la plantilla fuente Y uno de los archivos
 // generados (la versión "es"). Sin esto, correr el script dos veces duplica
@@ -102,7 +102,7 @@ function pagina(idi) {
     `<meta property="og:description" content="${m.ogDesc}">`
   );
   html = html.replace(
-    '<meta property="og:url" content="https://mv-agendate-ia.vercel.app/">',
+    '<meta property="og:url" content="https://www.mvbusinesscalendar.com/">',
     `<meta property="og:url" content="${SITIO}/${m.ruta}">`
   );
   html = html.replace(
@@ -110,7 +110,7 @@ function pagina(idi) {
     `<meta property="og:locale" content="${m.locale}">\n${ogLocaleAlternate(idi)}`
   );
   html = html.replace(
-    '<link rel="canonical" href="https://mv-agendate-ia.vercel.app/">',
+    '<link rel="canonical" href="https://www.mvbusinesscalendar.com/">',
     `<link rel="canonical" href="${SITIO}/${m.ruta}">\n${hreflangs()}`
   );
   html = html.replace(

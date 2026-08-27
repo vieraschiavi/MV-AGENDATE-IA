@@ -8,4 +8,4 @@ Disallow: /clientes.html
 Disallow: /dashboards.html
 Disallow: /api/
 
-Sitemap: https://mv-agendate-ia.vercel.app/sitemap.xml
+Sitemap: https://www.mvbusinesscalendar.com/sitemap.xml
