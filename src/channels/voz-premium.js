@@ -8,13 +8,15 @@
 //     → de vuelta a la llamada.
 //
 // Requiere en .env: DEEPGRAM_API_KEY (ASR). Para la voz (TTS) usa, en orden:
-//   1) Piper — voz es_AR-daniela rioplatense, GRATIS y offline (sin ElevenLabs).
+//   1) Piper — voz del IDIOMA del profesional, GRATIS y offline (sin
+//      ElevenLabs). Si no está instalada la de ese idioma, se saltea: ver
+//      tts-piper.js (nunca hablar con la voz de otro idioma).
 //   2) ElevenLabs (voz clonada) si hay ELEVENLABS_API_KEY + ELEVENLABS_VOICE_ID.
 // Sin Deepgram, /webhook/voz-premium redirige a la vía rápida (/webhook/voz).
 import { Router } from 'express';
 import { WebSocketServer, WebSocket } from 'ws';
 import { conversar } from '../ai/agente.js';
-import { piperDisponible, sintetizarUlaw as piperUlaw } from './tts-piper.js';
+import { piperDisponible, vozDelIdioma, sintetizarUlaw as piperUlaw } from './tts-piper.js';
 import { get as cfg } from '../store/config.js';
 import { idiomaActivo } from '../ai/cotizador.js';
 import { runConCuenta } from '../store/contextoCuenta.js';
@@ -37,7 +39,12 @@ const MAX_REINTENTOS_DG = 6; // ~30 s de backoff antes de rendirse con el ASR
 const ttsElevenLabs = () => Boolean(EL() && VOZ_ID());
 // El pipeline vive con Deepgram (ASR) + alguna voz (Piper gratis, o ElevenLabs).
 const disponible = () => Boolean(DG() && (piperDisponible() || ttsElevenLabs()));
-const motorVoz = () => (piperDisponible() ? 'Piper (es_AR-daniela, gratis)' : ttsElevenLabs() ? 'ElevenLabs' : 'ninguno');
+// El nombre sale de la voz REAL del idioma activo: hardcodeado en
+// "es_AR-daniela" hacía creer, en un diagnóstico de una cuenta en portugués,
+// que había una voz correcta cargada.
+const motorVoz = () => (piperDisponible()
+  ? `Piper (${vozDelIdioma().replace(/\.onnx$/, '')}, gratis)`
+  : ttsElevenLabs() ? 'ElevenLabs' : 'ninguno');
 
 // --- TwiML: conecta la llamada al stream de audio bidireccional ---
 // Multi-cuenta (SaaS): si el número llamado ("To") es de una cuenta, la

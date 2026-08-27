@@ -52,7 +52,7 @@ import whatsapp, { enviarWhatsApp, probarConexion as probarConexionWhatsapp } fr
 import * as tw from './store/twilio.js';
 import voz from './channels/voz.js';
 import vozPremium, { montarVozPremium } from './channels/voz-premium.js';
-import { piperDisponible, sintetizarWav } from './channels/tts-piper.js';
+import { piperDisponible, vozDelIdioma, sintetizarWav } from './channels/tts-piper.js';
 import { checkBotId } from 'botid/server';
 import { iniciarChequeoLicencia, iaHabilitada, motivoSuspension } from './store/estadoLicencia.js';
 import { limitar } from './store/limites.js';
@@ -450,8 +450,13 @@ app.post('/api/agenda/proponer', limitar({ nombre: 'agenda-proponer', max: 30, v
   res.json(r);
 });
 
-// --- Voz del profesional (TTS) — Piper es_AR-daniela (rioplatense, gratis). ---
-app.get('/api/voz/estado', (_req, res) => res.json({ disponible: piperDisponible(), voz: 'es_AR-daniela (rioplatense)' }));
+// --- Voz del profesional (TTS) — Piper, gratis, una voz por idioma. ---
+// El nombre de la voz sale del idioma configurado, no de una constante: decía
+// "es_AR-daniela" incluso en una cuenta en portugués, donde esa voz ni se usa.
+app.get('/api/voz/estado', (_req, res) => res.json({
+  disponible: piperDisponible(),
+  voz: vozDelIdioma().replace(/\.onnx$/, '') || 'sin voz para este idioma',
+}));
 app.get('/api/voz', limitar({ nombre: 'voz', max: 15, ventanaSeg: 60,
   mensaje: 'Muchos audios seguidos.' }), async (req, res) => {
   const texto = String(req.query?.texto || '').slice(0, 900).trim();

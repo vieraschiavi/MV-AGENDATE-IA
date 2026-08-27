@@ -1,32 +1,60 @@
 // © 2026 Martín Viera. Todos los derechos reservados.
 
-// TTS con Piper — voz neuronal es_AR-daniela (rioplatense), OFFLINE y GRATIS.
-// Es la voz del gestor IA (ChatVoice) sin depender de ElevenLabs ni de créditos.
+// TTS con Piper — voz neuronal OFFLINE y GRATIS para el ChatVoice, sin
+// depender de ElevenLabs ni de créditos.
 //
 // Piper genera PCM crudo s16le a 22050 Hz (--output-raw). Para el teléfono (Twilio)
 // lo convertimos a mu-law 8000 Hz con ffmpeg; para reproducción web devolvemos WAV.
 //
+// UNA VOZ POR IDIOMA, y nunca la de otro idioma: la voz estaba fija en
+// es_AR-daniela, así que a un profesional brasileño —cuenta en portugués,
+// clientes que hablan portugués— el asistente le contestaba con acento
+// rioplatense leyendo texto en portugués. Si no está instalada la voz del
+// idioma activo, este motor se declara NO disponible a propósito: arriba eso
+// cae a ElevenLabs y, si tampoco está, al canal estándar por Twilio (Polly
+// pt-BR/Camila), que sí habla portugués. Sonar bien en otro idioma es peor
+// que ceder el turno a quien lo hace bien.
+//
 // Instalación (una vez):  bash promo/instalar-voz.sh
-// Config: piperBin (binario), piperVoz (ruta al modelo .onnx). Por defecto busca
-// ./voces/es_AR-daniela-high.onnx y el binario 'piper' en el PATH.
+// Config: piperBin (binario), piperVoz (ruta al modelo .onnx — si se setea a
+// mano, gana sobre la elección por idioma) y el binario 'piper' en el PATH.
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { get as cfg } from '../store/config.js';
+import { idiomaActivo } from '../ai/cotizador.js';
 
 const RAIZ = process.cwd();
 
+// Modelo de Piper por idioma. Un idioma que no esté acá (hoy, inglés) no
+// tiene voz propia: mejor no hablar que hablar con la voz equivocada.
+const VOZ_POR_IDIOMA = {
+  es: 'es_AR-daniela-high.onnx',
+  pt: 'pt_BR-faber-medium.onnx',
+};
+
 function binPiper() { return cfg('piperBin') || process.env.PIPER_BIN || 'piper'; }
+
+/** Nombre del modelo .onnx que le toca al idioma activo ('' si no hay). */
+export function vozDelIdioma(idioma = idiomaActivo()) {
+  return VOZ_POR_IDIOMA[idioma] || '';
+}
+
 function rutaVoz() {
   const c = cfg('piperVoz') || process.env.PIPER_VOZ;
   if (c) return c;
-  const local = path.join(RAIZ, 'voces', 'es_AR-daniela-high.onnx');
-  return existsSync(local) ? local : '/tmp/voces/es_AR-daniela-high.onnx';
+  const archivo = vozDelIdioma();
+  if (!archivo) return '';           // idioma sin voz → no disponible
+  const local = path.join(RAIZ, 'voces', archivo);
+  return existsSync(local) ? local : path.join('/tmp/voces', archivo);
 }
 
-/** ¿Está el motor Piper disponible? (existe el modelo de voz). */
+/** ¿Hay voz Piper para el idioma activo? (existe su modelo). */
 export function piperDisponible() {
-  try { return existsSync(rutaVoz()); } catch { return false; }
+  try {
+    const ruta = rutaVoz();
+    return Boolean(ruta) && existsSync(ruta);
+  } catch { return false; }
 }
 
 // Limpia markdown/emoji para que la voz no lea símbolos.
@@ -84,4 +112,4 @@ export async function sintetizarUlaw(texto) {
   return correr('ffmpeg', ['-nostdin', '-v', 'error', '-f', 's16le', '-ar', '22050', '-ac', '1', '-i', 'pipe:0', '-ar', '8000', '-ac', '1', '-f', 'mulaw', 'pipe:1'], pcm);
 }
 
-export default { piperDisponible, sintetizarPCM, sintetizarWav, sintetizarUlaw };
+export default { piperDisponible, vozDelIdioma, sintetizarPCM, sintetizarWav, sintetizarUlaw };
