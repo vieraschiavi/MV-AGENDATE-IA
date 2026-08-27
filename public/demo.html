@@ -61,76 +61,172 @@
 <div class="nav">
   <div class="marca"><img src="/logo-mv.svg" alt="MV">MV Agendate IA</div>
   <div class="der">
-    <a href="/">← Inicio</a>
-    <a href="/comprar.html">Planes</a>
-    <a href="/instalar.html">Instalar</a>
+    <select class="mv-sel-idioma" aria-label="Idioma" style="padding:4px 6px;border-radius:8px;border:1px solid #cbd5e1;font-size:13px;">
+      <option value="es">🇺🇾 ES</option>
+      <option value="pt">🇧🇷 PT</option>
+      <option value="en">🇬🇧 EN</option>
+    </select>
+    <a href="/" data-i18n="nInicio">← Inicio</a>
+    <a href="/comprar.html" data-i18n="nPlanes">Planes</a>
+    <a href="/instalar.html" data-i18n="nInstalar">Instalar</a>
   </div>
 </div>
 
 <div class="hero">
-  <div class="kicker">DEMO EN VIVO, UNO A UNO</div>
-  <h1>Te mostramos el asistente funcionando con tu caso</h1>
-  <p>No es un video grabado ni un chat de juguete: nos conectamos, cargamos un trabajo real de tu oficio y ves cómo cotiza, cómo agenda y cómo avisa un retraso. Dura unos 20 minutos.</p>
+  <div class="kicker" data-i18n="kicker">DEMO EN VIVO, UNO A UNO</div>
+  <h1 data-i18n="heroH1">Te mostramos el asistente funcionando con tu caso</h1>
+  <p data-i18n="heroP">No es un video grabado ni un chat de juguete: nos conectamos, cargamos un trabajo real de tu oficio y ves cómo cotiza, cómo agenda y cómo avisa un retraso. Dura unos 20 minutos.</p>
 </div>
 
 <main>
   <div class="card" id="tarjeta">
-    <h2>Pedí tu demo</h2>
-    <p class="sub">Dejanos estos datos y coordinamos día y hora por email.</p>
+    <h2 data-i18n="hPedir">Pedí tu demo</h2>
+    <p class="sub" data-i18n="subPedir">Dejanos estos datos y coordinamos día y hora por email.</p>
 
     <form id="form" novalidate>
       <div class="campos">
         <div class="campo">
-          <label for="nombre">Nombre y apellido *</label>
+          <label for="nombre" data-i18n="lNombre">Nombre y apellido *</label>
           <input id="nombre" name="nombre" autocomplete="name" required>
         </div>
         <div class="campo">
-          <label for="email">Email *</label>
+          <label for="email" data-i18n="lEmail">Email *</label>
           <input id="email" name="email" type="email" autocomplete="email" required>
         </div>
         <div class="campo">
-          <label for="pais">País *</label>
+          <label for="pais" data-i18n="lPais">País *</label>
           <input id="pais" name="pais" autocomplete="country-name" required>
         </div>
         <div class="campo">
-          <label for="empresa">Empresa *</label>
+          <label for="empresa" data-i18n="lEmpresa">Empresa *</label>
           <input id="empresa" name="empresa" autocomplete="organization" required>
         </div>
         <div class="campo ancho">
-          <label for="oficio">Oficio o rubro <span style="font-weight:400;">(opcional)</span></label>
-          <input id="oficio" name="oficio" placeholder="Electricista, plomero, veterinaria, taller…">
+          <label for="oficio" data-i18n="lOficio">Oficio o rubro <span style="font-weight:400;">(opcional)</span></label>
+          <input id="oficio" name="oficio" data-i18n-placeholder="pOficio" placeholder="Electricista, plomero, veterinaria, taller…">
         </div>
         <div class="campo ancho">
-          <label for="mensaje">¿Qué te gustaría ver? <span style="font-weight:400;">(opcional)</span></label>
-          <textarea id="mensaje" name="mensaje" placeholder="Contanos cómo agendás y cotizás hoy, y en qué se te va el tiempo."></textarea>
+          <label for="mensaje" data-i18n="lMensaje">¿Qué te gustaría ver? <span style="font-weight:400;">(opcional)</span></label>
+          <textarea id="mensaje" name="mensaje" data-i18n-placeholder="pMensaje" placeholder="Contanos cómo agendás y cotizás hoy, y en qué se te va el tiempo."></textarea>
         </div>
       </div>
-      <button class="btn" type="submit" id="enviar">Pedir la demo →</button>
+      <button class="btn" type="submit" id="enviar" data-i18n="btnEnviar">Pedir la demo →</button>
       <div class="aviso" id="aviso" role="status" aria-live="polite"></div>
     </form>
   </div>
 
   <div class="card">
-    <h2>Qué vas a ver</h2>
+    <h2 data-i18n="hVas">Qué vas a ver</h2>
     <ul class="lista">
-      <li>Una cotización real armada con una lista de precios como la tuya — el asistente nunca inventa montos.</li>
-      <li>La agenda del día calculando el traslado entre una cita y la otra, con los descansos.</li>
-      <li>El aviso automático de retraso al próximo cliente, sin que vos toques nada.</li>
-      <li>El panel: clientes, trabajos del mes y facturación.</li>
-      <li>Los precios y cómo queda instalado en tu PC y en tu celular.</li>
+      <li data-i18n="li1">Una cotización real armada con una lista de precios como la tuya — el asistente nunca inventa montos.</li>
+      <li data-i18n="li2">La agenda del día calculando el traslado entre una cita y la otra, con los descansos.</li>
+      <li data-i18n="li3">El aviso automático de retraso al próximo cliente, sin que vos toques nada.</li>
+      <li data-i18n="li4">El panel: clientes, trabajos del mes y facturación.</li>
+      <li data-i18n="li5">Los precios y cómo queda instalado en tu PC y en tu celular.</li>
     </ul>
   </div>
 
   <div class="card">
-    <h2>¿Por qué no hay una demo abierta?</h2>
-    <p class="porque">Porque lo que distingue a este producto no es la pantalla: es cómo el asistente repregunta, cotiza y arma la agenda. Eso es el trabajo de ingeniería, y una demo abierta lo regala. Mostrártelo en vivo nos lleva el mismo tiempo y a vos te sirve más: preguntás lo que quieras sobre tu propio caso.</p>
+    <h2 data-i18n="hPorque">¿Por qué no hay una demo abierta?</h2>
+    <p class="porque" data-i18n="porque">Porque lo que distingue a este producto no es la pantalla: es cómo el asistente repregunta, cotiza y arma la agenda. Eso es el trabajo de ingeniería, y una demo abierta lo regala. Mostrártelo en vivo nos lleva el mismo tiempo y a vos te sirve más: preguntás lo que quieras sobre tu propio caso.</p>
   </div>
 </main>
 
-<footer>MV Agendate IA · Turnos y presupuestos con IA para cualquier profesión u oficio de LATAM · <a href="/">Inicio</a> · <a href="/comprar.html">Planes</a> · <a href="/instalar.html">Instalar</a></footer>
+<footer data-i18n-html="pie">MV Agendate IA · Turnos y presupuestos con IA para cualquier profesión u oficio de LATAM · <a href="/">Inicio</a> · <a href="/comprar.html">Planes</a> · <a href="/instalar.html">Instalar</a></footer>
 
 <script>
+window.MV_PT = {
+  nInicio:'← Início', nPlanes:'Planos', nInstalar:'Instalar',
+  kicker:'DEMO AO VIVO, UM A UM',
+  heroH1:'Mostramos o assistente funcionando com o seu caso',
+  heroP:'Não é um vídeo gravado nem um chat de brinquedo: nos conectamos, carregamos um trabalho real do seu ofício e você vê como ele orça, como agenda e como avisa um atraso. Dura uns 20 minutos.',
+  hPedir:'Peça sua demo', subPedir:'Deixe esses dados e combinamos dia e horário por email.',
+  lNombre:'Nome e sobrenome *', lEmail:'Email *', lPais:'País *', lEmpresa:'Empresa *',
+  lOficio:'Ofício ou ramo <span style="font-weight:400;">(opcional)</span>',
+  pOficio:'Eletricista, encanador, veterinária, oficina…',
+  lMensaje:'O que você gostaria de ver? <span style="font-weight:400;">(opcional)</span>',
+  pMensaje:'Conte como você agenda e orça hoje, e onde perde mais tempo.',
+  btnEnviar:'Pedir a demo →',
+  hVas:'O que você vai ver',
+  li1:'Um orçamento real montado com uma lista de preços como a sua — o assistente nunca inventa valores.',
+  li2:'A agenda do dia calculando o deslocamento entre um atendimento e outro, com as pausas.',
+  li3:'O aviso automático de atraso ao próximo cliente, sem você tocar em nada.',
+  li4:'O painel: clientes, trabalhos do mês e faturamento.',
+  li5:'Os preços e como fica instalado no seu PC e no seu celular.',
+  hPorque:'Por que não tem uma demo aberta?',
+  porque:'Porque o que diferencia este produto não é a tela: é como o assistente repergunta, orça e monta a agenda. Isso é o trabalho de engenharia, e uma demo aberta o entrega de graça. Mostrar ao vivo leva o mesmo tempo pra nós e serve mais pra você: você pergunta o que quiser sobre o seu próprio caso.',
+  pie:'MV Agenda IA · Agendamentos e orçamentos com IA para qualquer profissão ou ofício da América Latina · <a href="/">Início</a> · <a href="/comprar.html">Planos</a> · <a href="/instalar.html">Instalar</a>'
+};
+window.MV_EN = {
+  nInicio:'← Home', nPlanes:'Plans', nInstalar:'Install',
+  kicker:'LIVE DEMO, ONE ON ONE',
+  heroH1:'We show you the assistant working with your own case',
+  heroP:'It\'s not a recorded video or a toy chatbot: we hop on a call, load a real job from your trade, and you see how it quotes, schedules, and warns about a delay. Takes about 20 minutes.',
+  hPedir:'Request your demo', subPedir:'Leave us your details and we\'ll coordinate a day and time by email.',
+  lNombre:'Full name *', lEmail:'Email *', lPais:'Country *', lEmpresa:'Business *',
+  lOficio:'Trade or field <span style="font-weight:400;">(optional)</span>',
+  pOficio:'Electrician, plumber, vet clinic, workshop…',
+  lMensaje:'What would you like to see? <span style="font-weight:400;">(optional)</span>',
+  pMensaje:'Tell us how you schedule and quote today, and where most of your time goes.',
+  btnEnviar:'Request the demo →',
+  hVas:'What you\'ll see',
+  li1:'A real quote built with a price list like your own — the assistant never makes up amounts.',
+  li2:'The day\'s schedule accounting for travel time between appointments, with breaks.',
+  li3:'The automatic delay warning to the next client, without you touching anything.',
+  li4:'The dashboard: clients, jobs this month, and billing.',
+  li5:'Pricing and how it gets installed on your PC and your phone.',
+  hPorque:'Why isn\'t there an open demo?',
+  porque:'Because what sets this product apart isn\'t the screen: it\'s how the assistant asks follow-up questions, quotes, and builds the schedule. That\'s the engineering work, and an open demo gives it away for free. Showing it to you live takes us the same amount of time, and serves you better: you get to ask about your own case.',
+  pie:'MV Schedule AI · AI scheduling and quoting for any trade or profession in Latin America · <a href="/">Home</a> · <a href="/comprar.html">Plans</a> · <a href="/instalar.html">Install</a>'
+};
+</script>
+<script src="/js/i18n.js"></script>
+<script>
+document.querySelectorAll('[data-i18n-placeholder]').forEach((n) => {
+  const es = n.getAttribute('placeholder');
+  const k = n.dataset.i18nPlaceholder;
+  const aplicar = () => {
+    const idi = (window.mvIdioma && window.mvIdioma()) || 'es';
+    const dic = idi === 'pt' ? window.MV_PT : idi === 'en' ? window.MV_EN : null;
+    n.setAttribute('placeholder', (dic && dic[k]) || es);
+  };
+  aplicar();
+  document.addEventListener('mv:idioma', aplicar);
+});
+
 const $ = (s) => document.querySelector(s);
+const _idi = () => (window.mvIdioma && window.mvIdioma()) || 'es';
+const TX_ALL = {
+  es: {
+    faltan:'Completá nombre, email, país y empresa.',
+    enviando:'Enviando…',
+    error:'No pudimos enviar tu pedido. Probá de nuevo en un rato.',
+    sinConexion:'No pudimos conectar. Revisá tu conexión y probá de nuevo.',
+    listoNuevo:'recibimos tu pedido', listoRepetido:'te tenemos anotado',
+    teEscribimos:'Te escribimos a', paraCoordinar:'para coordinar día y hora. Suele ser dentro de las 24 horas hábiles.',
+    mientrasTanto:'Mientras tanto podés mirar', losPlanes:'los planes', oInstalar:'cómo se instala'
+  },
+  pt: {
+    faltan:'Preencha nome, email, país e empresa.',
+    enviando:'Enviando…',
+    error:'Não conseguimos enviar seu pedido. Tente de novo em instantes.',
+    sinConexion:'Não conseguimos conectar. Verifique sua conexão e tente de novo.',
+    listoNuevo:'recebemos seu pedido', listoRepetido:'já temos você anotado',
+    teEscribimos:'Vamos escrever para', paraCoordinar:'para combinar dia e horário. Costuma ser dentro de 24 horas úteis.',
+    mientrasTanto:'Enquanto isso você pode ver', losPlanes:'os planos', oInstalar:'como se instala'
+  },
+  en: {
+    faltan:'Fill in name, email, country and business.',
+    enviando:'Sending…',
+    error:"We couldn't send your request. Try again in a bit.",
+    sinConexion:"Couldn't connect. Check your connection and try again.",
+    listoNuevo:'we got your request', listoRepetido:"we've got you down already",
+    teEscribimos:'We\'ll email', paraCoordinar:'to set up a day and time. Usually within 24 business hours.',
+    mientrasTanto:'Meanwhile, you can check out', losPlanes:'the plans', oInstalar:'how it installs'
+  }
+};
+const TX = () => TX_ALL[_idi()] || TX_ALL.es;
+
 function aviso(msg, ok) {
   const a = $('#aviso');
   a.textContent = msg;
@@ -146,13 +242,13 @@ $('#form').addEventListener('submit', async (e) => {
   // Validación mínima acá para no gastar un viaje al servidor; la de verdad
   // (la que cuenta) está en el servidor, que es donde se guarda el lead.
   if (!datos.nombre.trim() || !datos.email.trim() || !datos.pais.trim() || !datos.empresa.trim()) {
-    return aviso('Completá nombre, email, país y empresa.', false);
+    return aviso(TX().faltan, false);
   }
 
   const btn = $('#enviar');
   btn.disabled = true;
   const textoOriginal = btn.textContent;
-  btn.textContent = 'Enviando…';
+  btn.textContent = TX().enviando;
   aviso('', true);
 
   try {
@@ -163,19 +259,22 @@ $('#form').addEventListener('submit', async (e) => {
     if (!r.ok) {
       btn.disabled = false;
       btn.textContent = textoOriginal;
-      return aviso(d.error || 'No pudimos enviar tu pedido. Probá de nuevo en un rato.', false);
+      return aviso(d.error || TX().error, false);
     }
+    const t = TX();
+    const listo = { es: 'Listo, ', pt: 'Pronto, ', en: 'Done, ' }[_idi()];
+    const y = { es: 'o', pt: 'ou', en: 'or' }[_idi()];
     $('#tarjeta').innerHTML = `<div class="ok">
       <div class="tick">✔</div>
-      <h2>Listo, ${d.repetida ? 'te tenemos anotado' : 'recibimos tu pedido'}</h2>
-      <p class="sub">Te escribimos a <b>${datos.email.replace(/[&<>"]/g, '')}</b> para coordinar día y hora. Suele ser dentro de las 24&nbsp;horas hábiles.</p>
-      <p class="sub">Mientras tanto podés mirar <a href="/comprar.html">los planes</a> o <a href="/instalar.html">cómo se instala</a>.</p>
+      <h2>${listo}${d.repetida ? t.listoRepetido : t.listoNuevo}</h2>
+      <p class="sub">${t.teEscribimos} <b>${datos.email.replace(/[&<>"]/g, '')}</b> ${t.paraCoordinar}</p>
+      <p class="sub">${t.mientrasTanto} <a href="/comprar.html">${t.losPlanes}</a> ${y} <a href="/instalar.html">${t.oInstalar}</a>.</p>
     </div>`;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch {
     btn.disabled = false;
     btn.textContent = textoOriginal;
-    aviso('No pudimos conectar. Revisá tu conexión y probá de nuevo.', false);
+    aviso(TX().sinConexion, false);
   }
 });
 </script>
