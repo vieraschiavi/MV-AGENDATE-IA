@@ -52,12 +52,23 @@
 
 // Video promocional según idioma: cada uno con su narración y capturas
 // (mv-agendate-ia.mp4 / -en.mp4 / -pt.mp4).
+//
+// El POSTER va junto con el video, y es tan importante como él: es lo único
+// que se ve hasta que la persona toca play (y lo único que ve quien nunca lo
+// toca). Es un frame real del propio video —la pantalla del cotizador, con
+// los textos y hasta la moneda de cada idioma—, así que dejarlo fijo en
+// español le mostraba una captura en español a todo visitante de /en/ y /pt/.
+// Se generan con scripts/generar-posters.sh, del mismo segundo de cada video.
 (function () {
   function ajustarVideo() {
     const idi = (window.mvIdioma && window.mvIdioma()) || 'es';
     const base = '/video/mv-agendate-ia';
     const src = idi === 'es' ? base + '.mp4' : `${base}-${idi}.mp4`;
+    const poster = idi === 'es' ? '/video/poster.jpg' : `/video/poster-${idi}.jpg`;
     document.querySelectorAll('video.mv-video').forEach((v) => {
+      // El poster se ajusta SIEMPRE, aunque el <source> ya sea el correcto:
+      // son dos atributos independientes y uno puede estar al día y el otro no.
+      if (v.getAttribute('poster') !== poster) v.setAttribute('poster', poster);
       const fuente = v.querySelector('source');
       if (!fuente || fuente.getAttribute('src') === src) return;
       const estaba = !v.paused;

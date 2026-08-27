@@ -8,14 +8,17 @@
 //     → de vuelta a la llamada.
 //
 // Requiere en .env: DEEPGRAM_API_KEY (ASR). Para la voz (TTS) usa, en orden:
-//   1) Piper — voz es_AR-daniela rioplatense, GRATIS y offline (sin ElevenLabs).
+//   1) Piper — voz del IDIOMA del profesional, GRATIS y offline (sin
+//      ElevenLabs). Si no está instalada la de ese idioma, se saltea: ver
+//      tts-piper.js (nunca hablar con la voz de otro idioma).
 //   2) ElevenLabs (voz clonada) si hay ELEVENLABS_API_KEY + ELEVENLABS_VOICE_ID.
 // Sin Deepgram, /webhook/voz-premium redirige a la vía rápida (/webhook/voz).
 import { Router } from 'express';
 import { WebSocketServer, WebSocket } from 'ws';
 import { conversar } from '../ai/agente.js';
-import { piperDisponible, sintetizarUlaw as piperUlaw } from './tts-piper.js';
+import { piperDisponible, vozDelIdioma, sintetizarUlaw as piperUlaw } from './tts-piper.js';
 import { get as cfg } from '../store/config.js';
+import { idiomaActivo } from '../ai/cotizador.js';
 import { runConCuenta } from '../store/contextoCuenta.js';
 import { cuentaPorNumeroVoz, obtenerOverrides } from '../store/configCuentas.js';
 import { listarCuentaIds } from '../store/cuentas.js';
@@ -36,7 +39,12 @@ const MAX_REINTENTOS_DG = 6; // ~30 s de backoff antes de rendirse con el ASR
 const ttsElevenLabs = () => Boolean(EL() && VOZ_ID());
 // El pipeline vive con Deepgram (ASR) + alguna voz (Piper gratis, o ElevenLabs).
 const disponible = () => Boolean(DG() && (piperDisponible() || ttsElevenLabs()));
-const motorVoz = () => (piperDisponible() ? 'Piper (es_AR-daniela, gratis)' : ttsElevenLabs() ? 'ElevenLabs' : 'ninguno');
+// El nombre sale de la voz REAL del idioma activo: hardcodeado en
+// "es_AR-daniela" hacía creer, en un diagnóstico de una cuenta en portugués,
+// que había una voz correcta cargada.
+const motorVoz = () => (piperDisponible()
+  ? `Piper (${vozDelIdioma().replace(/\.onnx$/, '')}, gratis)`
+  : ttsElevenLabs() ? 'ElevenLabs' : 'ninguno');
 
 // --- TwiML: conecta la llamada al stream de audio bidireccional ---
 // Multi-cuenta (SaaS): si el número llamado ("To") es de una cuenta, la
@@ -136,8 +144,13 @@ export function montarVozPremium(httpServer) {
     const log = (...a) => console.log('[voz-premium]', ...a);
 
     function abrirDeepgram() {
+      // Igual que vozTwilio() en voz.js: el ASR tiene que escuchar en el
+      // idioma real del profesional, no siempre en español — si no, un
+      // cliente brasileño (cuenta en portugués) queda transcripto con un
+      // modelo en el idioma equivocado.
+      const idiomaDg = idiomaActivo() === 'pt' ? 'pt-BR' : 'es';
       const url =
-        'wss://api.deepgram.com/v1/listen?model=nova-2&language=es&encoding=mulaw&sample_rate=8000' +
+        `wss://api.deepgram.com/v1/listen?model=nova-2&language=${idiomaDg}&encoding=mulaw&sample_rate=8000` +
         '&punctuate=true&smart_format=true&interim_results=false&endpointing=400';
       dgWs = new WebSocket(url, { headers: { Authorization: `Token ${DG()}` } });
       // Una conexión que llegó a abrirse limpia la cuenta de reintentos: el
