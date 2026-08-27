@@ -60,11 +60,33 @@ de su Windows y quedarse con el programa sin pagar.
 > El README decía "repo privado". No lo era. Ahora nada de la variante dueño se
 > commitea ni se publica: se arma en tu máquina cuando lo necesitás.
 
+**La forma corta (Windows): doble clic en `INSTALADOR/OWNER/Armar-instalador-dueno.bat`.**
+Hace todo solo — instala dependencias si faltan, genera el par de claves si no
+existe, arma el instalador y **restaura los archivos que el empaquetador pisa**
+(ver abajo por qué eso importa). Sale
+`dist-instalador/MV-Agendate-IA-Setup-Dueno.exe`: el producto completo, plan
+Full, sin límite y sin pedir código. Ese `.exe` **no entra al repo** —
+`dist-instalador/` está en `.gitignore`.
+
+A mano, si preferís:
+
 | Qué | Cómo se arma |
 |---|---|
 | Instalador del dueño | `npm run empaquetar-exe-owner` |
 | Portable del dueño | `npm run empaquetar-pc-owner` |
 | El conversor (`.bat` + `.ps1`) | `npm run activador-dueno` (sale en `dist/`) |
+
+> **Ojo si lo hacés a mano:** `scripts/ofuscar.js` **no** trabaja sobre una
+> copia — reescribe `src/store/licencia-incluida.js`, `src/store/dias-prueba.js`
+> y `electron/owner-config.cjs` **dentro del repo**. Después de un build de
+> dueño, el árbol de trabajo queda con la licencia perpetua firmada adentro de
+> un archivo rastreado por git; un `git add -A` distraído la publica, y esa
+> licencia activa el producto completo para siempre en cualquier máquina. Es la
+> misma fuga del `.exe` de más arriba, en otro archivo.
+>
+> El `.bat` los restaura solo. Si empaquetaste a mano:
+> `git checkout -- src/store/licencia-incluida.js src/store/dias-prueba.js electron/owner-config.cjs`.
+> `npm test` también lo agarra (ver `test/convertir-owner.test.js`).
 
 Las tres cosas necesitan tu **clave privada de firma** (ver abajo): sin ella el
 empaquetador corta en vez de sacar una entrega a medias.
