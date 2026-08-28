@@ -274,3 +274,44 @@ test('sin clave privada no se genera ningún conversor', () => {
   assert.ok(err, 'generó un conversor sin poder firmar');
   assert.match(String(err.stderr || ''), /licencias-firma\.js init/, 'no dice cómo conseguir la clave');
 });
+
+// ── El build de dueño ensucia el repo, y eso también es una fuga ───────────
+//
+// scripts/ofuscar.js NO trabaja sobre una copia: reescribe los archivos de
+// variante DENTRO del repo (ver REESCRITOS en ofuscar.js, todos con RAIZ). Así
+// que después de `npm run empaquetar-exe-owner` el árbol de trabajo queda con
+// la licencia perpetua firmada adentro de un archivo RASTREADO por git, en un
+// repo PÚBLICO. Un `git add -A` distraído la publica, y esa licencia activa el
+// producto completo para siempre en cualquier máquina.
+//
+// Es la misma fuga que ya pasó con el .exe (ver INSTALADOR/README.md), en otro
+// archivo. Estos tests la agarran antes del push: CLAUDE.md manda correr
+// `npm run lint && npm test` antes de cada commit, y CI los vuelve a correr.
+test('el repo no lleva ninguna licencia firmada adentro de los archivos de variante', () => {
+  const incluida = readFileSync(join(RAIZ, 'src/store/licencia-incluida.js'), 'utf8');
+  const valor = (incluida.match(/LICENCIA_INCLUIDA\s*=\s*'([^']*)'/) || [])[1];
+  assert.equal(
+    valor, '',
+    'src/store/licencia-incluida.js quedó con una licencia adentro. Es lo que deja ' +
+    'un build de dueño (npm run empaquetar-exe-owner). NO lo commitees: restauralo ' +
+    'con `git checkout -- src/store/licencia-incluida.js` antes de seguir.'
+  );
+  assert.match(
+    incluida, /ACEPTA_LEGADO = false/,
+    'ACEPTA_LEGADO quedó en true en el repo: esa entrega acepta cualquier código con ' +
+    'formato viejo. Es solo para un build de transición puntual, nunca el default.'
+  );
+});
+
+test('el repo no queda con los dias de prueba de una variante que no se vende', () => {
+  // owner-config.cjs y dias-prueba.js son los otros dos que reescribe ofuscar.js.
+  // Si quedan con los de la demo (3) o los de un build viejo, la próxima entrega
+  // de CLIENTE sale con los días equivocados sin que nadie lo note.
+  const dias = readFileSync(join(RAIZ, 'src/store/dias-prueba.js'), 'utf8');
+  const enRepo = Number((dias.match(/DIAS_PRUEBA_CLIENTE\s*=\s*(\d+)/) || [])[1]);
+  assert.equal(
+    enRepo, 7,
+    `src/store/dias-prueba.js quedó en ${enRepo} días. El default del repo es 7 ` +
+    '(lo que se vende); si un build lo dejó pisado, restauralo antes de commitear.'
+  );
+});

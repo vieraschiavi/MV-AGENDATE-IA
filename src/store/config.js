@@ -82,7 +82,13 @@ const ENV = {
   // cada cuenta guarda el suyo y el webhook de voz rutea la llamada entrante
   // a la cuenta dueña del número marcado (se completa solo al comprar un
   // número desde /config.html con la sesión de la cuenta iniciada).
-  twilioNumero: 'TWILIO_NUMERO',
+  // Dos nombres a propósito: el manual de puesta en producción (el que se
+  // sigue a mano al configurar Vercel, y que cubre los 15 proyectos) pide
+  // TWILIO_PHONE_NUMBER, que es además como lo llama la consola de Twilio.
+  // El código nació con TWILIO_NUMERO. Aceptar los dos evita el peor caso:
+  // cargar la variable siguiendo el manual, que el código la ignore, y no
+  // tener ningún error que lo explique — el ChatVoice simplemente no atiende.
+  twilioNumero: ['TWILIO_NUMERO', 'TWILIO_PHONE_NUMBER'],
   deepgramApiKey: 'DEEPGRAM_API_KEY',
   elevenlabsApiKey: 'ELEVENLABS_API_KEY',
   elevenlabsVoiceId: 'ELEVENLABS_VOICE_ID',
@@ -155,6 +161,21 @@ const SECRETAS = new Set([
   'jwtSecret', 'resendApiKey'
 ]);
 
+// Valor de una clave leído del entorno. ENV[k] puede ser un nombre o VARIOS:
+// un mismo dato a veces llega con distinto nombre según quién configure (el
+// manual de producción, la consola del proveedor, o el nombre histórico del
+// código). Se prueban en orden y gana el primero DEFINIDO.
+//
+// El criterio es `!== undefined`, no "no vacío", para no cambiar lo que ya
+// hacía `process.env[ENV[k]] ?? ...`: una variable puesta en vacío significa
+// "configurada en vacío" y sigue ganándole al valor embebido, igual que antes.
+function desdeEntorno(nombres) {
+  for (const n of (Array.isArray(nombres) ? nombres : [nombres])) {
+    if (process.env[n] !== undefined) return process.env[n];
+  }
+  return undefined;
+}
+
 // Clave/config EMBEBIDA por el vendedor (oculta, base64) que viaja con el
 // producto. Es el default de más baja prioridad: nunca se expone por la API.
 const EMBEBIDA_FILE = join(here, '../clave-embebida.b64');
@@ -185,7 +206,7 @@ function cargar() {
     const guardado = archivo[k];
     cache[k] = (guardado != null && String(guardado) !== '')
       ? guardado
-      : (process.env[ENV[k]] ?? embebida[k] ?? '');
+      : (desdeEntorno(ENV[k]) ?? embebida[k] ?? '');
   }
   return cache;
 }
